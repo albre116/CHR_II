@@ -6,7 +6,7 @@ Authors@R: as.person(c(
     ))
 Description: Pulls CHR data from flat files or relational data bases and formats into model load file
 Depends:
-    R (>= 3.1)
+    R (>= 3.1.1)
 License: Copyright, CH Robinson
 LazyData: true
 Suggests:

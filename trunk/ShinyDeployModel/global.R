@@ -1,6 +1,13 @@
-library(shiny)
-library(shinyBS)
-library(rCharts)
+if(!require("devtools"))
+  (install.packages("devtools"))
+if(!require("shiny"))
+  (install.packages("shiny"))
+if(!require("shinyBS"))
+  (install.packages("shinyBS"))
+if(!require("rCharts"))
+  (install.packages("rCharts"))
+if(!require("dplyr"))
+  (install.packages("dplyr"))
 
 if(!requireNamespace('DataFetch')) {
   print('Data Loading Service not installed. Please install it from github using devtools.')
@@ -10,25 +17,12 @@ if(!requireNamespace('DataFetch')) {
 }
 
 
+####source all java scripts and functions related to shiny display (data processing functions should be in packages highlighted in the export space)
 source("matrixCustom.R")
 #source("helpers.R")
 
-SERVER_HOST_ADDRESS <- 'http://p1haplostats-s1:28080'
+####Build up the test scripts here and we will move them over
+####to the server file as they begin to work
 
+load("../DataFetch/R/sysdata.rda")###this will be replaced by loading the DataFetch Package
 
-POPULATIONS <- c("CAU", "AFA","HIS", "API", "UNK","NAM")
-POPULATIONS_TEXT<- c("White", "African American", "Hispanic", "Asian Pacific Islander", "Unknown","Native American")
-host<- 'http://p1haplostats-s1:28080'
-
-PROGNOSIS <- c("Good","Fair","Poor")
-VALID_RIDS <- c(2082108,2087222,2097353,2065723,2065509,2065558,2065756,2066150)
-
-
-# display_mug <- data.frame(locus = c('A', 'B', 'C', 'DRB1', 'DQB1', 'DRB3', 'DRB4', 'DRB5'), 
-#                           type1 = '', 
-#                           type2 = '',
-#                           stringsAsFactors = FALSE)
-display_mug <- data.frame(locus = c('A', 'B', 'C', 'DRB1', 'DQB1'), 
-                          type1 = '', 
-                          type2 = '',
-                          stringsAsFactors = FALSE)
