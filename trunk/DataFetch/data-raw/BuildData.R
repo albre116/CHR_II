@@ -11,7 +11,7 @@ library(testthat)
 test_that("build data", {
 
   #pull in data
-  raw_data <- read.table('data-raw/FullDataSet_AllYearsCombined.txt',sep="|",nrows=1000,header=TRUE)
+  raw_data <- read.table('~/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt',sep="|",nrows=1000,header=TRUE)
   RAW_DATA<-buildData(raw_data)
 
   #create quick test to confirm that the column dimensions are the same
