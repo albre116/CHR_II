@@ -1,0 +1,9 @@
+Package: DataPull
+Title: Given a source data file path, creates the modeling data file
+Version: 0.0.0.9000
+Authors@R: person("Mark", "Albrecht", , "albre116@gmail.com", role = c("aut", "cre"))
+Description: Returns a data file with the appropriately formatted predictors
+Depends: R (>= 3.1.2), dplyr, lubridate, data.table
+License: copyright CH Robinson
+LazyData: true
+Suggests: testthat

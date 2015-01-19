@@ -10,18 +10,28 @@ if(!require("dplyr"))
   (install.packages("dplyr"))
 if(!require("data.table"))
   (install.packages("data.table"))
+if(!require("lubridate"))
+  (install.packages("lubridate"))
+if(!require("ggplot2"))
+  (install.packages("ggplot2"))
+if(!require("rCharts"))
+  (install_github('rCharts', 'ramnathv'))
 
-# example of how to load custom package and instructions
-# if(!requireNamespace('DataFetch')) {
-#   print('Data Loading Service not installed. Please install it from github using devtools.')
-#   print("devtools::install_svn('http://svn.nmdp.org/repos/dev/bioinformatics/projects/search-prognosis-tool', 'HaplotypeServiceClient')")
-# } else {
-#   library(DataFetch)
-# }
 
+###custom and local packages
+if(!require('DataPull')) {
+  print('HaplotypeServiceClient not installed. Please install it from github using devtools.')
+  print("devtools::install_svn('http://svn.nmdp.org/repos/dev/bioinformatics/projects/search-prognosis-tool', 'DataPull')")
+}
 
 
 ####Load in Data####
-data_path <- c('~/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt')
-raw_data <- fread(data_path,sep="|",header=TRUE)
+path <- c('~/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt')  ###set this to file path location for raw data
+sample_pct <- 0.1 ###set between [0,1]
+CHR<-DataPull::loadData(path,sample_pct)  ### see help file for documentation
+
+
+
+####lets look at some basic associations between the different profit measures
+
 
