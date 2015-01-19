@@ -7,11 +7,14 @@ buildData <- function(raw_data) {
 }
 
 
+###this is a quick check of the build data function that should be run each time one
+###updates the source data (which isn't all of the time)
+
 library(testthat)
 test_that("build data", {
 
   #pull in data
-  raw_data <- read.table('~/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt',sep="|",nrows=1000,header=TRUE)
+  raw_data <- fread('~/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt',sep="|",nrows=100,header=TRUE)
   RAW_DATA<-buildData(raw_data)
 
   #create quick test to confirm that the column dimensions are the same

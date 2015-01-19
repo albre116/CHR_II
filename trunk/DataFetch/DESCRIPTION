@@ -2,7 +2,7 @@ Package: DataFetch
 Title: Fetch CHR Lane Data
 Version: 0.0.0.9000
 Authors@R: as.person(c(
-    "Mark Albrecht <albre116@gmail.com> [aut, cre]",
+    "Mark Albrecht <albre116@gmail.com> [aut, cre]"
     ))
 Description: Pulls CHR data from flat files or relational data bases and formats into model load file
 Depends:
@@ -12,4 +12,4 @@ LazyData: true
 Suggests:
     testthat
 Imports:
-    dplyr
+    dplyr , data.table
