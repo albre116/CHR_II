@@ -20,8 +20,7 @@ if(!require("rCharts"))
 
 ###custom and local packages
 if(!require('DataPull')) {
-  print('HaplotypeServiceClient not installed. Please install it from github using devtools.')
-  print("devtools::install_svn('http://svn.nmdp.org/repos/dev/bioinformatics/projects/search-prognosis-tool', 'DataPull')")
+  devtools::install_github(c("albre116/CHR_II/trunk/DataPull"),auth_token="ffcaf9fb4036981ec6022f13d2a1d05df97a5ff3")
 }
 
 
@@ -33,5 +32,7 @@ CHR<-DataPull::loadData(path,sample_pct)  ### see help file for documentation
 
 
 ####lets look at some basic associations between the different profit measures
+
+
 
 
