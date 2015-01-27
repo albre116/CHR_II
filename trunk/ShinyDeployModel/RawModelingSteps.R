@@ -22,7 +22,10 @@ if(!require("gbm"))
   (install.packages("gbm"))
 if(!require("e1071"))
   (install.packages("e1071"))
-
+if(!require("dtw"))
+  (install.packages("dtw"))
+if(!require("wavelets"))
+  (install.packages("wavelets"))
 
 ###custom and local packages
 if(!require('DataPull')) {
@@ -32,15 +35,40 @@ if(!require('DataPull')) {
 
 ####Load in Data####
 path <- c('~/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt')  ###set this to file path location for raw data
-path <- c('C:/Users/malbrech/Desktop/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt')
-sample_pct <- 1 ###set between [0,1]
+#path <- c('C:/Users/malbrech/Desktop/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt')
+sample_pct <- 0.1 ###set between [0,1]
 RAW <- DataPull::loadData(path,sample_pct)  ### see help file for documentation
+
+
 
 ###do some data cleanup that should be moved to the DataPull package
 shipped <- unique(RAW$LoadCondition)[grep("F",unique(RAW$LoadCondition))]
 #Cutout Non-shipped and Shippers Agent Loads (check about the SA thing)
 RAW <- dplyr::filter(RAW,LoadCondition == shipped & SAFlag == "False")
 RAW$DayEntryDate<-as.numeric(format(RAW$EntryDate,format="%j"))
+
+
+Get3DigZip <- function(x){
+  tmp <- strsplit(x,",")[[1]][3]
+  tmp <- gsub(" ","",tmp)
+  tmp <- substr(tmp,1,5)
+  tmp <- as.numeric(tmp)
+  return(tmp)
+}
+
+
+RAW$Orig3DigZip<-unlist(lapply(RAW$Origin,Get3DigZip))
+
+TEST<-mutate(RAW,Orig3DigZip=Get3DigZip(Origin))
+
+
+TEST$Orig3DigZip
+
+#DWT reference
+###http://www.jstatsoft.org/v31/i07/paper
+#Wavlet clustering reference
+###http://www.rdatamining.com/examples/time-series-clustering-classification
+
 
 ###now filter for display
 #grab the Low-High-th percentiles
@@ -83,7 +111,7 @@ print(plot)
 
 
 
-###i like the idea of 
+###i like the idea of
 
 
 
