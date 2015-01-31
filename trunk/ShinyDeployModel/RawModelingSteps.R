@@ -26,6 +26,11 @@ if(!require("dtw"))
   (install.packages("dtw"))
 if(!require("wavelets"))
   (install.packages("wavelets"))
+if(!require("zipcode"))
+  (install.packages("zipcode"))
+if(!require("cluster"))
+  (install.packages("cluster"))
+
 
 ###custom and local packages
 if(!require('DataPull')) {
@@ -45,24 +50,189 @@ RAW <- DataPull::loadData(path,sample_pct)  ### see help file for documentation
 shipped <- unique(RAW$LoadCondition)[grep("F",unique(RAW$LoadCondition))]
 #Cutout Non-shipped and Shippers Agent Loads (check about the SA thing)
 RAW <- dplyr::filter(RAW,LoadCondition == shipped & SAFlag == "False")
-RAW$DayEntryDate<-as.numeric(format(RAW$EntryDate,format="%j"))
+RAW$Day<-as.numeric(format(RAW$EntryDate,format="%j"))
+RAW$Month<-as.numeric(format(RAW$EntryDate,format="%m"))
+RAW$Year<-as.numeric(format(RAW$EntryDate,format="%Y"))
 
 
-Get3DigZip <- function(x){
+Get5DigZip <- function(x){
   tmp <- strsplit(x,",")[[1]][3]
   tmp <- gsub(" ","",tmp)
   tmp <- substr(tmp,1,5)
-  tmp <- as.numeric(tmp)
   return(tmp)
 }
 
+RAW$Orig5DigZip <- unlist(lapply(RAW$Origin,Get5DigZip))
+RAW$Dest5DigZip <- unlist(lapply(RAW$Destination,Get5DigZip))
 
-RAW$Orig3DigZip<-unlist(lapply(RAW$Origin,Get3DigZip))
+####Geocode the 5-digit zips to lat/long pairs####
+data(zipcode)###pull in reference data mapping zip to lat/long
 
-TEST<-mutate(RAW,Orig3DigZip=Get3DigZip(Origin))
+###code the origin
+orig_zip_geocode <- zipcode %>% 
+  select(zip,OrigLatitude=latitude,OrigLongitude=longitude)
+RAW <- RAW %>% left_join(orig_zip_geocode,c("Orig5DigZip" = "zip"))
+rm(orig_zip_geocode)
+
+###code the destination
+dest_zip_geocode <- zipcode %>% 
+  select(zip,DestLatitude=latitude,DestLongitude=longitude)
+RAW <- RAW %>% left_join(dest_zip_geocode,c("Dest5DigZip" = "zip"))
+rm(dest_zip_geocode)
 
 
-TEST$Orig3DigZip
+####Now create the 3-digit zip table centroids
+###simpliest approach is to just use the medoid of the 5-digit zip data for each 3-dig roll-up
+###i.e. we are going to use the most central point
+
+pull_mediod_x<-function(lat,long){
+  tmp <- data.frame(lat,long)
+  tmp<-tmp[complete.cases(tmp),]
+  if(nrow(tmp)>1){
+  return(pam(tmp,1,diss=FALSE)$medoids[1])}
+  if(nrow(tmp)==1){
+    return(tmp[,1])
+  }else{return(NA)}
+}
+
+pull_mediod_y<-function(lat,long){
+  tmp <- data.frame(lat,long)
+  tmp<-tmp[complete.cases(tmp),]
+  if(nrow(tmp)>1){
+    return(pam(tmp,1,diss=FALSE)$medoids[2])}
+  if(nrow(tmp)==1){
+    return(tmp[,2])
+  }else{return(NA)}
+}
+
+
+Zip3DigMedioids <- zipcode %>%
+  select(zip,latitude,longitude) %>%
+  mutate(Zip3dig=substr(zip,1,3)) %>%
+  select(-zip) %>%
+  group_by(Zip3dig) %>%
+  summarise(N=n(),
+            Lat3Dig=pull_mediod_x(latitude,longitude),
+            Long3Dig=pull_mediod_y(latitude,longitude))
+
+RAW<-RAW %>% mutate(Orig3DigZip=substr(Orig5DigZip,1,3),
+                    Dest3DigZip=substr(Dest5DigZip,1,3))
+
+###code the origin
+orig_zip_geocode <- Zip3DigMedioids %>% 
+  select(Zip3dig,OrigLatitude3Dig=Lat3Dig,OrigLongitude3Dig=Long3Dig)
+RAW <- RAW %>% left_join(orig_zip_geocode,c("Orig3DigZip" = "Zip3dig"))
+rm(orig_zip_geocode)
+
+###code the destination
+dest_zip_geocode <- Zip3DigMedioids %>% 
+  select(Zip3dig,DestLatitude3Dig=Lat3Dig,DestLongitude3Dig=Long3Dig)
+RAW <- RAW %>% left_join(dest_zip_geocode,c("Dest3DigZip" = "Zip3dig"))
+rm(dest_zip_geocode)
+
+####Now pull out the City from the address field
+GetCity <- function(x){
+  tmp <- strsplit(x,",")[[1]][1]
+  tmp <- gsub(" ","",tmp)
+  return(tmp)
+}
+
+RAW <- RAW %>% mutate(OrigCity=unlist(lapply(Origin,GetCity)),
+                      DestCity=unlist(lapply(Destination,GetCity)))
+####geocode complete
+
+##########################################################################################
+#####All of the above steps should be pushed to the datapull package and documented within
+##########################################################################################
+
+##########################################################################################
+#####Now we are going to construct the volume model
+##########################################################################################
+
+
+
+
+
+
+
+
+
+DATA<-dplyr::filter(RAW,!is.infinite(RPM_NormalizedCustomer) &
+                      !is.na(RPM_NormalizedCustomer))
+
+Low=0
+High=100
+DATA<-dplyr::filter(DATA,ntile(RPM_NormalizedCustomer,100)>Low &
+                      ntile(RPM_NormalizedCustomer,100)<=High)
+
+
+
+
+
+
+
+
+
+
+
+
+
+sc <- read.table("synthetic_control.data", header=F, sep="")
+
+
+# randomly sampled n cases from each class, to make it easy for plotting
+
+n <- 10
+
+s <- sample(1:100, n)
+
+idx <- c(s, 100+s, 200+s, 300+s, 400+s, 500+s)
+
+sample2 <- sc[idx,]
+
+observedLabels <- c(rep(1,n), rep(2,n), rep(3,n), rep(4,n), rep(5,n), rep(6,n))
+
+# compute DTW distances
+
+library(dtw)
+
+distMatrix <- dist(sample2, method="DTW")
+
+# hierarchical clustering
+
+hc <- hclust(distMatrix, method="average")
+
+plot(hc, labels=observedLabels, main="")
+
+
+library(wavelets)
+wtData <- NULL
+
+for (i in 1:nrow(sc)) {
+  
+a <- t(sc[i,])
+  
+wt <- dwt(a, filter="haar", boundary="periodic")
+  
+wtData <- rbind(wtData, unlist(c(wt@W,wt@V[[wt@level]])))
+  
+}
+
+wtData <- as.data.frame(wtData)
+
+classId <- c(rep("1",100), rep("2",100), rep("3",100),
+               
+               rep("4",100), rep("5",100), rep("6",100))
+
+wtSc <- data.frame(cbind(classId, wtData))
+
+
+fit <- gbm(classId~.,data=wtSc,n.trees=1000)
+best.iter <- gbm.perf(fit,method="OOB")
+print(best.iter)
+predict(fit,n.trees=best.iter,type="link")
+
+
 
 #DWT reference
 ###http://www.jstatsoft.org/v31/i07/paper
