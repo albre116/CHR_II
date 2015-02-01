@@ -50,7 +50,8 @@ RAW <- DataPull::loadData(path,sample_pct)  ### see help file for documentation
 shipped <- unique(RAW$LoadCondition)[grep("F",unique(RAW$LoadCondition))]
 #Cutout Non-shipped and Shippers Agent Loads (check about the SA thing)
 RAW <- dplyr::filter(RAW,LoadCondition == shipped & SAFlag == "False")
-RAW$Day<-as.numeric(format(RAW$EntryDate,format="%j"))
+RAW$Day365<-as.numeric(format(RAW$EntryDate,format="%j"))
+RAW$Day<-as.numeric(format(RAW$EntryDate,format="%d"))
 RAW$Month<-as.numeric(format(RAW$EntryDate,format="%m"))
 RAW$Year<-as.numeric(format(RAW$EntryDate,format="%Y"))
 
@@ -146,16 +147,67 @@ RAW <- RAW %>% mutate(OrigCity=unlist(lapply(Origin,GetCity)),
 ##########################################################################################
 
 ##########################################################################################
-#####Now we are going to construct the volume model
+#####Now we are going to construct the transactional volume model
+#####For both the destination and origin
 ##########################################################################################
 
+OrigVolumeTally<-RAW %>% 
+  group_by(Year,Month,Day,Orig3DigZip) %>%
+  summarise(OrigVolume=n())
+
+DestVolumeTally<-RAW %>% 
+  group_by(Year,Month,Day,Dest3DigZip) %>%
+  summarise(DestVolume=n())
+
+####Now construct the time series of Origin and Destination 3-dig zips for each day
+min_time<-as.Date(format(min((RAW$EntryDate)),format="%Y-%m-%d"))
+max_time<-as.Date(format(max((RAW$EntryDate)),format="%Y-%m-%d"))
+span<-difftime(max_time,min_time)
+time_sequence<-min_time+0:span  ##this is the date set over which to compute the volume
 
 
+OrigZip3Categories <- RAW %>%
+  select(Orig3DigZip) %>%
+  arrange(Orig3DigZip) %>%
+  distinct() %>%
+  filter(Orig3DigZip %in% Zip3DigMedioids$Zip3dig)
+
+DestZip3Categories <- RAW %>%
+  select(Dest3DigZip) %>%
+  arrange(Dest3DigZip) %>%
+  distinct() %>%
+  filter(Dest3DigZip %in% Zip3DigMedioids$Zip3dig)
 
 
+OrigVolumeSeries <- rbind_all(lapply(time_sequence,function(x){
+  data.frame(Date=x,OrigZip3Categories)
+}))
+
+DestVolumeSeries <- rbind_all(lapply(time_sequence,function(x){
+  data.frame(Date=x,DestZip3Categories)
+}))
 
 
+OrigVolumeSeries <- OrigVolumeSeries %>%
+  mutate(Year=as.numeric(format(Date,format="%Y")),
+             Month=as.numeric(format(Date,format="%m")),
+             Day=as.numeric(format(Date,format="%d"))) %>%
+  left_join(OrigVolumeTally,c("Year"="Year","Month"="Month","Day"="Day","Orig3DigZip"="Orig3DigZip"))
 
+OrigVolumeSeries$OrigVolume[is.na(OrigVolumeSeries$OrigVolume)]=0 ##set NA's to 0
+  
+
+
+DestVolumeSeries <- DestVolumeSeries %>%
+  mutate(Year=as.numeric(format(Date,format="%Y")),
+         Month=as.numeric(format(Date,format="%m")),
+         Day=as.numeric(format(Date,format="%d"))) %>%
+  left_join(DestVolumeTally,c("Year"="Year","Month"="Month","Day"="Day","Dest3DigZip"="Dest3DigZip"))
+
+DestVolumeSeries$DestVolume[is.na(DestVolumeSeries$DestVolume)]=0 ##set NA's to 0
+
+
+####stopped here ####
 
 DATA<-dplyr::filter(RAW,!is.infinite(RPM_NormalizedCustomer) &
                       !is.na(RPM_NormalizedCustomer))
