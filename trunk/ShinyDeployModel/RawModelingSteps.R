@@ -171,6 +171,7 @@ states.in <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota",
                "Oklahoma", "North Carolina", "Tennessee", "Texas", "New Mexico", 
                "Alabama", "Mississippi", "Georgia", "South Carolina", "Arkansas", 
                "Louisiana", "Florida", "Michigan")
+states.in <- c("California")
 usa.selected <- usa.states[(usa.states@data$STATE_NAME %in% states.in),]
 usa.selected@data$id=rownames(usa.selected@data)
 usa.selected.points=fortify(usa.selected,region="id")
@@ -206,7 +207,7 @@ rm(kgrid.cl)  # tidy up: we're only interested in clipped ones
 Map <- ggplot(usa.selected.df)+
   aes(long,lat,group=group)+
   geom_polygon(color="black",alpha=0)+
-  labs(x = "Long", y = "Lat") + 
+  labs(x = "Long", y = "Lat") + coord_fixed()+
   theme_bw()+ theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
@@ -285,7 +286,7 @@ KrigData<- SpatialPointsDataFrame(coords=kgrid@coords,data=Grid_Summary)
 Map <- ggplot(usa.selected.df)+
   aes(long,lat,group=group)+
   geom_polygon(color="black",alpha=0)+
-  labs(x = "Long", y = "Lat") + 
+  labs(x = "Long", y = "Lat") + coord_fixed()+
   theme_bw()+ theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
