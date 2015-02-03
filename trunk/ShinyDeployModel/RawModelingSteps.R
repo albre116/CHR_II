@@ -30,6 +30,16 @@ if(!require("zipcode"))
   (install.packages("zipcode"))
 if(!require("cluster"))
   (install.packages("cluster"))
+if(!require("fields"))
+  (install.packages("fields"))
+if(!require("rgdal"))
+  (install.packages("rgdal"))
+if(!require("ggmap"))
+  (install.packages("ggmap"))
+if(!require("rgeos"))
+  (install.packages("rgeos"))
+if(!require("reshape2"))
+  (install.packages("reshape2"))
 
 
 ###custom and local packages
@@ -41,9 +51,8 @@ if(!require('DataPull')) {
 ####Load in Data####
 path <- c('~/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt')  ###set this to file path location for raw data
 #path <- c('C:/Users/malbrech/Desktop/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt')
-sample_pct <- 0.1 ###set between [0,1]
+sample_pct <- 1 ###set between [0,1]
 RAW <- DataPull::loadData(path,sample_pct)  ### see help file for documentation
-
 
 
 ###do some data cleanup that should be moved to the DataPull package
@@ -146,65 +155,221 @@ RAW <- RAW %>% mutate(OrigCity=unlist(lapply(Origin,GetCity)),
 #####All of the above steps should be pushed to the datapull package and documented within
 ##########################################################################################
 
-##########################################################################################
-#####Now we are going to construct the transactional volume model
-#####For both the destination and origin
-##########################################################################################
+#######################################################
+####In this part of the code we are going to create
+####A grid of shipper's access to volume points
+####and then krig the volume access over this grid
+#######################################################
+usa.states <- readOGR(dsn = "Shapefiles", layer = "states")
+states.in <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota", 
+               "Wyoming", "Wisconsin", "Idaho", "Vermont", "Minnesota", "Oregon", 
+               "New Hampshire", "Iowa", "Massachusetts", "Nebraska", "New York", 
+               "Pennsylvania", "Connecticut", "Rhode Island", "New Jersey", 
+               "Indiana", "Nevada", "Utah", "California", "Ohio", "Illinois", 
+               "District of Columbia", "Delaware", "West Virginia", "Maryland", 
+               "Colorado", "Kentucky", "Kansas", "Virginia", "Missouri", "Arizona", 
+               "Oklahoma", "North Carolina", "Tennessee", "Texas", "New Mexico", 
+               "Alabama", "Mississippi", "Georgia", "South Carolina", "Arkansas", 
+               "Louisiana", "Florida", "Michigan")
+usa.selected <- usa.states[(usa.states@data$STATE_NAME %in% states.in),]
+usa.selected@data$id=rownames(usa.selected@data)
+usa.selected.points=fortify(usa.selected,region="id")
+usa.selected.df=left_join(usa.selected.points,usa.selected@data,by="id")
 
-OrigVolumeTally<-RAW %>% 
-  group_by(Year,Month,Day,Orig3DigZip) %>%
-  summarise(OrigVolume=n())
+b <- bbox(usa.selected)
+b[1, ] <- (b[1, ] - mean(b[1, ])) * 1.05 + mean(b[1, ])
+b[2, ] <- (b[2, ] - mean(b[2, ])) * 1.05 + mean(b[2, ])
+# scale longitude and latitude (increase bb by 5% for plot) replace 1.05
+# with 1.xx for an xx% increase in the plot size
 
-DestVolumeTally<-RAW %>% 
-  group_by(Year,Month,Day,Dest3DigZip) %>%
-  summarise(DestVolume=n())
+#baselayer <- ggmap(get_map(location = b))
 
+
+###create grid from bounding box for kriging
+npoints<-2500
+lon <- seq(b[1,1],b[1,2],length.out = ceiling(sqrt(npoints)))
+lat <- seq(b[2,1],b[2,2],length.out = ceiling(sqrt(npoints)))
+kgrid<-expand.grid(x = lon, y = lat)
+
+kgrid<-SpatialPoints(kgrid)
+
+int<-gIntersects(kgrid,usa.selected,byid=T)
+
+clipped <- apply(int == F, MARGIN = 2, all)
+plot(kgrid[which(clipped), ])  # shows all stations we DO NOT want
+kgrid.cl <- kgrid[which(!clipped), ]  # use ! to select the invers
+points(kgrid.cl, col = "green")  # check that it's worked
+
+kgrid <- kgrid.cl
+rm(kgrid.cl)  # tidy up: we're only interested in clipped ones
+
+Map <- ggplot(usa.selected.df)+
+  aes(long,lat,group=group)+
+  geom_polygon(color="black",alpha=0)+
+  labs(x = "Long", y = "Lat") + 
+  theme_bw()+ theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
+                    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+points<-as.data.frame(kgrid@coords)
+Map+geom_point(data=points,aes(x=x,y=y,group=1))+ggtitle("Kriging Support Points")
+
+
+###now for the kriging grid, we need to compute a volume measure within a specified distance
+# Distances are measured in miles.
+# Longitudes and latitudes are measured in degrees.
+# Earth is assumed to be perfectly spherical.
+dist=50#miles for load to be in cell
+earth_radius = 3960.0
+degrees_to_radians = pi/180.0
+radians_to_degrees = 180.0/pi
+
+change_in_latitude<-function(miles){
+  #"Given a distance north, return the change in latitude."
+  degrees_lat<-(miles/earth_radius)*radians_to_degrees
+  return(degrees_lat)
+}
+
+
+change_in_longitude <- function(latitude, miles){
+  #"Given a latitude and a distance west, return the change in longitude."
+  # Find the radius of a circle around the earth at given latitude.
+  r = earth_radius*cos(latitude*degrees_to_radians)
+  degrees_lon <- (miles/r)*radians_to_degrees
+  return(degrees_lon)
+}
+
+
+bounds <- apply(kgrid@coords,1,function(x){
+  delta_lat <- change_in_latitude(dist/2)
+  delta_long <- change_in_longitude(x[2],dist/2)
+  lower_long <- x[1] - delta_long
+  upper_long <- x[1] + delta_long
+  lower_lat <- x[2] - delta_lat
+  upper_lat <- x[2] + delta_lat
+  return(data.frame(lower_long,upper_long,lower_lat,upper_lat))
+})
+
+bounds<-matrix(unlist(bounds),ncol=4,byrow=T)
+colnames(bounds) <- c("long_lower","long_upper","lat_lower","lat_upper")
+kgrid <- SpatialPointsDataFrame(kgrid,data=as.data.frame(bounds))
+
+####the kriging grid and boundaries are now complete###
 ####Now construct the time series of Origin and Destination 3-dig zips for each day
 min_time<-as.Date(format(min((RAW$EntryDate)),format="%Y-%m-%d"))
 max_time<-as.Date(format(max((RAW$EntryDate)),format="%Y-%m-%d"))
 span<-difftime(max_time,min_time)
-time_sequence<-min_time+0:span  ##this is the date set over which to compute the volume
+time_sequence<-min_time+0:span  ##this is the date set over which to compute the summary measures
+
+DatePlotStart <- as.Date(max_time,format="%Y-%m-%d")-3
+DatePlotEnd <- as.Date(max_time,format="%Y-%m-%d")
+DATA <- RAW %>% filter(Year>=as.numeric(format(DatePlotStart,format="%Y")) & Year<=as.numeric(format(DatePlotEnd,format="%Y")),
+                       Month>=as.numeric(format(DatePlotStart,format="%m")) & Month<=as.numeric(format(DatePlotEnd,format="%m")),
+                       Day>=as.numeric(format(DatePlotStart,format="%d")) & Day<=as.numeric(format(DatePlotEnd,format="%d")))
+
+####summarise observations landing within krig-grid cells
+x <- DATA$OrigLongitude
+y <- DATA$OrigLatitude
+Grid_Summary<- apply(kgrid@data,1,function(b){
+  tmp<-filter(DATA,(OrigLongitude>=b[1] & OrigLongitude<=b[2]) & 
+                (OrigLatitude>=b[3] & OrigLatitude<=b[4]))
+  summarise(tmp,Volume=n(),RPM_NormalizedCustomer=mean(RPM_NormalizedCustomer))
+})
+Colnames <- colnames(Grid_Summary[[1]])
+Ncol <- ncol(Grid_Summary[[1]])
+Grid_Summary <- as.data.frame(matrix(unlist(Grid_Summary),ncol=Ncol,byrow=T))
+colnames(Grid_Summary) <- Colnames
+
+KrigData<- SpatialPointsDataFrame(coords=kgrid@coords,data=Grid_Summary)
 
 
-OrigZip3Categories <- RAW %>%
-  select(Orig3DigZip) %>%
-  arrange(Orig3DigZip) %>%
-  distinct() %>%
-  filter(Orig3DigZip %in% Zip3DigMedioids$Zip3dig)
+Map <- ggplot(usa.selected.df)+
+  aes(long,lat,group=group)+
+  geom_polygon(color="black",alpha=0)+
+  labs(x = "Long", y = "Lat") + 
+  theme_bw()+ theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
+                    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
-DestZip3Categories <- RAW %>%
-  select(Dest3DigZip) %>%
-  arrange(Dest3DigZip) %>%
-  distinct() %>%
-  filter(Dest3DigZip %in% Zip3DigMedioids$Zip3dig)
+points<-as.data.frame(x=x,y=y)
+Map+geom_point(data=points,aes(x=x,y=y,group=1))+
+  ggtitle(paste("Observed Destination Transactions",DatePlotStart,"to",DatePlotEnd))
+
+xx <- KrigData@coords
+yy <- KrigData@data$Volume
+# fit<- Tps(xx,yy)
+fit <- Krig(xx, yy, theta=20) 
+out<- predictSurface( fit)
+
+r<-nrow(out$z)
+c<-ncol(out$z)
+df<-matrix(ncol=3,nrow=r*c)
+colnames(df)<-c("x","y","value")
+i=2
+for(i in 1:ncol(out$z)){
+  df[((i-1)*r+1):(i*r),1]=(out$x)
+  df[((i-1)*r+1):(i*r),2]=(out$y[i])
+  df[((i-1)*r+1):(i*r),3]=(out$z[,i])
+}
+df<-as.data.frame(df)
+
+Map+geom_tile(data=df,aes(x=x,y=y,fill=value,group=1),alpha=0.75)+
+  stat_contour(data=df,aes(x=x,y=y,z=value,group=1))
+
+surface( out, type="C") # option "C" our favorite
+US(add=TRUE) # add US map
+
+#quilt.plot(x,y)
+#US(add=TRUE) # add US map
+
+# fit<- Tps(xx,yy)
+# # fits a GCV thin plate smoothing spline surface to ozone measurements.
+# # Hey, it does not get any easier than this!
+# 
+# summary(fit) #diagnostic summary of the fit 
+# 
+# set.panel(2,2)
+# plot(fit) # four diagnostic plots of  fit and residuals.
+# 
+# set.panel()
+# surface(fit) # contour/image plot of the fitted surface
+# US( add=TRUE, col="magenta", lwd=2) # US map overlaid
+# title(paste("Origin Volume Activity for ",DatePlotStart,"to",DatePlotEnd))
+
+# 
+# fit <- Krig(xx, yy, theta=20) 
+# 
+# summary( fit) # summary of fit 
+# set.panel( 2,2) 
+# plot(fit) # four diagnostic plots of fit  
+# set.panel()
+# surface( fit, type="C") # look at the surface 
+# 
+# # predict at data
+# predict( fit)
+# 
+# # predict using 7.5 effective degrees of freedom:
+# predict( fit, df=7.5)
+# 
+# 
+# # predict on a grid ( grid chosen here by defaults)
+# out<- predictSurface( fit)
+# surface( out, type="C") # option "C" our favorite
+# US(add=TRUE) # add US map
+# 
+# # predict at arbitrary points (10,-10) and (20, 15)
+# xnew<- rbind( c( 10, -10), c( 20, 15))
+# predict( fit, xnew)
+# 
+# # standard errors of prediction based on covariance model.  
+# predictSE( fit, xnew)
+# 
+# # surface of standard errors on a default grid
+# predictSurfaceSE( fit)-> out.p # this takes some time!
+# surface( out.p, type="C")
+# points( fit$x)
 
 
-OrigVolumeSeries <- rbind_all(lapply(time_sequence,function(x){
-  data.frame(Date=x,OrigZip3Categories)
-}))
-
-DestVolumeSeries <- rbind_all(lapply(time_sequence,function(x){
-  data.frame(Date=x,DestZip3Categories)
-}))
 
 
-OrigVolumeSeries <- OrigVolumeSeries %>%
-  mutate(Year=as.numeric(format(Date,format="%Y")),
-             Month=as.numeric(format(Date,format="%m")),
-             Day=as.numeric(format(Date,format="%d"))) %>%
-  left_join(OrigVolumeTally,c("Year"="Year","Month"="Month","Day"="Day","Orig3DigZip"="Orig3DigZip"))
-
-OrigVolumeSeries$OrigVolume[is.na(OrigVolumeSeries$OrigVolume)]=0 ##set NA's to 0
-  
-
-
-DestVolumeSeries <- DestVolumeSeries %>%
-  mutate(Year=as.numeric(format(Date,format="%Y")),
-         Month=as.numeric(format(Date,format="%m")),
-         Day=as.numeric(format(Date,format="%d"))) %>%
-  left_join(DestVolumeTally,c("Year"="Year","Month"="Month","Day"="Day","Dest3DigZip"="Dest3DigZip"))
-
-DestVolumeSeries$DestVolume[is.na(DestVolumeSeries$DestVolume)]=0 ##set NA's to 0
 
 
 ####stopped here ####
