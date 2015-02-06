@@ -89,26 +89,6 @@ shinyUI(fluidPage(
                                  value=3)
       )
       
-#       uiOutput("sire_text"),
-#       
-#       uiOutput("prognosis_section"),
-#       
-#       fluidRow(
-#         column(6,showOutput("sire_stack",'highcharts')),
-#         column(6,showOutput("bayes_stack",'highcharts'))),
-#       
-#       uiOutput("bayes_text"),
-#       
-#       fluidRow(
-#         column(5,showOutput('race_probability_pie','highcharts')),
-#         column(7,dataTableOutput('race_prognosis_table'))
-#         ),
-#       br(),
-#       fluidRow(
-#         column(3,p("This table displays values used in Bayes Calculations.")),
-#         column(6,tableOutput('inputTable'))
-#        )
-      
     )
   ),
 

@@ -77,5 +77,14 @@ loadData <- function(path,sample_pct){
   CHR$RPMProfit_AllIn <- CHR$RPM_AllInCustomer-CHR$CPM_AllInCarrier
   CHR$Profit_Normalized <- CHR$NormalizedCustomerLineHaul-CHR$NormalizedCarrierLineHaul
   CHR$Profit_AllIn <- CHR$TotalCustomerCharges-CHR$TotalCarrierCharges
+  ###do some data cleanup that should be moved to the DataPull package
+  shipped <- unique(CHR$LoadCondition)[grep("F",unique(CHR$LoadCondition))]
+  #Cutout Non-shipped and Shippers Agent Loads (check about the SA thing)
+  CHR <- dplyr::filter(CHR,LoadCondition == shipped & SAFlag == "False")
+  CHR$Day365<-as.numeric(format(CHR$EntryDate,format="%j"))
+  #CHR$Day<-as.numeric(format(CHR$EntryDate,format="%d"))
+  #CHR$Month<-as.numeric(format(CHR$EntryDate,format="%m"))
+  #CHR$Year<-as.numeric(format(CHR$EntryDate,format="%Y"))
+  CHR$EntryDate <- as.Date(format(CHR$EntryDate,format="%Y-%m-%d"))
   return(CHR)
 }
