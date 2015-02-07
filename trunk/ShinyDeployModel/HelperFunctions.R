@@ -1,4 +1,83 @@
 
+StateMap <- function(RAW,norig=2,ndest=2){
+map("state",interior=T)
+points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="blue",pch=19)
+points(x=RAW$DestLongitude,y=RAW$DestLatitude,cex=0.1,col="red",pch=19)
+legend("bottomright",c("Orig Transation","Dest Transaction"),pch=19,col=c("blue","red"))
+
+
+####try a locator function for origin
+identify <- locator(norig)
+identify <- as.data.frame(identify)
+states <- map("state",fill=T,plot=F)
+selectedOriginStates <- map.where(states,x=identify$x,y=identify$y)
+mapOrig <- map("state",regions = selectedOriginStates,plot=F,fill=T,col="grey")
+
+####do it for destination
+identify <- locator(ndest)
+identify <- as.data.frame(identify)
+states <- map("state",fill=T,plot=F)
+selectedDestinationStates <- map.where(states,x=identify$x,y=identify$y)
+mapDest <- map("state",regions = selectedDestinationStates,plot=F,fill=T,col="grey")
+
+
+orig_filter <- map.where(mapOrig,x=RAW$OrigLongitude,y=RAW$OrigLatitude)
+dest_filter <- map.where(mapDest,x=RAW$DestLongitude,y=RAW$DestLatitude)
+DATA <- RAW %>% filter(!is.na(orig_filter) , !is.na(dest_filter))
+
+####plot the joint selection
+map('state')
+map(mapOrig,add=T,fill=T,col="grey")
+map(mapDest,add=T,fill=T,col="grey")
+points(x=DATA$OrigLongitude,y=DATA$OrigLatitude,cex=0.1,col="blue",pch=19)
+points(x=DATA$DestLongitude,y=DATA$DestLatitude,cex=0.1,col="red",pch=19)
+legend("bottomright",c("Orig Transation","Dest Transaction"),pch=19,col=c("blue","red"))
+
+return(list(DATA=DATA,selectedOriginStates=selectedOriginStates,selectedDestinationStates=selectedDestinationStates))
+}
+
+CountyMap <- function(DATA,selectedOriginStates,selectedDestinationStates,ndest=5,norig=5){
+
+####now time for county level cutting
+####Origin side
+origCounty <- map("county",regions = selectedOriginStates)
+identify <- locator(norig)
+identify <- as.data.frame(identify)
+countys <- map("county",regions = selectedOriginStates,fill=T,plot=F)
+selectedOriginCountys <- map.where(countys,x=identify$x,y=identify$y)
+subOrig <- map("county",regions=selectedOriginCountys,add=T,fill=T,col="grey")
+indexOrigCounty <- map.where(subOrig,x=DATA$OrigLongitude,y=DATA$OrigLatitude)
+
+####dest side
+destCounty <- map("county",regions = selectedDestinationStates)
+identify <- locator(ndest)
+identify <- as.data.frame(identify)
+countys <- map("county",regions = selectedDestinationStates,fill=T,plot=F)
+selectedDestCountys <- map.where(countys,x=identify$x,y=identify$y)
+subDest <- map("county",regions=selectedDestCountys,add=T,fill=T,col="grey")
+indexDestCounty <- map.where(subDest,x=DATA$DestLongitude,y=DATA$DestLatitude)
+
+####cut out the data
+DATASUB <- DATA %>% filter(!is.na(indexOrigCounty),!is.na(indexDestCounty))
+
+####map the orig
+map(origCounty)
+map(subOrig,fill=T,col="grey",add=T)
+points(x=DATASUB$OrigLongitude,y=DATASUB$OrigLatitude,cex=0.1,col="blue",pch=19)
+legend("bottomright",c("Orig Transation"),pch=19,col=c("blue"))
+
+####map the dest
+map(destCounty)
+map(subDest,fill=T,col="grey",add=T)
+points(x=DATASUB$DestLongitude,y=DATASUB$DestLatitude,cex=0.1,col="red",pch=19)
+legend("bottomright",c("Dest Transation"),pch=19,col=c("red"))
+
+return(DATASUB)
+}
+
+############################################
+#################done
+############################################
 
 
 

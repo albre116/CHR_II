@@ -117,5 +117,6 @@ tallyDailyVolume <- function(RAW,dist=50,volume_lag=2){
 
   RAW_FINAL <- rbind_all(RAW_FINAL)
   RAW_FINAL <- RAW_FINAL %>% select(-(orig_long_lower:dest_lat_upper))
+  RAW_FINAL <- as.data.frame(RAW_FINAL)
   return(RAW_FINAL)
 }

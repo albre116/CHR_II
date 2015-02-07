@@ -57,7 +57,7 @@ if(!require('DataPull')) {
 source("HelperFunctions.R")
 ####Load in Data####
 path <- c('~/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt')  ###set this to file path location for raw data
-sample_pct <- 0.01 ###set between [0,1]
+sample_pct <- 0.1 ###set between [0,1]
 RAW <- DataPull::loadData(path,sample_pct)  ### see help file for documentation
 RAW <- DataPull::geocodeData(RAW)   ###Geocoding the Data
 RAW <- DataPull::tallyDailyVolume(RAW)
@@ -66,6 +66,15 @@ save(RAW,file="RAW.RData")###save it so we don't always have to run this
 
 
 load("RAW.RData")###we can start here most times
+
+######Lets get a cut of the data
+
+DATA <- StateMap(RAW,norig=2,ndest=2)
+DATA <- CountyMap(DATA$DATA,DATA$selectedOriginStates,DATA$selectedDestinationStates)
+
+
+
+
 
 #####do some kriging
 
