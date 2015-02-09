@@ -70,6 +70,9 @@ states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakot
                   "Alabama", "Mississippi", "Georgia", "South Carolina", "Arkansas", 
                   "Louisiana", "Florida", "Michigan")
 
+map_range <- function(range,coordinate){
+  range[1]+(range[2]-range[1])*coordinate
+}
 
-
+states <- map("state",regions = states.model,plot=F,fill=T)
 
