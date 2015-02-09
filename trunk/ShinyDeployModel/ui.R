@@ -2,29 +2,20 @@
 
 # Define UI for miles per gallon application
 shinyUI(fluidPage(
-  fluidRow(3,
-           
-           
+  fluidRow(column(3,
+           h2("What Ever stuff goes here")
            
            ),###end left hand nav bar
-  fluidRow(9, navbarPage(title = "Version 1.0",id = "navbar1",
-                         tabPanel("Dataset Selection", value = "panel1",
-                                  h2("Add Map"),
-                                  plotOutput(outputId = "OrigPlotAdd", height="650px",clickId = "AddOrigin"),
-                                  h2("Remove Map"),
-                                  plotOutput(outputId = "OrigPlotDelete", height="650px",clickId = "DeleteOrigin")
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  ),### end tab panel1
-                          )###end navbar 1
-           ) ###end right hand main panel
-))
-  
+           column(9, 
+                  h2("Add Map"),
+                  plotOutput(outputId = "OrigPlotAdd", "100%", "500px",  clickId = "AddOrigin"),
+                  h2("Remove Map"),
+                  plotOutput(outputId = "OrigPlotDelete", "100%", "500px", clickId = "DeleteOrigin")
+           )
+  )
+)
+)
+
   
   
   

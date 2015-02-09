@@ -30,6 +30,7 @@ shinyServer(function(input, output, session) {
       
       
       DATASTATES <- reactive({
+        browser()
         states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota", 
                           "Wyoming", "Wisconsin", "Idaho", "Vermont", "Minnesota", "Oregon", 
                           "New Hampshire", "Iowa", "Massachusetts", "Nebraska", "New York", 
@@ -41,26 +42,31 @@ shinyServer(function(input, output, session) {
                           "Alabama", "Mississippi", "Georgia", "South Carolina", "Arkansas", 
                           "Louisiana", "Florida", "Michigan")
         states <- map("state",regions = states.model,plot=F,fill=T)
+        if(!is.null(input$AddOrigin)){
         AddOrigStates <- as.data.frame(state=map.where(states,x=OriginAdd$x,y=OriginAdd$y))
-        AddOrigStates$Value <- 1
+        ggplot_build(gg)$panel$ranges[[1]]$y.range[1]
+        
+        AddOrigStates$Value <- 1} else{AddOrigStates <- data.frame(state="California",Value=0)}
+        if(!is.null(input$DeleteOrigin)){
         DeleteOrigStates <- as.data.frame(state=map.where(states,x=OriginDelete$x,y=OriginDelete$y))
-        DeleteOrigStates$Value <- -1
+        DeleteOrigStates$Value <- -1} else{DeleteOrigStates <- data.frame(state="California",Value=0)}
         
         ####figure out the current state of the clicks by mappking (k,v) pairs
-        STATES <- rbind_all(AddOrigStates,DeleteOrigStates) %>% 
+        STATES <- bind_rows(AddOrigStates,DeleteOrigStates) %>% 
           group_by(state) %>%
           summarise(count=sum(Value) )%>% 
           filter(count>=1)
-        
-        mapOrig <- map("state",regions = STATES$state,plot=F,fill=T,col="grey")
-        orig_filter <- map.where(mapOrig,x=RAW$OrigLongitude,y=RAW$OrigLatitude)
-        DATA <- RAW %>% filter(!is.na(orig_filter))
-        list(DATA=DATA,mapOrig=mapOrig)
+        if(nrow(STATES)>0){
+        mapOrig <- map("state",regions = STATES$state,plot=F,fill=T,col="grey")} else{mapOrig <- NULL}
+        #orig_filter <- map.where(mapOrig,x=RAW$OrigLongitude,y=RAW$OrigLatitude)
+        #DATA <- RAW %>% filter(!is.na(orig_filter))
+        #list(DATA=DATA,mapOrig=mapOrig)
+        list(mapOrig=mapOrig)
       })
       
       
       StateBaseLayerOrig <- reactive({
-        DATA <- DATASTATES()[["DATA"]]
+        #DATA <- DATASTATES()[["DATA"]]
         mapOrig <- DATASTATES()[["mapOrig"]]
         state <- map_data('state')
         gg <- ggplot(state, aes(long, lat, group=group))
@@ -76,7 +82,7 @@ shinyServer(function(input, output, session) {
                          axis.ticks = element_blank(),
                          legend.position="left",
                          legend.title=element_blank())
-        gg <- gg + geom_point(data=DATA,aes(x=OrigLongitude,y=OrigLatitude,group=1),color="blue",size=0.1)
+        gg <- gg + geom_point(data=RAW,aes(x=OrigLongitude,y=OrigLatitude,group=1),color="blue",size=0.1)
         return(gg)
       })
       
