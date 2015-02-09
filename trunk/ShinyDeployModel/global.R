@@ -59,7 +59,16 @@ if(!require('DataPull')) {
 }
 
 load("RAW.RData")###identify the data path from the datapull package
-
+states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota", 
+                  "Wyoming", "Wisconsin", "Idaho", "Vermont", "Minnesota", "Oregon", 
+                  "New Hampshire", "Iowa", "Massachusetts", "Nebraska", "New York", 
+                  "Pennsylvania", "Connecticut", "Rhode Island", "New Jersey", 
+                  "Indiana", "Nevada", "Utah", "California", "Ohio", "Illinois", 
+                  "District of Columbia", "Delaware", "West Virginia", "Maryland", 
+                  "Colorado", "Kentucky", "Kansas", "Virginia", "Missouri", "Arizona", 
+                  "Oklahoma", "North Carolina", "Tennessee", "Texas", "New Mexico", 
+                  "Alabama", "Mississippi", "Georgia", "South Carolina", "Arkansas", 
+                  "Louisiana", "Florida", "Michigan")
 
 
 

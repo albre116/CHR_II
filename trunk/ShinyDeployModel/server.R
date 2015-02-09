@@ -31,25 +31,27 @@ shinyServer(function(input, output, session) {
       
       DATASTATES <- reactive({
         browser()
-        states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota", 
-                          "Wyoming", "Wisconsin", "Idaho", "Vermont", "Minnesota", "Oregon", 
-                          "New Hampshire", "Iowa", "Massachusetts", "Nebraska", "New York", 
-                          "Pennsylvania", "Connecticut", "Rhode Island", "New Jersey", 
-                          "Indiana", "Nevada", "Utah", "California", "Ohio", "Illinois", 
-                          "District of Columbia", "Delaware", "West Virginia", "Maryland", 
-                          "Colorado", "Kentucky", "Kansas", "Virginia", "Missouri", "Arizona", 
-                          "Oklahoma", "North Carolina", "Tennessee", "Texas", "New Mexico", 
-                          "Alabama", "Mississippi", "Georgia", "South Carolina", "Arkansas", 
-                          "Louisiana", "Florida", "Michigan")
+        range_x <- ggplot_build(StateBaseLayerOrig())$panel$ranges[[1]]$x.range
+        range_y <- ggplot_build(StateBaseLayerOrig())$panel$ranges[[1]]$y.range
+        
+        map_range <- function(range,coordinate){
+          range[1]+(range[2]-range[1])*coordinate
+        }
+        
+        
         states <- map("state",regions = states.model,plot=F,fill=T)
         if(!is.null(input$AddOrigin)){
-        AddOrigStates <- as.data.frame(state=map.where(states,x=OriginAdd$x,y=OriginAdd$y))
-        ggplot_build(gg)$panel$ranges[[1]]$y.range[1]
-        
-        AddOrigStates$Value <- 1} else{AddOrigStates <- data.frame(state="California",Value=0)}
+        AddOrigStates <- data.frame(state=map.where(states,
+                                                    x=map_range(range_x,OriginAdd$x),
+                                                    y=map_range(range_y,OriginAdd$y)))
+        AddOrigStates$Value <- 1
+        } else{AddOrigStates <- data.frame(state="California",Value=0)}
         if(!is.null(input$DeleteOrigin)){
-        DeleteOrigStates <- as.data.frame(state=map.where(states,x=OriginDelete$x,y=OriginDelete$y))
-        DeleteOrigStates$Value <- -1} else{DeleteOrigStates <- data.frame(state="California",Value=0)}
+        DeleteOrigStates <- data.frame(state=map.where(states,
+                                                       x=map_range(range_x,OriginDelete$x),
+                                                       y=map_range(range_y,OriginDelete$y)))
+        DeleteOrigStates$Value <- -1
+        } else{DeleteOrigStates <- data.frame(state="California",Value=0)}
         
         ####figure out the current state of the clicks by mappking (k,v) pairs
         STATES <- bind_rows(AddOrigStates,DeleteOrigStates) %>% 
@@ -67,7 +69,7 @@ shinyServer(function(input, output, session) {
       
       StateBaseLayerOrig <- reactive({
         #DATA <- DATASTATES()[["DATA"]]
-        mapOrig <- DATASTATES()[["mapOrig"]]
+        #mapOrig <- DATASTATES()[["mapOrig"]]
         state <- map_data('state')
         gg <- ggplot(state, aes(long, lat, group=group))
         gg <- gg + geom_polygon(fill=NA, colour='gray50', size=0.25)
@@ -82,19 +84,29 @@ shinyServer(function(input, output, session) {
                          axis.ticks = element_blank(),
                          legend.position="left",
                          legend.title=element_blank())
-        gg <- gg + geom_point(data=RAW,aes(x=OrigLongitude,y=OrigLatitude,group=1),color="blue",size=0.1)
+        #gg <- gg + geom_point(data=RAW,aes(x=OrigLongitude,y=OrigLatitude,group=1),color="blue",size=0.1)
         return(gg)
       })
       
       
       output$OrigPlotAdd <- renderPlot({
-        print(StateBaseLayerOrig())
+        gg <- StateBaseLayerOrig()
+        mapOrig <- DATASTATES()[["mapOrig"]]
+        if(!is.null(mapOrig)){
+        mapOrig.df <- map_data(mapOrig)
+        }
+        print(gg)
       }, res=150, height=700, width=700, bg="transparent")
         
         
       output$OrigPlotDelete <- renderPlot({
-        print(StateBaseLayerOrig())
-      }, res=150, height=700, width=700, bg="transparent")
+        gg <- StateBaseLayerOrig()
+        mapOrig <- DATASTATES()[["mapOrig"]]
+        if(!is.null(mapOrig)){
+          mapOrig.df <- map_data(mapOrig)
+        }
+        print(gg)
+        }, res=150, height=700, width=700, bg="transparent")
   
   
   
