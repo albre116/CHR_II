@@ -1,4 +1,9 @@
 
+
+
+
+
+
 StateMap <- function(RAW,norig=2,ndest=2){
 map("state",interior=T)
 points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="blue",pch=19)
@@ -12,6 +17,7 @@ identify <- as.data.frame(identify)
 states <- map("state",fill=T,plot=F)
 selectedOriginStates <- map.where(states,x=identify$x,y=identify$y)
 mapOrig <- map("state",regions = selectedOriginStates,plot=F,fill=T,col="grey")
+test <- map_data(mapOrig)
 
 ####do it for destination
 identify <- locator(ndest)
