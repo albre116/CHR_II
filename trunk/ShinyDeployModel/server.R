@@ -55,20 +55,20 @@ shinyServer(function(input, output, session) {
       output$OrigPlotAdd <- renderPlot(function(){
         mapOrig <- DATASTATES()[["mapOrig"]]
         map(states)
-        map.text(state_labs,add=T)
         if(!is.null(mapOrig)){
           map(mapOrig,fill=T,add=T,col="grey")
         }
+        map.text(state_labs,add=T)
       })
         
         
       output$OrigPlotDelete <- renderPlot(function(){
         mapOrig <- DATASTATES()[["mapOrig"]]
         map(states)
-        map.text(state_labs,add=T)
         if(!is.null(mapOrig)){
           map(mapOrig,fill=T,add=T,col="grey")
         }
+        map.text(state_labs,add=T)
         })
   
   
