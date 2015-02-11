@@ -70,9 +70,18 @@ states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakot
                   "Alabama", "Mississippi", "Georgia", "South Carolina", "Arkansas", 
                   "Louisiana", "Florida", "Michigan")
 
-map_range <- function(range,coordinate){
-  range[1]+(range[2]-range[1])*coordinate
-}
 
-states <- map("state",regions = states.model,plot=F,fill=T)
+states <- map("state",regions = states.model,plot=F,fill=TRUE)
+data(state.fips)
+states_labels <- data.frame(labels=states$names) %>% 
+  left_join(state.fips,by=c("labels"="polyname")) %>%
+  select(abb)
+
+state_labs <- states
+state_labs$names <- as.character(states_labels$abb)
+
+
+
+
+
 

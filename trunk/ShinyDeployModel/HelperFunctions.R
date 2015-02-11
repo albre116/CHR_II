@@ -4,6 +4,8 @@
 
 
 
+
+
 StateMap <- function(RAW,norig=2,ndest=2){
 map("state",interior=T)
 points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="blue",pch=19)
