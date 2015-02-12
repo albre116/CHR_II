@@ -27,8 +27,9 @@ body <- dashboardBody(
                         ),
                      box(
                        title="Origin Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
-                       solidHeader = TRUE,
-                       h2("add county select map")
+                       h3(textOutput("AddCountiesHoverSelectedOrigin")),
+                       plotOutput(outputId = "OrigPlotCounties",clickId = "OriginCounties",hoverId="OriginCountiesHover",hoverDelay=300),
+                       uiOutput("SelectOrigCounties")
                         )
                      ),###end first column
               column(width=6,
