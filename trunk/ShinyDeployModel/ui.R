@@ -27,6 +27,7 @@ body <- dashboardBody(
                         ),
                      box(
                        title="Origin Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
+                       solidHeader = TRUE,
                        h3(textOutput("AddCountiesHoverSelectedOrigin")),
                        plotOutput(outputId = "OrigPlotCounties",clickId = "OriginCounties",hoverId="OriginCountiesHover",hoverDelay=300),
                        uiOutput("SelectOrigCounties")
@@ -43,7 +44,9 @@ body <- dashboardBody(
                      box(
                        title="Destination Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
                        solidHeader = TRUE,
-                       h2("add county select map")
+                       h3(textOutput("AddCountiesHoverSelectedDestination")),
+                       plotOutput(outputId = "DestPlotCounties",clickId = "DestinationCounties",hoverId="DestinationCountiesHover",hoverDelay=300),
+                       uiOutput("SelectDestCounties")
                      )
               )###end second column
             )

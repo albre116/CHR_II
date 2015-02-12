@@ -143,9 +143,9 @@ shinyServer(function(input, output, session) {
         return(counties)
       })
       
-      
       OriginAddCounties<- reactiveValues(x=NULL, y=NULL)
       OriginCountiesHover <- reactiveValues(x=NULL, y=NULL)
+      
       ###listen for clicks
       observe({
         # Initially will be empty
@@ -172,6 +172,7 @@ shinyServer(function(input, output, session) {
       
       ClickCountiesAddOrig<- reactive({
         counties <- CountiesOrigin()
+        if(is.null(counties)){return(NULL)}
         AddOrigCounties <- map.where(counties,x=OriginAddCounties$x,y=OriginAddCounties$y)
         AddOrigCounties <- AddOrigCounties[!is.na(AddOrigCounties)]
         if (length(AddOrigCounties)==0){AddOrigCounties <- NULL}
@@ -181,14 +182,17 @@ shinyServer(function(input, output, session) {
       output$SelectOrigCounties <- renderUI({
         counties <- CountiesOrigin()
         isolate(selected <- input$SelectOrigCounties)
+        pick <- c(counties$names,input$SelectOrigStates)
+        pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddOrig())
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
-        selectizeInput("SelectOrigCounties","Selected Origin Counties",choices=counties$names,selected=selected,multiple=T)
+        selectizeInput("SelectOrigCounties","Selected Origin Counties or Entire State",choices=pick,selected=selected,multiple=T)
       })
       
       output$AddCountiesHoverSelectedOrigin <- renderText({
         counties <- CountiesOrigin()
+        if(is.null(counties)){return(NULL)}
         if(is.null(input$OriginCountiesHover)){return("Mouse Hover:")}
         AddOrigCounties <- map.where(counties,x=OriginCountiesHover$x,y=OriginCountiesHover$y)
         AddOrigCounties <- AddOrigCounties[!is.na(AddOrigCounties)]
@@ -199,12 +203,93 @@ shinyServer(function(input, output, session) {
       
       output$OrigPlotCounties <- renderPlot(function(){
         counties <- CountiesOrigin()
+        if(is.null(counties)){return(NULL)}
         selectCounties <- input$SelectOrigCounties
         if(length(selectCounties)>0){
           mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="grey")} else{mapOrig <- NULL}
         map(counties)
         if(!is.null(mapOrig)){
           map(mapOrig,fill=T,add=T,col="grey")
+        }
+      })
+      
+      ###########################################################
+      #######All of the Selection functions for the Destination Counties
+      ###########################################################
+      CountiesDestination <- reactive({
+        pick <- input$SelectDestStates
+        if(is.null(pick)){return(NULL)}
+        counties <- map("county",regions = pick,plot=F,fill=TRUE)
+        return(counties)
+      })
+      
+      DestinationAddCounties<- reactiveValues(x=NULL, y=NULL)
+      DestinationCountiesHover <- reactiveValues(x=NULL, y=NULL)
+      
+      ###listen for clicks
+      observe({
+        # Initially will be empty
+        if (is.null(input$DestinationCounties)){
+          return()
+        } else{
+          isolate(DestinationAddCounties$x <- input$DestinationCounties$x)
+          isolate(DestinationAddCounties$y <- input$DestinationCounties$y)
+        }
+      })
+      
+      ###listen for hover
+      observe({
+        # Will be NULL when no hover
+        if (is.null(input$DestinationCountiesHover)){
+          return()
+        } else{
+          isolate(DestinationCountiesHover$x <- input$DestinationCountiesHover$x)
+          isolate(DestinationCountiesHover$y <- input$DestinationCountiesHover$y)
+        }
+      })
+      
+      
+      
+      ClickCountiesAddDest<- reactive({
+        counties <- CountiesDestination()
+        if(is.null(counties)){return(NULL)}
+        AddDestCounties <- map.where(counties,x=DestinationAddCounties$x,y=DestinationAddCounties$y)
+        AddDestCounties <- AddDestCounties[!is.na(AddDestCounties)]
+        if (length(AddDestCounties)==0){AddDestCounties <- NULL}
+        return(AddDestCounties)
+      })
+      
+      output$SelectDestCounties <- renderUI({
+        counties <- CountiesDestination()
+        isolate(selected <- input$SelectDestCounties)
+        pick <- c(counties$names,input$SelectDestStates)
+        pick <- pick[!is.null(pick)]
+        selected <- c(selected,ClickCountiesAddDest())
+        selected <- unique(selected)
+        selected <- selected[!is.null(selected)]
+        selectizeInput("SelectDestCounties","Selected Destination Counties or Entire State",choices=pick,selected=selected,multiple=T)
+      })
+      
+      output$AddCountiesHoverSelectedDestination <- renderText({
+        counties <- CountiesDestination()
+        if(is.null(counties)){return(NULL)}
+        if(is.null(input$DestinationCountiesHover)){return("Mouse Hover:")}
+        AddDestCounties <- map.where(counties,x=DestinationCountiesHover$x,y=DestinationCountiesHover$y)
+        AddDestCounties <- AddDestCounties[!is.na(AddDestCounties)]
+        if (length(AddDestCounties)==0){AddDestCounties <-NULL}
+        return(paste("Mouse Hover:",AddDestCounties))
+      })
+      
+      
+      output$DestPlotCounties <- renderPlot(function(){
+        counties <- CountiesDestination()
+        if(is.null(counties)){return(NULL)}
+        selectCounties <- input$SelectDestCounties
+        if(length(selectCounties)>0){
+          mapDest <- map("county",regions = selectCounties,plot=F,fill=T,col="grey")} else{mapDest <- NULL}
+        map(counties)
+        if(!is.null(mapDest)){
+          map(mapDest,fill=T,add=T,col="grey")
         }
       })
       
