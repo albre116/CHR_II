@@ -19,26 +19,30 @@ body <- dashboardBody(
             fluidRow(
               column(width=6,
                      box(
-                       title="Add Origin State",width=NULL,status="primary",
+                       title="Origin States: Click To Select or Enter/Delete In List",width=NULL,status="primary",
                        solidHeader = TRUE,
-                       plotOutput(outputId = "OrigPlotAdd",clickId = "AddOrigin")
+                       h3(textOutput("AddStatesHoverSelectedOrigin")),
+                       plotOutput(outputId = "OrigPlotState",clickId = "OriginStates",hoverId="OriginStatesHover",hoverDelay=300),
+                       uiOutput("SelectOrigStates")
                         ),
                      box(
-                       title="Remove Origin State",width=NULL,status="primary",
+                       title="Origin Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
                        solidHeader = TRUE,
-                       plotOutput(outputId = "OrigPlotDelete", clickId = "DeleteOrigin")
+                       h2("add county select map")
                         )
                      ),###end first column
               column(width=6,
                      box(
-                       title="Add Destination State",width=NULL,status="primary",
+                       title="Destination States: Click To Select or Enter/Delete In List",width=NULL,status="primary",
                        solidHeader = TRUE,
-                       plotOutput(outputId = "DestPlotAdd",clickId = "AddDest")
+                       h3(textOutput("AddStatesHoverSelectedDestination")),
+                       plotOutput(outputId = "DestPlotState",clickId = "DestinationStates",hoverId="DestinationStatesHover",hoverDelay=300),
+                       uiOutput("SelectDestStates")
                      ),
                      box(
-                       title="Remove Destination State",width=NULL,status="primary",
+                       title="Destination Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
                        solidHeader = TRUE,
-                       plotOutput(outputId = "DestPlotDelete", clickId = "DeleteDest")
+                       h2("add county select map")
                      )
               )###end second column
             )

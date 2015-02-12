@@ -3,144 +3,131 @@
 # Define server logic required to plot various variables against mpg
 shinyServer(function(input, output, session) {
   
-      OriginAdd<- reactiveValues(x=NULL, y=NULL)
-      OriginDelete<- reactiveValues(x=NULL, y=NULL)
-
-
-      
-      observe({
-        # Initially will be empty
-        if (is.null(input$AddOrigin)){
-          return() 
-        }
-        isolate(OriginAdd$x <- c(OriginAdd$x, input$AddOrigin$x))
-        isolate(OriginAdd$y <- c(OriginAdd$y, input$AddOrigin$y))
-      })
-      
-      observe({
-        # Initially will be empty
-        if (is.null(input$DeleteOrigin)){
-          return() 
-        }
-        isolate(OriginDelete$x <- c(OriginDelete$x, input$DeleteOrigin$x))
-        isolate(OriginDelete$y <- c(OriginDelete$y, input$DeleteOrigin$y))
-      })
-      
-      DATASTATES <- reactive({
-        if(!is.null(input$AddOrigin)){
-          AddOrigStates <- data.frame(state=map.where(states,
-                                                      x=OriginAdd$x,
-                                                      y=OriginAdd$y))
-          AddOrigStates$Value <- 1
-          AddOrigStates <- AddOrigStates[complete.cases(AddOrigStates),]
-        } else{AddOrigStates <- data.frame(state="California",Value=0)}
-        if(!is.null(input$DeleteOrigin)){
-          DeleteOrigStates <- data.frame(state=map.where(states,
-                                                         x=OriginDelete$x,
-                                                         y=OriginDelete$y))
-          DeleteOrigStates$Value <- -1
-          DeleteOrigStates <- DeleteOrigStates[ complete.cases(DeleteOrigStates),]
-        } else{DeleteOrigStates <- data.frame(state="California",Value=0)}
-        
-        ####figure out the current state of the clicks by mappking (k,v) pairs
-        STATES <- bind_rows(AddOrigStates,DeleteOrigStates) %>% 
-          group_by(state) %>%
-          summarise(count=sum(Value) )%>% 
-          filter(count>=1)
-        if(nrow(STATES)>0){
-          mapOrig <- map("state",regions = STATES$state,plot=F,fill=T,col="grey")} else{mapOrig <- NULL}
-        list(mapOrig=mapOrig)
-      })
-      
-      output$OrigPlotAdd <- renderPlot(function(){
-        mapOrig <- DATASTATES()[["mapOrig"]]
-        map(states)
-        if(!is.null(mapOrig)){
-          map(mapOrig,fill=T,add=T,col="grey")
-        }
-        map.text(state_labs,add=T)
-      })
-      
-      
-      output$OrigPlotDelete <- renderPlot(function(){
-        mapOrig <- DATASTATES()[["mapOrig"]]
-        map(states)
-        if(!is.null(mapOrig)){
-          map(mapOrig,fill=T,add=T,col="grey")
-        }
-        map.text(state_labs,add=T)
-      })
-      
-      
-      ####do the destination stuff
-      DestAdd<- reactiveValues(x=NULL, y=NULL)
-      DestDelete<- reactiveValues(x=NULL, y=NULL)
-      
-      observe({
-        # Initially will be empty
-        if (is.null(input$AddDest)){
-          return() 
-        }
-        isolate(DestAdd$x <- c(DestAdd$x, input$AddDest$x))
-        isolate(DestAdd$y <- c(DestAdd$y, input$AddDest$y))
-      })
-      
-      observe({
-        # Initially will be empty
-        if (is.null(input$DeleteDest)){
-          return() 
-        }
-        isolate(DestDelete$x <- c(DestDelete$x, input$DeleteDest$x))
-        isolate(DestDelete$y <- c(DestDelete$y, input$DeleteDest$y))
-      })
-      
-      
-      DATASTATES2 <- reactive({
-        if(!is.null(input$AddDest)){
-        AddDestStates <- data.frame(state=map.where(states,
-                                                    x=DestAdd$x,
-                                                    y=DestAdd$y))
-        AddDestStates$Value <- 1
-        AddDestStates <- AddDestStates[complete.cases(AddDestStates),]
-        } else{AddDestStates <- data.frame(state="California",Value=0)}
-        if(!is.null(input$DeleteDest)){
-        DeleteDestStates <- data.frame(state=map.where(states,
-                                                       x=DestDelete$x,
-                                                       y=DestDelete$y))
-        DeleteDestStates$Value <- -1
-        DeleteDestStates <- DeleteDestStates[ complete.cases(DeleteDestStates),]
-        } else{DeleteDestStates <- data.frame(state="California",Value=0)}
-        
-        ####figure out the current state of the clicks by mappking (k,v) pairs
-        STATES <- bind_rows(AddDestStates,DeleteDestStates) %>% 
-          group_by(state) %>%
-          summarise(count=sum(Value) )%>% 
-          filter(count>=1)
-        if(nrow(STATES)>0){
-        mapDest <- map("state",regions = STATES$state,plot=F,fill=T,col="grey")} else{mapDest <- NULL}
-        list(mapDest=mapDest)
-      })
-      
-      output$DestPlotAdd <- renderPlot(function(){
-        mapDest <- DATASTATES2()[["mapDest"]]
-        map(states)
-        if(!is.null(mapDest)){
-          map(mapDest,fill=T,add=T,col="grey")
-        }
-        map.text(state_labs,add=T)
-      })
-        
-        
-      output$DestPlotDelete <- renderPlot(function(){
-        mapDest <- DATASTATES2()[["mapDest"]]
-        map(states)
-        if(!is.null(mapDest)){
-          map(mapDest,fill=T,add=T,col="grey")
-        }
-        map.text(state_labs,add=T)
-        })
-      
-
   
+  #######All of the Selection functions for the Origin States
+      OriginAddStates<- reactiveValues(x=NULL, y=NULL)
+      OriginStatesHover <- reactiveValues(x=NULL, y=NULL)
+      ###listen for clicks
+      observe({
+        # Initially will be empty
+        if (is.null(input$OriginStates)){
+          return()
+        } else{
+        isolate(OriginAddStates$x <- input$OriginStates$x)
+        isolate(OriginAddStates$y <- input$OriginStates$y)
+        }
+      })
+      
+      ###listen for hover
+      observe({
+        # Will be NULL when no hover
+        if (is.null(input$OriginStatesHover)){
+          return()
+        } else{
+          isolate(OriginStatesHover$x <- input$OriginStatesHover$x)
+          isolate(OriginStatesHover$y <- input$OriginStatesHover$y)
+        }
+      })
+      
+      
+
+      ClickStateAddOrig<- reactive({
+        AddOrigStates <- map.where(states,x=OriginAddStates$x,y=OriginAddStates$y)
+        AddOrigStates <- AddOrigStates[!is.na(AddOrigStates)]
+        if (length(AddOrigStates)==0){AddOrigStates <- NULL}
+        return(AddOrigStates)
+      })
+      
+      output$SelectOrigStates <- renderUI({
+        isolate(selected <- input$SelectOrigStates)
+        selected <- c(selected,ClickStateAddOrig())
+        selected <- unique(selected)
+        selected <- selected[!is.null(selected)]
+        selectizeInput("SelectOrigStates","Selected Origin States",choices=states$names,selected=selected,multiple=T)
+      })
+      
+      output$AddStatesHoverSelectedOrigin <- renderText({
+        if(is.null(input$OriginStatesHover)){return("Mouse Hover:")}
+        AddOrigStates <- map.where(states,x=OriginStatesHover$x,y=OriginStatesHover$y)
+        AddOrigStates <- AddOrigStates[!is.na(AddOrigStates)]
+        if (length(AddOrigStates)==0){AddOrigStates <-NULL}
+        return(paste("Mouse Hover:",AddOrigStates))
+      })
+      
+      
+      output$OrigPlotState <- renderPlot(function(){
+        selectStates <- input$SelectOrigStates
+        if(length(selectStates)>0){
+          mapOrig <- map("state",regions = selectStates,plot=F,fill=T,col="grey")} else{mapOrig <- NULL}
+        map(states)
+        if(!is.null(mapOrig)){
+          map(mapOrig,fill=T,add=T,col="grey")
+        }
+        map.text(state_labs,add=T)
+      })
+      
+      #######All of the Selection functions for the Destination States
+      
+      DestinationAddStates<- reactiveValues(x=NULL, y=NULL)
+      DestinationStatesHover <- reactiveValues(x=NULL, y=NULL)
+      ###listen for clicks
+      observe({
+        # Initially will be empty
+        if (is.null(input$DestinationStates)){
+          return()
+        } else{
+          isolate(DestinationAddStates$x <- input$DestinationStates$x)
+          isolate(DestinationAddStates$y <- input$DestinationStates$y)
+        }
+      })
+      
+      ###listen for hover
+      observe({
+        # Will be NULL when no hover
+        if (is.null(input$DestinationStatesHover)){
+          return()
+        } else{
+          isolate(DestinationStatesHover$x <- input$DestinationStatesHover$x)
+          isolate(DestinationStatesHover$y <- input$DestinationStatesHover$y)
+        }
+      })
+      
+      
+      
+      ClickStateAddDest<- reactive({
+        AddDestStates <- map.where(states,x=DestinationAddStates$x,y=DestinationAddStates$y)
+        AddDestStates <- AddDestStates[!is.na(AddDestStates)]
+        if (length(AddDestStates)==0){AddDestStates <- NULL}
+        return(AddDestStates)
+      })
+      
+      output$SelectDestStates <- renderUI({
+        isolate(selected <- input$SelectDestStates)
+        selected <- c(selected,ClickStateAddDest())
+        selected <- unique(selected)
+        selected <- selected[!is.null(selected)]
+        selectizeInput("SelectDestStates","Selected Destination States",choices=states$names,selected=selected,multiple=T)
+      })
+      
+      output$AddStatesHoverSelectedDestination <- renderText({
+        if(is.null(input$DestinationStatesHover)){return("Mouse Hover:")}
+        AddDestStates <- map.where(states,x=DestinationStatesHover$x,y=DestinationStatesHover$y)
+        AddDestStates <- AddDestStates[!is.na(AddDestStates)]
+        if (length(AddDestStates)==0){AddDestStates <-NULL}
+        return(paste("Mouse Hover:",AddDestStates))
+      })
+      
+      
+      output$DestPlotState <- renderPlot(function(){
+        selectStates <- input$SelectDestStates
+        if(length(selectStates)>0){
+          mapDest <- map("state",regions = selectStates,plot=F,fill=T,col="grey")} else{mapDest <- NULL}
+        map(states)
+        if(!is.null(mapDest)){
+          map(mapDest,fill=T,add=T,col="grey")
+        }
+        map.text(state_labs,add=T)
+      })
+      
   
 })###end server here
