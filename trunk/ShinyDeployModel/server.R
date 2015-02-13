@@ -3,6 +3,12 @@
 # Define server logic required to plot various variables against mpg
 shinyServer(function(input, output, session) {
   
+  
+
+  ###########################################################
+  #######Tab Panel 1:  Geography
+  ###########################################################
+  
   ###########################################################
   #######All of the Selection functions for the Origin States
   ###########################################################
@@ -43,9 +49,10 @@ shinyServer(function(input, output, session) {
       output$SelectOrigStates <- renderUI({
         isolate(selected <- input$SelectOrigStates)
         selected <- c(selected,ClickStateAddOrig())
+        selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
-        selectizeInput("SelectOrigStates","Selected Origin States",choices=states$names,selected=selected,multiple=T)
+        selectizeInput("SelectOrigStates","Selected Origin States",choices=unlist(lapply(states$names,function(x){strsplit(x,":")[[1]][1]})),selected=selected,multiple=T)
       })
       
       output$AddStatesHoverSelectedOrigin <- renderText({
@@ -60,10 +67,10 @@ shinyServer(function(input, output, session) {
       output$OrigPlotState <- renderPlot(function(){
         selectStates <- input$SelectOrigStates
         if(length(selectStates)>0){
-          mapOrig <- map("state",regions = selectStates,plot=F,fill=T,col="grey")} else{mapOrig <- NULL}
+          mapOrig <- map("state",regions = selectStates,plot=F,fill=T,col="grey95")} else{mapOrig <- NULL}
         map(states)
         if(!is.null(mapOrig)){
-          map(mapOrig,fill=T,add=T,col="grey")
+          map(mapOrig,fill=T,add=T,col="grey95")
         }
         map.text(state_labs,add=T)
       })
@@ -108,9 +115,10 @@ shinyServer(function(input, output, session) {
       output$SelectDestStates <- renderUI({
         isolate(selected <- input$SelectDestStates)
         selected <- c(selected,ClickStateAddDest())
+        selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
-        selectizeInput("SelectDestStates","Selected Destination States",choices=states$names,selected=selected,multiple=T)
+        selectizeInput("SelectDestStates","Selected Destination States",choices=unlist(lapply(states$names,function(x){strsplit(x,":")[[1]][1]})),selected=selected,multiple=T)
       })
       
       output$AddStatesHoverSelectedDestination <- renderText({
@@ -125,10 +133,10 @@ shinyServer(function(input, output, session) {
       output$DestPlotState <- renderPlot(function(){
         selectStates <- input$SelectDestStates
         if(length(selectStates)>0){
-          mapDest <- map("state",regions = selectStates,plot=F,fill=T,col="grey")} else{mapDest <- NULL}
+          mapDest <- map("state",regions = selectStates,plot=F,fill=T,col="grey95")} else{mapDest <- NULL}
         map(states)
         if(!is.null(mapDest)){
-          map(mapDest,fill=T,add=T,col="grey")
+          map(mapDest,fill=T,add=T,col="grey95")
         }
         map.text(state_labs,add=T)
       })
@@ -139,6 +147,7 @@ shinyServer(function(input, output, session) {
       CountiesOrigin <- reactive({
         pick <- input$SelectOrigStates
         if(is.null(pick)){return(NULL)}
+        pick <- unlist(lapply(pick,function(x){strsplit(x,":")[[1]][1]}))
         counties <- map("county",regions = pick,plot=F,fill=TRUE)
         return(counties)
       })
@@ -182,7 +191,8 @@ shinyServer(function(input, output, session) {
       output$SelectOrigCounties <- renderUI({
         counties <- CountiesOrigin()
         isolate(selected <- input$SelectOrigCounties)
-        pick <- c(counties$names,input$SelectOrigStates)
+        pick <- unlist(lapply(input$SelectOrigStates,function(x){strsplit(x,":")[[1]][1]}))
+        pick <- c(counties$names,pick)
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddOrig())
         selected <- unique(selected)
@@ -206,10 +216,10 @@ shinyServer(function(input, output, session) {
         if(is.null(counties)){return(NULL)}
         selectCounties <- input$SelectOrigCounties
         if(length(selectCounties)>0){
-          mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="grey")} else{mapOrig <- NULL}
+          mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="grey95")} else{mapOrig <- NULL}
         map(counties)
         if(!is.null(mapOrig)){
-          map(mapOrig,fill=T,add=T,col="grey")
+          map(mapOrig,fill=T,add=T,col="grey95")
         }
       })
       
@@ -219,6 +229,7 @@ shinyServer(function(input, output, session) {
       CountiesDestination <- reactive({
         pick <- input$SelectDestStates
         if(is.null(pick)){return(NULL)}
+        pick <- unlist(lapply(pick,function(x){strsplit(x,":")[[1]][1]}))
         counties <- map("county",regions = pick,plot=F,fill=TRUE)
         return(counties)
       })
@@ -262,7 +273,8 @@ shinyServer(function(input, output, session) {
       output$SelectDestCounties <- renderUI({
         counties <- CountiesDestination()
         isolate(selected <- input$SelectDestCounties)
-        pick <- c(counties$names,input$SelectDestStates)
+        pick <- unlist(lapply(input$SelectDestStates,function(x){strsplit(x,":")[[1]][1]}))
+        pick <- c(counties$names,pick)
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddDest())
         selected <- unique(selected)
@@ -286,12 +298,75 @@ shinyServer(function(input, output, session) {
         if(is.null(counties)){return(NULL)}
         selectCounties <- input$SelectDestCounties
         if(length(selectCounties)>0){
-          mapDest <- map("county",regions = selectCounties,plot=F,fill=T,col="grey")} else{mapDest <- NULL}
+          mapDest <- map("county",regions = selectCounties,plot=F,fill=T,col="grey95")} else{mapDest <- NULL}
         map(counties)
         if(!is.null(mapDest)){
-          map(mapDest,fill=T,add=T,col="grey")
+          map(mapDest,fill=T,add=T,col="grey95")
         }
       })
+      
+      
+      ###########################################################
+      #######Tab Panel 2:  Data Conditioning
+      ###########################################################
+      
+      DATA <- reactive({
+        if(is.null(input$SelectDestCounties) | is.null(input$SelectOrigCounties)){return(NULL)}
+        countiesDestination <- input$SelectDestCounties
+        countiesOrigin <- input$SelectOrigCounties
+        selectDestination <- map("county",regions = countiesDestination,fill=T,plot=F)
+        selectOrigin <- map("county",regions = countiesOrigin,fill=T,plot=F)
+        indexDestCounty <- map.where(selectDestination,x=RAW$DestLongitude,y=RAW$DestLatitude)
+        indexOrigCounty <- map.where(selectOrigin,x=RAW$OrigLongitude,y=RAW$OrigLatitude)
+        SELECTED <- RAW %>% filter(!is.na(indexOrigCounty),!is.na(indexDestCounty))
+        NOTSELECTED <- RAW %>% filter(is.na(indexOrigCounty),is.na(indexDestCounty))
+        return(list(SELECTED=SELECTED,NOTSELECTED=NOTSELECTED))
+      })
+      
+      
+      
+      
+      output$PlotSelectedData <- renderPlot(function(){
+        if(is.null(DATA())){return(NULL)}
+        layers <- input$maplayers
+        SELECTED <- DATA()[["SELECTED"]]
+        NOTSELECTED <- DATA()[["NOTSELECTED"]]
+        
+        map("state",interior=F)
+        if("State Borders" %in% layers){map("state")}
+        
+        if("Selected Counties" %in% layers){
+          selectCounties <- input$SelectDestCounties
+          map("county",regions = selectCounties,plot=T,fill=T,col="grey95",add=T)
+          selectCounties <- input$SelectOrigCounties
+          map("county",regions = selectCounties,plot=T,fill=T,col="grey95",add=T)}
+        
+        if("Unselected Data" %in% layers){
+          points(x=NOTSELECTED$OrigLongitude,y=NOTSELECTED$OrigLatitude,cex=0.1,col="grey",pch=19)
+          points(x=NOTSELECTED$DestLongitude,y=NOTSELECTED$DestLatitude,cex=0.1,col="grey",pch=19)}
+        
+        if("Selected Data" %in% layers){
+        points(x=SELECTED$OrigLongitude,y=SELECTED$OrigLatitude,cex=0.1,col="blue",pch=19)
+        points(x=SELECTED$DestLongitude,y=SELECTED$DestLatitude,cex=0.1,col="red",pch=19)}
+        
+        
+        if(("Unselected Data" %in% layers) & ("Selected Data" %in% layers)){
+            legend("bottomright",c("Orig Transaction","Dest Transaction","Unselected"),pch=19,col=c("blue","red","grey"))}
+        
+        if(("Unselected Data" %in% layers) & !("Selected Data" %in% layers)){
+          legend("bottomright",c("Unselected"),pch=19,col=c("grey"))}
+        
+        if(!("Unselected Data" %in% layers) & ("Selected Data" %in% layers)){
+          legend("bottomright",c("Orig Transaction","Dest Transaction"),pch=19,col=c("blue","red"))}
+        
+      })
+      
+      
+      
+      
+      
+      
+      
       
   
 })###end server here

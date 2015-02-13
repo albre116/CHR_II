@@ -24,7 +24,7 @@ body <- dashboardBody(
                        h3(textOutput("AddStatesHoverSelectedOrigin")),
                        plotOutput(outputId = "OrigPlotState",clickId = "OriginStates",hoverId="OriginStatesHover",hoverDelay=300),
                        uiOutput("SelectOrigStates")
-                        ),
+                     ),
                      box(
                        title="Origin Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
                        solidHeader = TRUE,
@@ -49,13 +49,27 @@ body <- dashboardBody(
                        uiOutput("SelectDestCounties")
                      )
               )###end second column
-            )
+            )###end fluid row
     ),
     
     tabItem(tabName = "data_conditioning",
-            h2("Data Selection")
-    )
-  )
+              box(title="Plot of Selected Data",width=NULL,status="primary",solidHeader = TRUE,
+                  fluidRow(
+                    column(width=2,
+                           selectInput("maplayers","Map Layers to Display",
+                                       c("Selected Data","Selected Counties","State Borders","Unselected Data"),
+                                       selected=c("Selected Data","State Borders"),multiple = T)
+                           ),
+                    column(width=10,
+                           plotOutput(outputId = "PlotSelectedData",height="800px")
+                           )
+                    )
+              )
+    )###end current tab
+    
+    
+    
+  )###end tab items
 )###end body
 
 
@@ -65,29 +79,6 @@ dashboardPage(header, sidebar, body)
 
 
 
-
-# shinyUI(fluidPage(
-#   fluidRow(column(3,
-#            h2("What Ever stuff goes here")
-#            
-#            ),###end left hand nav bar
-#            column(4.5, 
-#                   bsCollapse(multiple = T,open="state",id="map_selector",
-#                              bsCollapsePanel("States",
-#                                              h2("Add Map"),
-#                                              plotOutput(outputId = "OrigPlotAdd",clickId = "AddOrigin"),
-#                                              h2("Remove Map"),
-#                                              plotOutput(outputId = "OrigPlotDelete", clickId = "DeleteOrigin"),
-#                                              id="state",value="test1"
-#                                              )
-#                   )
-#            ),
-#            column(4.5, h2("dest goes here")
-#            )
-#   )
-# ))
-
-  
   
   
 
