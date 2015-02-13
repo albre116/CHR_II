@@ -53,7 +53,7 @@ body <- dashboardBody(
     ),
     
     tabItem(tabName = "data_conditioning",
-              box(title="Plot of Selected Data",width=NULL,status="primary",solidHeader = TRUE,
+            box(title="Map of Selected Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                   fluidRow(
                     column(width=2,
                            selectInput("maplayers","Map Layers to Display",
@@ -61,10 +61,22 @@ body <- dashboardBody(
                                        selected=c("Selected Data","State Borders"),multiple = T)
                            ),
                     column(width=10,
-                           plotOutput(outputId = "PlotSelectedData",height="800px")
+                           plotOutput(outputId = "MapSelectedData",height="800px")
                            )
                     )
-              )
+              ),
+            box(title="Time Series Plot: Click Data to Identify Groups for Removal",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                fluidRow(
+                  column(width=2,
+                         selectInput("remove","Carrier Customer Group Removed",
+                                     c("Selected Data","Selected Counties","State Borders","Unselected Data"),
+                                     selected=c("Selected Data","State Borders"),multiple = T)
+                  ),
+                  column(width=10,
+                         plotOutput(outputId = "RemovalPlot",height="800px")
+                  )
+                )
+            )
     )###end current tab
     
     

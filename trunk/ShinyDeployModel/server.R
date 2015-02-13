@@ -326,7 +326,7 @@ shinyServer(function(input, output, session) {
       
       
       
-      output$PlotSelectedData <- renderPlot(function(){
+      output$MapSelectedData <- renderPlot(function(){
         if(is.null(DATA())){return(NULL)}
         layers <- input$maplayers
         SELECTED <- DATA()[["SELECTED"]]
@@ -349,7 +349,6 @@ shinyServer(function(input, output, session) {
         points(x=SELECTED$OrigLongitude,y=SELECTED$OrigLatitude,cex=0.1,col="blue",pch=19)
         points(x=SELECTED$DestLongitude,y=SELECTED$DestLatitude,cex=0.1,col="red",pch=19)}
         
-        
         if(("Unselected Data" %in% layers) & ("Selected Data" %in% layers)){
             legend("bottomright",c("Orig Transaction","Dest Transaction","Unselected"),pch=19,col=c("blue","red","grey"))}
         
@@ -358,11 +357,13 @@ shinyServer(function(input, output, session) {
         
         if(!("Unselected Data" %in% layers) & ("Selected Data" %in% layers)){
           legend("bottomright",c("Orig Transaction","Dest Transaction"),pch=19,col=c("blue","red"))}
-        
       })
       
       
-      
+      output$RemovalPlot <- renderPlot(function(){
+        SELECTED <- DATA()[["SELECTED"]]
+        plot(x=SELECTED$EntryDate,y=SELECTED$RPM_NormalizedCustomer,type="p",pch=19,col="grey75")
+      })
       
       
       
