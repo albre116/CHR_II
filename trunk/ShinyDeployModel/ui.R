@@ -56,9 +56,9 @@ body <- dashboardBody(
             box(title="Map of Selected Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                   fluidRow(
                     column(width=2,
-                           selectInput("maplayers","Map Layers to Display",
+                           checkboxGroupInput("maplayers","Map Layers to Display",
                                        c("Selected Data","Selected Counties","State Borders","Unselected Data"),
-                                       selected=c("Selected Data","State Borders"),multiple = T)
+                                       selected=c("Selected Data","State Borders"))
                            ),
                     column(width=10,
                            plotOutput(outputId = "MapSelectedData",height="800px")
@@ -68,12 +68,10 @@ body <- dashboardBody(
             box(title="Time Series Plot: Click Data to Identify Groups for Removal",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=2,
-                         selectInput("remove","Carrier Customer Group Removed",
-                                     c("Selected Data","Selected Counties","State Borders","Unselected Data"),
-                                     selected=c("Selected Data","State Borders"),multiple = T)
+                         uiOutput("RemoveCustomerCarrier")
                   ),
                   column(width=10,
-                         plotOutput(outputId = "RemovalPlot",height="800px")
+                         plotOutput(outputId = "RemovalPlot",height="800px",clickId = "RemoveGroups",hoverId="RemoveGroupsHover",hoverDelay=300)
                   )
                 )
             )

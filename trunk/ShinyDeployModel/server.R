@@ -192,7 +192,7 @@ shinyServer(function(input, output, session) {
         counties <- CountiesOrigin()
         isolate(selected <- input$SelectOrigCounties)
         pick <- unlist(lapply(input$SelectOrigStates,function(x){strsplit(x,":")[[1]][1]}))
-        pick <- c(counties$names,pick)
+        pick <- c(pick,counties$names)
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddOrig())
         selected <- unique(selected)
@@ -274,7 +274,7 @@ shinyServer(function(input, output, session) {
         counties <- CountiesDestination()
         isolate(selected <- input$SelectDestCounties)
         pick <- unlist(lapply(input$SelectDestStates,function(x){strsplit(x,":")[[1]][1]}))
-        pick <- c(counties$names,pick)
+        pick <- c(pick,counties$names)
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddDest())
         selected <- unique(selected)
@@ -308,6 +308,10 @@ shinyServer(function(input, output, session) {
       
       ###########################################################
       #######Tab Panel 2:  Data Conditioning
+      ###########################################################
+      
+      ###########################################################
+      #######Plot Map of chosen data
       ###########################################################
       
       DATA <- reactive({
@@ -360,9 +364,84 @@ shinyServer(function(input, output, session) {
       })
       
       
-      output$RemovalPlot <- renderPlot(function(){
+      ###########################################################
+      #######Remove fixed rate observations (if desired)
+      ###########################################################
+      
+      RemoveGroups<- reactiveValues(x=NULL, y=NULL)
+      RemoveGroupsHover <- reactiveValues(x=NULL, y=NULL)
+      
+      ###listen for clicks
+      observe({
+        # Initially will be empty
+        if (is.null(input$RemoveGroups)){
+          return()
+        } else{
+          isolate(RemoveGroups$x <- input$RemoveGroups$x)
+          isolate(RemoveGroups$y <- input$RemoveGroups$y)
+        }
+      })
+      
+      ###listen for hover
+      observe({
+        # Will be NULL when no hover
+        if (is.null(input$RemoveGroupsHover)){
+          return()
+        } else{
+          isolate(RemoveGroupsHover$x <- input$RemoveGroupsHover$x)
+          isolate(RemoveGroupsHover$y <- input$RemoveGroupsHover$y)
+        }
+      })
+      
+      ClickRemovalPoints<- reactive({
         SELECTED <- DATA()[["SELECTED"]]
-        plot(x=SELECTED$EntryDate,y=SELECTED$RPM_NormalizedCustomer,type="p",pch=19,col="grey75")
+        if(is.null(SELECTED)){return(NULL)}
+        if(is.null(RemoveGroups$x)){return(NULL)}
+        train <- data.frame(as.numeric(SELECTED$EntryDate),SELECTED$RPM_NormalizedCustomer)
+        lower <- unlist(apply(train,2,min))
+        upper <- unlist(apply(train,2,max))
+        scaling <- upper-lower
+        train <- scale(train,center=F,scale=scaling)
+        cl <- factor(SELECTED$CustomerCarrier)
+        test <- data.frame(RemoveGroups$x,RemoveGroups$y)
+        test <- scale(test,center=F,scale=scaling)
+        p <- knn1(train, test, cl)
+        p <- as.character(p)
+        return(p)
+      })
+      
+      output$RemoveCustomerCarrier <- renderUI({
+        SELECTED <- DATA()[["SELECTED"]]
+        if(is.null(SELECTED)){return(NULL)}
+        pick <- SELECTED$CustomerCarrier
+        remove <- ClickRemovalPoints()
+        isolate(selected <- input$RemoveCustomerCarrier)
+        selected <- selected[!is.null(selected)]
+        selected <- c(selected,remove)
+        selected <- unique(selected)
+        selected <- selected[!is.null(selected)]
+        selectizeInput("RemoveCustomerCarrier","Customer Carrier Groups to Remove",choices=pick,selected=selected,multiple=T)
+      })
+      
+      
+      DATAFILTERED <- reactive({
+        SELECTED <- DATA()[["SELECTED"]]
+        if(is.null(SELECTED)){return(NULL)}
+        pull <- input$RemoveCustomerCarrier
+        idx_toss <- SELECTED$CustomerCarrier %in% pull
+        KEEP <- SELECTED %>% filter(!idx_toss)
+        TOSS <- SELECTED %>% filter(idx_toss)
+        return(list(KEEP=KEEP,TOSS=TOSS))
+      })
+      
+      
+      output$RemovalPlot <- renderPlot(function(){
+        if(is.null(DATAFILTERED)){return(NULL)}
+        KEEP <- DATAFILTERED()[["KEEP"]]
+        TOSS <- DATAFILTERED()[["TOSS"]]
+        plot(x=KEEP$EntryDate,y=KEEP$RPM_NormalizedCustomer,type="p",pch=19,col="grey75")
+        points(x=TOSS$EntryDate,y=TOSS$RPM_NormalizedCustomer,type="p",pch=19,col="black")
+        legend("topright",c("Kept","Removed"),pch=19,col=c("grey75","black"))
       })
       
       

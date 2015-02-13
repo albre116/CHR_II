@@ -8,6 +8,8 @@ if(!require("rCharts"))
   install.packages("rCharts")
 if(!require("dplyr"))
   install.packages("dplyr")
+if(!require("class"))
+  install.packages("class")
 if(!require("data.table"))
   install.packages("data.table")
 if(!require("lubridate"))
@@ -18,6 +20,8 @@ if(!require("rCharts"))
   install_github('rCharts', 'ramnathv')
 if(!require("mgcv"))
   install.packages("mgcv")
+if(!require("xts"))
+  install.packages("xts")
 if(!require("gbm"))
   install.packages("gbm")
 if(!require("e1071"))
@@ -52,14 +56,17 @@ if(!require("maptools"))
   install.packages("maptools")
 if(!require("ggplot2"))
   install.packages("ggplot2")
-if(!require("htmlwidgets"))
-  install.packages("htmlwidgets")
 if(!require("shinydashboard"))
   devtools::install_github("rstudio/shinydashboard")
 if(!require("bubbles"))
   devtools::install_github("jcheng5/bubbles")
 if(!require("shinySignals"))
   devtools::install_github("hadley/shinySignals")
+if(!require("htmlwidgets"))
+  devtools::install_github("ramnathv/htmlwidgets")
+if(!require("dygraphs"))
+  devtools::install_github("rstudio/dygraphs")
+
 
 
 ###custom and local packages
@@ -68,6 +75,8 @@ if(!require('DataPull')) {
 }
 
 load("RAW.RData")###identify the data path from the datapull package
+
+
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota", 
                   "Wyoming", "Wisconsin", "Idaho", "Vermont", "Minnesota", "Oregon", 
                   "New Hampshire", "Iowa", "Massachusetts", "Nebraska", "New York", 
