@@ -69,10 +69,11 @@ shinyServer(function(input, output, session) {
         if(length(selectStates)>0){
           mapOrig <- map("state",regions = selectStates,plot=F,fill=T,col="grey95")} else{mapOrig <- NULL}
         map(states)
-        if(!is.null(mapOrig)){
-          map(mapOrig,fill=T,add=T,col="grey95")
-        }
-        map.text(state_labs,add=T)
+        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="grey95")}
+        if("State Names" %in% input$maplayersOrigStates){map.text(state_labs,add=T)}
+        if("Data" %in% input$maplayersOrigStates){
+          points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="grey",pch=19)
+          }
       })
       
       ################################################################
@@ -135,10 +136,11 @@ shinyServer(function(input, output, session) {
         if(length(selectStates)>0){
           mapDest <- map("state",regions = selectStates,plot=F,fill=T,col="grey95")} else{mapDest <- NULL}
         map(states)
-        if(!is.null(mapDest)){
-          map(mapDest,fill=T,add=T,col="grey95")
+        if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="grey95")}
+        if("State Names" %in% input$maplayersDestStates){map.text(state_labs,add=T)}
+        if("Data" %in% input$maplayersDestStates){
+          points(x=RAW$DestLongitude,y=RAW$DestLatitude,cex=0.1,col="grey",pch=19)
         }
-        map.text(state_labs,add=T)
       })
       
       ###########################################################
@@ -218,8 +220,9 @@ shinyServer(function(input, output, session) {
         if(length(selectCounties)>0){
           mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="grey95")} else{mapOrig <- NULL}
         map(counties)
-        if(!is.null(mapOrig)){
-          map(mapOrig,fill=T,add=T,col="grey95")
+        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="grey95")}
+        if("Data" %in% input$maplayersOrigCounties){
+          points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="grey",pch=19)
         }
       })
       
@@ -300,8 +303,9 @@ shinyServer(function(input, output, session) {
         if(length(selectCounties)>0){
           mapDest <- map("county",regions = selectCounties,plot=F,fill=T,col="grey95")} else{mapDest <- NULL}
         map(counties)
-        if(!is.null(mapDest)){
-          map(mapDest,fill=T,add=T,col="grey95")
+        if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="grey95")}
+        if("Data" %in% input$maplayersDestCounties){
+          points(x=RAW$DestLongitude,y=RAW$DestLatitude,cex=0.1,col="grey",pch=19)
         }
       })
       
@@ -365,6 +369,58 @@ shinyServer(function(input, output, session) {
       
       
       ###########################################################
+      #######Select the Appropriate Time Window
+      ###########################################################
+      PERCENTILES <- reactive({
+        if(is.null(DATA())){return(NULL)}
+        SELECTED <- DATA()[["SELECTED"]]
+        input$applyDygraph==0
+        isolate(df <- input$dfspline)
+        isolate(tau_lower <- input$lowerTau)
+        isolate(tau_center <- input$centralTau)
+        isolate(tau_upper <- input$upperTau)
+        
+        CLEAN <-  SELECTED %>% 
+          select(RPM_NormalizedCustomer,EntryDate) %>%
+          filter(!is.infinite(RPM_NormalizedCustomer),
+                 !is.na(RPM_NormalizedCustomer)) %>%
+          arrange(EntryDate)
+        X <- model.matrix(CLEAN$RPM_NormalizedCustomer ~ bs(CLEAN$EntryDate, df=df))
+        quantiles <- data.frame()
+        params <- c(tau_lower,tau_center,tau_upper)
+        for(tau in params){
+          fit <- rq(RPM_NormalizedCustomer ~ bs(EntryDate, df=df), tau=tau, data=CLEAN)
+          quantile.fit <- X %*% fit$coef
+          quant <- data.frame(EntryDate=CLEAN$EntryDate,fit=quantile.fit,quantile=tau)
+          quant <- quant %>%
+            group_by(EntryDate) %>%
+            summarise(fit=unique(fit),
+                      quantile=unique(tau)) %>%
+            arrange(EntryDate)
+          quantiles <- bind_rows(quantiles,quant)
+        }
+        rm(fit,X)
+        quantiles <- as.data.frame(quantiles)
+        EntryDate<- unique(quantiles$EntryDate)
+        quantiles <- unstack(quantiles,fit~quantile,data=quantiles)
+        quantiles$EntryDate <- EntryDate
+        colnames(quantiles) <- c(paste0(params*100,"th"),"Date")
+        return(quantiles)
+      })
+      
+      
+      
+      output$dygraph <- renderDygraph({
+        quantiles <- PERCENTILES()
+        plot_dat <- xts(quantiles[,-4],quantiles[,4])
+        dygraph(plot_dat,main=paste(paste(colnames(quantiles)[1:3],collapse=" "),"Percentiles of Raw Data")) %>%
+          dySeries(c(colnames(quantiles)[1:3]),label="Median RPM$") %>%
+          dyRangeSelector()
+      })
+      
+      
+      
+      ###########################################################
       #######Remove fixed rate observations (if desired)
       ###########################################################
       
@@ -398,29 +454,52 @@ shinyServer(function(input, output, session) {
         if(is.null(SELECTED)){return(NULL)}
         if(is.null(RemoveGroups$x)){return(NULL)}
         train <- data.frame(as.numeric(SELECTED$EntryDate),SELECTED$RPM_NormalizedCustomer)
+        idx <- complete.cases(train)
+        train <- train[idx,]
         lower <- unlist(apply(train,2,min))
         upper <- unlist(apply(train,2,max))
         scaling <- upper-lower
         train <- scale(train,center=F,scale=scaling)
-        cl <- factor(SELECTED$CustomerCarrier)
+        cl <- factor(SELECTED$CustomerCarrier[idx])
         test <- data.frame(RemoveGroups$x,RemoveGroups$y)
         test <- scale(test,center=F,scale=scaling)
         p <- knn1(train, test, cl)
         p <- as.character(p)
-        return(p)
+        return(list(p=p,lower=lower,upper=upper))
       })
       
       output$RemoveCustomerCarrier <- renderUI({
         SELECTED <- DATA()[["SELECTED"]]
         if(is.null(SELECTED)){return(NULL)}
         pick <- SELECTED$CustomerCarrier
-        remove <- ClickRemovalPoints()
+        remove <- ClickRemovalPoints()[["p"]]
         isolate(selected <- input$RemoveCustomerCarrier)
         selected <- selected[!is.null(selected)]
         selected <- c(selected,remove)
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("RemoveCustomerCarrier","Customer Carrier Groups to Remove",choices=pick,selected=selected,multiple=T)
+      })
+      
+      
+      output$RemoveCustomerCarrierHover <- renderText({
+        SELECTED <- DATA()[["SELECTED"]]
+        if(is.null(SELECTED)){return(NULL)}
+        if(is.null(RemoveGroupsHover$x)){return("Mouse Hover:")}
+        train <- data.frame(as.numeric(SELECTED$EntryDate),SELECTED$RPM_NormalizedCustomer)
+        idx <- complete.cases(train)
+        train <- train[idx,]
+        lower <- unlist(apply(train,2,min))
+        upper <- unlist(apply(train,2,max))
+        scaling <- upper-lower
+        train <- scale(train,center=F,scale=scaling)
+        cl <- factor(SELECTED$CustomerCarrier[idx])
+        test <- data.frame(RemoveGroupsHover$x,RemoveGroupsHover$y)
+        test <- scale(test,center=F,scale=scaling)
+        p <- knn1(train, test, cl)
+        p <- as.character(p)
+        if (length(p)==0){p <-NULL}
+        return(paste("Mouse Hover:",p))
       })
       
       
@@ -439,8 +518,27 @@ shinyServer(function(input, output, session) {
         if(is.null(DATAFILTERED)){return(NULL)}
         KEEP <- DATAFILTERED()[["KEEP"]]
         TOSS <- DATAFILTERED()[["TOSS"]]
-        plot(x=KEEP$EntryDate,y=KEEP$RPM_NormalizedCustomer,type="p",pch=19,col="grey75")
+        lower <- ClickRemovalPoints()[["lower"]]
+        upper <- ClickRemovalPoints()[["upper"]]
+        plot(x=KEEP$EntryDate,y=KEEP$RPM_NormalizedCustomer,type="n",pch=19,col="grey75",
+             xlim=c(lower[1],upper[1]),ylim=c(lower[2],upper[2]),xlab="Date",ylab="Normalized Rate Per Mile")
+        
+        if("Percentiles" %in% input$plotControls){
+          quantiles <- PERCENTILES()
+          cord.x <- c(quantiles[,4],quantiles[nrow(quantiles):1,4])
+          cord.y <- c(quantiles[,3],quantiles[nrow(quantiles):1,1])
+          polygon(cord.x,cord.y,col='grey95')
+        }
+        
+        if("Kept" %in% input$plotControls){
+          points(x=KEEP$EntryDate,y=KEEP$RPM_NormalizedCustomer,pch=19,col="grey75")
+        }
+        
+      if("Removed" %in% input$plotControls){
         points(x=TOSS$EntryDate,y=TOSS$RPM_NormalizedCustomer,type="p",pch=19,col="black")
+        }
+    
+
         legend("topright",c("Kept","Removed"),pch=19,col=c("grey75","black"))
       })
       

@@ -37,7 +37,53 @@ save(RAW,file="RAW.RData")###save it so we don't always have to run this
 ####End data processing
 
 
+#####Mean and Range by date to identify basic data trends
+#####We can add this to the outlier plot then
 
+low=25
+high=75
+
+CLEAN <-  RAW %>% 
+  select(RPM_NormalizedCustomer,EntryDate) %>%
+  filter(!is.infinite(RPM_NormalizedCustomer),
+         !is.na(RPM_NormalizedCustomer)) %>%
+  arrange(EntryDate)
+
+
+#plot(CLEAN$EntryDate,CLEAN$RPM_NormalizedCustomer,xlab = "Date", ylab = "RPM",type="p",pch=19,cex=0.25,col="grey95",
+#     ylim=c(0,5))
+X <- model.matrix(CLEAN$RPM_NormalizedCustomer ~ bs(CLEAN$EntryDate, df=15))
+quantiles <- data.frame()
+df=15
+tau_lower <- 0.25
+tau_center <- 0.5
+tau_upper <- 0.75
+params <- c(tau_lower,tau_center,tau_upper)
+for(tau in params){
+ fit <- rq(RPM_NormalizedCustomer ~ bs(EntryDate, df=df), tau=tau, data=CLEAN)
+ quantile.fit <- X %*% fit$coef
+ #lines(CLEAN$EntryDate,quantile.fit)
+ quant <- data.frame(EntryDate=CLEAN$EntryDate,fit=quantile.fit,quantile=tau)
+ quant <- quant %>%
+   group_by(EntryDate) %>%
+   summarise(fit=unique(fit),
+             quantile=unique(tau)) %>%
+   arrange(EntryDate)
+
+ quantiles <- bind_rows(quantiles,quant)
+ }
+rm(fit,X)
+
+quantiles <- as.data.frame(quantiles)
+EntryDate<- unique(quantiles$EntryDate)
+quantiles <- unstack(quantiles,fit~quantile,data=quantiles)
+quantiles$EntryDate <- EntryDate
+colnames(quantiles) <- c(paste0(params*100,"th Percentile"),"Date")
+plot_dat <- xts(quantiles[,-4],quantiles[,4])
+dygraph(plot_dat,main=paste(paste(paste0(params*100,"th"),collapse=" "),"Percentiles of Raw Data")) %>%
+  dySeries(c(colnames(quantiles)[1:3]),label="Median RPM$") %>%
+  dyRangeSelector()
+  
 
 
 

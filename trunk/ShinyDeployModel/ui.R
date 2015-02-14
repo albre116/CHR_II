@@ -23,14 +23,20 @@ body <- dashboardBody(
                        solidHeader = TRUE,
                        h3(textOutput("AddStatesHoverSelectedOrigin")),
                        plotOutput(outputId = "OrigPlotState",clickId = "OriginStates",hoverId="OriginStatesHover",hoverDelay=300),
-                       uiOutput("SelectOrigStates")
+                       uiOutput("SelectOrigStates"),
+                       checkboxGroupInput("maplayersOrigStates","Map Layers to Display",
+                                          c("State Names","Data"),
+                                          selected=c("State Names"),inline=TRUE)
                      ),
                      box(
                        title="Origin Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
                        solidHeader = TRUE,
                        h3(textOutput("AddCountiesHoverSelectedOrigin")),
                        plotOutput(outputId = "OrigPlotCounties",clickId = "OriginCounties",hoverId="OriginCountiesHover",hoverDelay=300),
-                       uiOutput("SelectOrigCounties")
+                       uiOutput("SelectOrigCounties"),
+                       checkboxGroupInput("maplayersOrigCounties","Map Layers to Display",
+                                          c("Data"),
+                                          selected=NULL,inline=TRUE)
                         )
                      ),###end first column
               column(width=6,
@@ -39,14 +45,20 @@ body <- dashboardBody(
                        solidHeader = TRUE,
                        h3(textOutput("AddStatesHoverSelectedDestination")),
                        plotOutput(outputId = "DestPlotState",clickId = "DestinationStates",hoverId="DestinationStatesHover",hoverDelay=300),
-                       uiOutput("SelectDestStates")
+                       uiOutput("SelectDestStates"),
+                       checkboxGroupInput("maplayersDestStates","Map Layers to Display",
+                                          c("State Names","Data"),
+                                          selected=c("State Names"),inline=TRUE)
                      ),
                      box(
                        title="Destination Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
                        solidHeader = TRUE,
                        h3(textOutput("AddCountiesHoverSelectedDestination")),
                        plotOutput(outputId = "DestPlotCounties",clickId = "DestinationCounties",hoverId="DestinationCountiesHover",hoverDelay=300),
-                       uiOutput("SelectDestCounties")
+                       uiOutput("SelectDestCounties"),
+                       checkboxGroupInput("maplayersDestCounties","Map Layers to Display",
+                                          c("Data"),
+                                          selected=NULL,inline=TRUE)
                      )
               )###end second column
             )###end fluid row
@@ -65,10 +77,28 @@ body <- dashboardBody(
                            )
                     )
               ),
-            box(title="Time Series Plot: Click Data to Identify Groups for Removal",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Select Date Range For Analysis By Dragging on Screen",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=2,
-                         uiOutput("RemoveCustomerCarrier")
+                         sliderInput("lowerTau","Lower Percentile",min=0,max=1,value=0.25),
+                         sliderInput("centralTau","Center Percentile",min=0,max=1,value=0.5),
+                         sliderInput("upperTau","Upper Percentile",min=0,max=1,value=0.75),
+                         numericInput("dfspline","Spline df",value=20,min=1,max=50,step=1),
+                         actionButton("applyDygraph","Apply Date & Percentile Selections",icon=icon("fa fa-refresh"))
+                  ),
+                  column(width=10,
+                         dygraphOutput("dygraph",height="800px")
+                  )
+                )
+            ),
+            box(title="Clean Up Fixed Rate Contracts: Click Data to Identify Groups for Removal",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                fluidRow(
+                  column(width=2,
+                         h3(textOutput("RemoveCustomerCarrierHover")),
+                         uiOutput("RemoveCustomerCarrier"),
+                         checkboxGroupInput("plotControls","Plot Layers to Display",
+                                            c("Percentiles","Kept","Removed"),
+                                            selected=c("Kept","Removed"))
                   ),
                   column(width=10,
                          plotOutput(outputId = "RemovalPlot",height="800px",clickId = "RemoveGroups",hoverId="RemoveGroupsHover",hoverDelay=300)
