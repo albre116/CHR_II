@@ -86,5 +86,8 @@ loadData <- function(path,sample_pct){
   #CHR$Month<-as.numeric(format(CHR$EntryDate,format="%m"))
   #CHR$Year<-as.numeric(format(CHR$EntryDate,format="%Y"))
   CHR$EntryDate <- as.Date(format(CHR$EntryDate,format="%Y-%m-%d"))
+  CHR$CustomerCCode <- gsub(" ","",CHR$CustomerCCode)
+  CHR$CarrierTCode <- gsub(" ","",CHR$CarrierTCode)
+  CHR$CustomerCarrier <- paste0(CHR$CustomerCCode,":",CHR$CarrierTCode)
   return(CHR)
 }

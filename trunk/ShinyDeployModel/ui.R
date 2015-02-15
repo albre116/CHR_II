@@ -80,9 +80,9 @@ body <- dashboardBody(
             box(title="Select Date Range For Analysis By Dragging on Screen",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=2,
-                         sliderInput("lowerTau","Lower Percentile",min=0,max=1,value=0.25),
+                         sliderInput("lowerTau","Lower Percentile",min=0,max=1,value=0.10),
                          sliderInput("centralTau","Center Percentile",min=0,max=1,value=0.5),
-                         sliderInput("upperTau","Upper Percentile",min=0,max=1,value=0.75),
+                         sliderInput("upperTau","Upper Percentile",min=0,max=1,value=0.95),
                          numericInput("dfspline","Spline df",value=20,min=1,max=50,step=1),
                          actionButton("applyDygraph","Apply Date & Percentile Selections",icon=icon("fa fa-refresh"))
                   ),
@@ -95,10 +95,15 @@ body <- dashboardBody(
                 fluidRow(
                   column(width=2,
                          h3(textOutput("RemoveCustomerCarrierHover")),
+                         uiOutput("UpperLower"),
+                         actionButton("applyUpperLower","Apply Rate Per Mile Filter",icon=icon("fa fa-refresh")),
+                         checkboxGroupInput("QuantileFilter","Apply Quantile Filter",c("Lower Quantile","Upper Quantile")),
+                         checkboxGroupInput("TypeRemoval","Point Click Removal Method",c("Customer Carrier","Individual Load"),selected = c("Customer Carrier")),
                          uiOutput("RemoveCustomerCarrier"),
+                         uiOutput("RemoveIndividual"),
                          checkboxGroupInput("plotControls","Plot Layers to Display",
                                             c("Percentiles","Kept","Removed"),
-                                            selected=c("Kept","Removed"))
+                                            selected=c("Kept","Removed","Percentiles"))
                   ),
                   column(width=10,
                          plotOutput(outputId = "RemovalPlot",height="800px",clickId = "RemoveGroups",hoverId="RemoveGroupsHover",hoverDelay=300)
