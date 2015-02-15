@@ -428,7 +428,9 @@ shinyServer(function(input, output, session) {
       output$UpperLower <- renderUI({
         DATA <- DATA()[["SELECTED"]]
         low <- min(DATA$RPM_NormalizedCustomer,na.rm = TRUE)
+        low <- floor(low*100)/100
         high <- max(DATA$RPM_NormalizedCustomer,na.rm = TRUE)
+        high <- ceiling(high*100)/100
         sliderInput("UpperLower","Rate Per Mile Limits",min=low,max=high,value=c(low,high))
       })
       
@@ -614,14 +616,41 @@ shinyServer(function(input, output, session) {
       if("Removed" %in% input$plotControls){
         points(x=TOSS$EntryDate,y=TOSS$RPM_NormalizedCustomer,type="p",pch=19,col="grey75")
         }
-    
 
         legend("topright",c("Removed","Kept"),pch=19,col=c("grey75","black"))
       })
       
       
+      ###########################################################
+      #######Tab Panel 3:  Model Fitting
+      ###########################################################
+      
+      ###########################################################
+      #######Modeling Kernel
+      ###########################################################
       
       
+      MODELFIT <- reactive({
+        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        if(is.null(data)){return(NULL)}
+        if(is.null(isolate(input$BaseModelParameters))){formula <- NULL}
+        input$FitModel
+        isolate(vars <- input$BaseModelParameters)
+        f <- formula(RPM_NormalizedCustomer~1)  ###place holder
+        if("Stop Count" %in% vars){f <- update(f,.~.+s(SumOfStops))}
+        if("Seasonality" %in% vars){f <- update(f,.~.+s(Day365,bs="cc"))}
+        if("Inflation" %in% vars){f <- update(f,.~.+EntryDate)}
+        fit <- modelCPDS(formula=f,data=data,kernel=isolate(input$ModelFamily),gamma=1.4)
+        return(fit)
+      })
       
+      output$ModelSummary <- renderPrint({
+        summary <- summary(MODELFIT())
+        if (!is.null(summary)) {
+          return(print(summary))
+        }
+      })
+      
+
   
 })###end server here

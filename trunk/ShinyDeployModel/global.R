@@ -78,7 +78,16 @@ if(!require('DataPull')) {
   devtools::install_github(c("albre116/CHR_II/trunk/DataPull"),auth_token="ffcaf9fb4036981ec6022f13d2a1d05df97a5ff3")
 }
 
-load("RAW.RData")###identify the data path from the datapull package
+
+####Generate the data if it doesn't exist
+
+if(!file.exists("RAW.RData")){
+  path <- c('~/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt')  ###set this to file path location for raw data
+  sample_pct <- 0.1 ###set between [0,1]
+  RAW <- DataPull::loadData(path,sample_pct)  ### see help file for documentation
+  RAW <- DataPull::geocodeData(RAW)   ###Geocoding the Data
+  RAW <- DataPull::tallyDailyVolume(RAW)
+}else{load("RAW.RData")}###identify the data path from the datapull package
 
 
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota", 
@@ -92,17 +101,37 @@ states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakot
                   "Alabama", "Mississippi", "Georgia", "South Carolina", "Arkansas", 
                   "Louisiana", "Florida", "Michigan")
 
-
 states <- map("state",regions = states.model,plot=F,fill=TRUE)
 data(state.fips)
 states_labels <- data.frame(labels=states$names) %>% 
   left_join(state.fips,by=c("labels"="polyname")) %>%
   select(abb)
-
 state_labs <- states
 state_labs$names <- as.character(states_labels$abb)
 
+###########################################################################
+###########################################################################
+########## Modeling Kernel Functions
+########## Will be moved to its own package
+########## With Documentation
+###########################################################################
+###########################################################################
 
+
+modelCPDS <- function(formula,       #pass in the model formula
+                      data,          #data to be fit
+                      kernel="GAM",  #type of modeling kernel
+                      ...            #additional parameters to the model
+                      ){
+  
+  ###put all of the model functions here in the switch statement
+  fit <- switch(kernel,
+        "Generalized Additive Model"=bam(formula,data=data,gamma=gamma)
+         )
+  
+  ###return the model image
+  return(fit)
+}
 
 
 

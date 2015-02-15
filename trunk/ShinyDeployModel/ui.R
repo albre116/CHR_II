@@ -7,7 +7,10 @@ header <- dashboardHeader(
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe")),
-    menuItem("Data Conditioning", tabName = "data_conditioning", icon = icon("fa fa-line-chart"))
+    menuItem("Data Conditioning",icon = icon("fa fa-line-chart"),
+             menuSubItem("Map of Selected Data","MapSelected"),
+             menuSubItem("Date Range & Outliers","DateRange")),
+    menuItem("Model Fitting", tabName = "modeling", icon = icon("fa fa-cog"))
   )
   
 )###end side bar
@@ -64,8 +67,8 @@ body <- dashboardBody(
             )###end fluid row
     ),
     
-    tabItem(tabName = "data_conditioning",
-            box(title="Map of Selected Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+    tabItem(tabName = "MapSelected",
+            box(title="Map of Selected Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                   fluidRow(
                     column(width=2,
                            checkboxGroupInput("maplayers","Map Layers to Display",
@@ -76,7 +79,9 @@ body <- dashboardBody(
                            plotOutput(outputId = "MapSelectedData",height="800px")
                            )
                     )
-              ),
+              )
+    ),
+    tabItem(tabName = "DateRange",
             box(title="Select Date Range For Analysis By Dragging on Screen",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=2,
@@ -87,7 +92,7 @@ body <- dashboardBody(
                          actionButton("applyDygraph","Apply Date & Percentile Selections",icon=icon("fa fa-refresh"))
                   ),
                   column(width=10,
-                         dygraphOutput("dygraph",height="800px")
+                         dygraphOutput("dygraph",height="400px")
                   )
                 )
             ),
@@ -107,6 +112,31 @@ body <- dashboardBody(
                   ),
                   column(width=10,
                          plotOutput(outputId = "RemovalPlot",height="800px",clickId = "RemoveGroups",hoverId="RemoveGroupsHover",hoverDelay=300)
+                  )
+                )
+            )
+    ),###end current tab
+    tabItem(tabName = "modeling",
+            box(title="Model Selection and Options",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                fluidRow(
+                  column(width=2,
+                         selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=c("Generalized Additive Model")),
+                         actionButton("FitModel","Update Model")
+                  ),
+                  column(width=10,
+                         checkboxGroupInput("BaseModelParameters","Base Model Parameters",
+                                            c("Stop Count","Seasonality","Inflation"),
+                                            selected=c("Stop Count","Seasonality","Inflation"))
+                  )
+                )
+            ),
+            box(title="Model Summary",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                fluidRow(
+                  column(width=2,
+                        h3("stuff here")
+                  ),
+                  column(width=10,
+                         div(class="span7", verbatimTextOutput("ModelSummary"))
                   )
                 )
             )
