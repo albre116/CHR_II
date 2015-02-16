@@ -628,18 +628,65 @@ shinyServer(function(input, output, session) {
       ###########################################################
       #######Modeling Kernel
       ###########################################################
+      output$LinearTerms <- renderUI({
+        data <- DATAFILTERED()[["KEEP"]]
+        terms <- colnames(data)
+        selectizeInput("LinearTerms","Linear Terms in Model",
+                       choices=terms,selected=c("EntryDate"),multiple=T)
+      })
+      
+      output$SplineTerms <- renderUI({
+        data <- DATAFILTERED()[["KEEP"]]
+        terms <- colnames(data)
+        selectizeInput("SplineTerms","Spline Terms in Model (non cyclic)",
+                       choices=terms,selected=c("SumOfStops"),multiple=T)
+      })
+      
+      output$SplineTermsCyclic <- renderUI({
+        data <- DATAFILTERED()[["KEEP"]]
+        terms <- colnames(data)
+        selectizeInput("SplineTermsCyclic","Cyclical Spline Terms in Model)",
+                       choices=terms,selected=c("Day365"),multiple=T)
+      })
+      
+      
+      
+      
       
       
       MODELFIT <- reactive({
         data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
         if(is.null(data)){return(NULL)}
-        if(is.null(isolate(input$BaseModelParameters))){formula <- NULL}
-        input$FitModel
-        isolate(vars <- input$BaseModelParameters)
+        if(input$FitModel==0){
+        linear <- input$LinearTerms
+        spline <- input$SplineTerms
+        splineCC <- input$SplineTermsCyclic
+        }else{
+        isolate(linear <- input$LinearTerms)
+        isolate(spline <- input$SplineTerms)
+        isolate(splineCC <- input$SplineTermsCyclic)}
+        
+        if(is.null(linear) & is.null(spline) & is.null(splineCC)){return(NULL)}
+        
         f <- formula(RPM_NormalizedCustomer~1)  ###place holder
-        if("Stop Count" %in% vars){f <- update(f,.~.+s(SumOfStops))}
-        if("Seasonality" %in% vars){f <- update(f,.~.+s(Day365,bs="cc"))}
-        if("Inflation" %in% vars){f <- update(f,.~.+EntryDate)}
+        
+        for(t in linear){
+          f_add <- paste0(".~.+",t)
+          f <- do.call("update",list(f,f_add))
+        }
+        
+        for(t in spline){
+          f_add <- paste0(".~.+s(",t,")")
+          f <- do.call("update",list(f,f_add))
+        }
+        
+        for(t in splineCC){
+
+          cat("f_add=.~.+s(",t,",bs=\"cc\")",file="b")
+          eval(parse("b"))
+          f <- do.call("update",list(f,f_add))
+        }
+        
         fit <- modelCPDS(formula=f,data=data,kernel=isolate(input$ModelFamily),gamma=1.4)
         return(fit)
       })
@@ -650,6 +697,24 @@ shinyServer(function(input, output, session) {
           return(print(summary))
         }
       })
+      
+      output$ModelPlot <- renderPlot({
+        plot(MODELFIT(),pages=1,all.terms=T)
+      })
+      
+      output$ModelDiagnostics <- renderPlot({
+        gam.check(MODELFIT())
+      })
+      
+      output$ModelDiagnostics <- renderPlot({
+        gam.check(MODELFIT())
+      })
+      
+      
+      
+      
+      
+      
       
 
   

@@ -124,23 +124,45 @@ body <- dashboardBody(
                          actionButton("FitModel","Update Model")
                   ),
                   column(width=10,
-                         checkboxGroupInput("BaseModelParameters","Base Model Parameters",
-                                            c("Stop Count","Seasonality","Inflation"),
-                                            selected=c("Stop Count","Seasonality","Inflation"))
+                         uiOutput("LinearTerms"),
+                         uiOutput("SplineTerms"),
+                         uiOutput("SplineTermsCyclic")
                   )
                 )
             ),
-            box(title="Model Summary",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
-                fluidRow(
-                  column(width=2,
-                        h3("stuff here")
-                  ),
-                  column(width=10,
-                         div(class="span7", verbatimTextOutput("ModelSummary"))
-                  )
+            tabBox(title="Model Fit Diagnostics",width=NULL,id="diagnostics",
+                tabPanel(title="Partial Effects",value="partial",
+                         fluidRow(
+                           column(width=2,
+                         h3("stuff here")
+                         ),
+                         column(width=10,
+                                plotOutput("ModelPlot",height="600px")
+                                )
+                         )
+                         ),
+                tabPanel(title="Model Diagnostics",value="diagnostics",
+                         fluidRow(
+                           column(width=2,
+                                  h3("stuff here")
+                           ),
+                           column(width=10,
+                                  plotOutput("ModelDiagnostics",height="600px")
+                           )
+                         )
+                ),
+                tabPanel(title="Model Summary",value="summary",
+                         fluidRow(
+                           column(width=2,
+                                  h3("stuff here")
+                                  ),
+                           column(width=10,
+                                  div(class="span7", verbatimTextOutput("ModelSummary"))
+                                  )
+                           )
+                         )
                 )
-            )
-    )###end current tab
+            )###end current tab
     
     
     
