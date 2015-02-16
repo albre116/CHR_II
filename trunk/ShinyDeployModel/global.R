@@ -87,6 +87,7 @@ if(!file.exists("RAW.RData")){
   RAW <- DataPull::loadData(path,sample_pct)  ### see help file for documentation
   RAW <- DataPull::geocodeData(RAW)   ###Geocoding the Data
   RAW <- DataPull::tallyDailyVolume(RAW)
+  save(RAW,file="RAW.RData")###save it so we don't always have to run this
 }else{load("RAW.RData")}###identify the data path from the datapull package
 
 
@@ -118,15 +119,15 @@ state_labs$names <- as.character(states_labels$abb)
 ###########################################################################
 
 
-modelCPDS <- function(formula,       #pass in the model formula
+modelCPDS <- function(f,       #pass in the model formula
                       data,          #data to be fit
                       kernel="GAM",  #type of modeling kernel
+                      gamma=1.4,
                       ...            #additional parameters to the model
                       ){
-  
   ###put all of the model functions here in the switch statement
   fit <- switch(kernel,
-        "Generalized Additive Model"=bam(formula,data=data,gamma=gamma)
+        "Generalized Additive Model"=bam(f,data=data,gamma=gamma)
          )
   
   ###return the model image

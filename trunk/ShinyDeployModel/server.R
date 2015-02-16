@@ -1,5 +1,5 @@
 
-
+flag <<-0
 # Define server logic required to plot various variables against mpg
 shinyServer(function(input, output, session) {
   
@@ -632,7 +632,7 @@ shinyServer(function(input, output, session) {
         data <- DATAFILTERED()[["KEEP"]]
         terms <- colnames(data)
         selectizeInput("LinearTerms","Linear Terms in Model",
-                       choices=terms,selected=c("EntryDate"),multiple=T)
+                       choices=terms,selected=c("NumericDate"),multiple=T)
       })
       
       output$SplineTerms <- renderUI({
@@ -645,7 +645,7 @@ shinyServer(function(input, output, session) {
       output$SplineTermsCyclic <- renderUI({
         data <- DATAFILTERED()[["KEEP"]]
         terms <- colnames(data)
-        selectizeInput("SplineTermsCyclic","Cyclical Spline Terms in Model)",
+        selectizeInput("SplineTermsCyclic","Cyclical Spline Terms in Model",
                        choices=terms,selected=c("Day365"),multiple=T)
       })
       
@@ -657,16 +657,19 @@ shinyServer(function(input, output, session) {
       MODELFIT <- reactive({
         data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
         if(is.null(data)){return(NULL)}
-        if(input$FitModel==0){
-        linear <- input$LinearTerms
-        spline <- input$SplineTerms
-        splineCC <- input$SplineTermsCyclic
+        input$FitModel
+        if(flag==0){
+          linear <- input$LinearTerms
+          spline <- input$SplineTerms
+          splineCC <- input$SplineTermsCyclic
+          flag<<-flag+1
         }else{
         isolate(linear <- input$LinearTerms)
         isolate(spline <- input$SplineTerms)
         isolate(splineCC <- input$SplineTermsCyclic)}
         
         if(is.null(linear) & is.null(spline) & is.null(splineCC)){return(NULL)}
+
         
         f <- formula(RPM_NormalizedCustomer~1)  ###place holder
         
@@ -681,13 +684,11 @@ shinyServer(function(input, output, session) {
         }
         
         for(t in splineCC){
-
-          cat("f_add=.~.+s(",t,",bs=\"cc\")",file="b")
-          eval(parse("b"))
+          eval(parse(text=paste0("f_add=.~.+s(",t,",bs=\"cc\")")))
           f <- do.call("update",list(f,f_add))
         }
         
-        fit <- modelCPDS(formula=f,data=data,kernel=isolate(input$ModelFamily),gamma=1.4)
+        fit <- modelCPDS(f=f,data=data,kernel=isolate(input$ModelFamily),gamma=1.4)
         return(fit)
       })
       
@@ -699,17 +700,16 @@ shinyServer(function(input, output, session) {
       })
       
       output$ModelPlot <- renderPlot({
-        plot(MODELFIT(),pages=1,all.terms=T)
+        fit <- MODELFIT()
+        if(is.null(fit)){return(NULL)}
+        return(plot(fit,pages=1,shade=TRUE,residuals=F,all.terms=T))
       })
       
       output$ModelDiagnostics <- renderPlot({
         gam.check(MODELFIT())
       })
       
-      output$ModelDiagnostics <- renderPlot({
-        gam.check(MODELFIT())
-      })
-      
+
       
       
       
