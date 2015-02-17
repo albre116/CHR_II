@@ -628,6 +628,8 @@ shinyServer(function(input, output, session) {
       ###########################################################
       #######Modeling Kernel
       ###########################################################
+      
+      
       output$LinearTerms <- renderUI({
         data <- DATAFILTERED()[["KEEP"]]
         terms <- colnames(data)
@@ -635,11 +637,18 @@ shinyServer(function(input, output, session) {
                        choices=terms,selected=c("NumericDate"),multiple=T)
       })
       
+      output$FactorTerms <- renderUI({
+        data <- DATAFILTERED()[["KEEP"]]
+        terms <- colnames(data)
+        selectizeInput("FactorTerms","Factors in Model",
+                       choices=terms,selected=c("SumOfStops"),multiple=T)
+      })
+      
       output$SplineTerms <- renderUI({
         data <- DATAFILTERED()[["KEEP"]]
         terms <- colnames(data)
         selectizeInput("SplineTerms","Spline Terms in Model (non cyclic)",
-                       choices=terms,selected=c("SumOfStops"),multiple=T)
+                       choices=terms,selected=NULL,multiple=T)
       })
       
       output$SplineTermsCyclic <- renderUI({
@@ -662,16 +671,24 @@ shinyServer(function(input, output, session) {
           linear <- input$LinearTerms
           spline <- input$SplineTerms
           splineCC <- input$SplineTermsCyclic
+          factors <- input$FactorTerms
           flag<<-flag+1
         }else{
         isolate(linear <- input$LinearTerms)
         isolate(spline <- input$SplineTerms)
-        isolate(splineCC <- input$SplineTermsCyclic)}
+        isolate(splineCC <- input$SplineTermsCyclic)
+        isolate(factors <- input$FactorTerms)}
         
         if(is.null(linear) & is.null(spline) & is.null(splineCC)){return(NULL)}
 
         
         f <- formula(RPM_NormalizedCustomer~1)  ###place holder
+        
+        for(t in factors){
+          f_add <- paste0(".~.+as.factor(",t,")")
+          f <- do.call("update",list(f,f_add))
+        }
+        
         
         for(t in linear){
           f_add <- paste0(".~.+",t)
@@ -710,6 +727,56 @@ shinyServer(function(input, output, session) {
       })
       
 
+      ###########################################################
+      #######Partial Effects Plot (adjusted by nusiance factors)
+      ###########################################################
+      
+      output$MarginalEffect <- renderUI({
+        linear <- input$LinearTerms
+        spline <- input$SplineTerms
+        splineCC <- input$SplineTermsCyclic
+        factors <- input$FactorTerms
+        terms <- c(linear,spline,splineCC,factors)
+        selectInput("MarginalEffect","Select Variable to Display Marginal Effect",
+                     choices=terms,selected=NULL)
+      })
+      
+      
+      
+      MarginalData <- reactive({
+        fit <- MODELFIT()
+        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        browser()
+        idx <- input$MarginalEffect
+        if(is.null(idx)){return(NULL)}
+        xs <- data[,idx,drop=F]
+        xs <- unique(xs)
+        
+        if(!is.na(mean(xs))){xs <- seq(min(xs),max(xs),length.out = 50)}
+        
+        y_hat <- apply(xs,1,function(x){
+          ndat <- data
+          ndat[,idx] <- x
+          tmp <- predict(fit,newdata=ndat)
+          return(mean(tmp))
+        })
+        
+        y_hat <- unlist(y_hat)
+        tmp <- data.frame(y_hat,xs)
+        return(tmp)
+        
+      })
+      
+      
+      
+      output$MarginalPlot <- renderPlot({
+        MarginalData <- MarginalData()
+        if(is.null(MarginalData)){return(NULL)}
+        plot(1~1)
+        
+      })
+      
+      
       
       
       

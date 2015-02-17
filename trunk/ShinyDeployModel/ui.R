@@ -10,7 +10,9 @@ sidebar <- dashboardSidebar(
     menuItem("Data Conditioning",icon = icon("fa fa-line-chart"),
              menuSubItem("Map of Selected Data","MapSelected"),
              menuSubItem("Date Range & Outliers","DateRange")),
-    menuItem("Model Fitting", tabName = "modeling", icon = icon("fa fa-cog"))
+    menuItem("Model Fitting", icon = icon("fa fa-cog"),
+             menuSubItem("Model Specification","modeling"),
+             menuSubItem("Marginal Effects","marginal"))
   )
   
 )###end side bar
@@ -123,7 +125,8 @@ body <- dashboardBody(
                          selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=c("Generalized Additive Model")),
                          actionButton("FitModel","Update Model")
                   ),
-                  column(width=10,
+                  column(width=4,
+                         uiOutput("FactorTerms"),
                          uiOutput("LinearTerms"),
                          uiOutput("SplineTerms"),
                          uiOutput("SplineTermsCyclic")
@@ -162,7 +165,21 @@ body <- dashboardBody(
                            )
                          )
                 )
-            )###end current tab
+            ),###end current tab
+    tabItem(tabName = "marginal",
+            box(title="Marginal Model Effects",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                   tabPanel(title="Marginal Effects",value="marginal",
+                            fluidRow(
+                              column(width=2,
+                                     uiOutput("MarginalEffect")
+                              ),
+                              column(width=10,
+                                    plotOutput("MarginalPlot")
+                              )
+                            )
+                   )
+            )
+    )###end current tab
     
     
     
