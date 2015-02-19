@@ -12,6 +12,7 @@ sidebar <- dashboardSidebar(
              menuSubItem("Date Range & Outliers","DateRange")),
     menuItem("Model Fitting", icon = icon("fa fa-cog"),
              menuSubItem("Model Specification","modeling"),
+             menuSubItem("Partial Effects","partial"),
              menuSubItem("Marginal Effects","marginal"))
   )
   
@@ -166,6 +167,25 @@ body <- dashboardBody(
                          )
                 )
             ),###end current tab
+    tabItem(tabName = "partial",
+            box(title="Partial Effects",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                tabPanel(title="Partial Effects",value="marginal",
+                         fluidRow(
+                           column(width=2,
+                                  uiOutput("PartialEffect"),
+                                  uiOutput("NusianceEffect"),
+                                  uiOutput("NusianceLevels"),
+                                  checkboxGroupInput("PartialSeries","Select Layers",
+                                                     c("Fitted","Observed"),
+                                                     selected=c("Fitted","Observed"))
+                           ),
+                           column(width=10,
+                                  plotOutput("PartialPlot")
+                           )
+                         )
+                )
+            )
+    ),###end current tab
     tabItem(tabName = "marginal",
             box(title="Marginal Model Effects",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                    tabPanel(title="Marginal Effects",value="marginal",
@@ -180,6 +200,7 @@ body <- dashboardBody(
                    )
             )
     )###end current tab
+
     
     
     
