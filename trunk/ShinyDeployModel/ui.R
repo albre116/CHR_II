@@ -13,7 +13,10 @@ sidebar <- dashboardSidebar(
     menuItem("Model Fitting", icon = icon("fa fa-cog"),
              menuSubItem("Model Specification","modeling"),
              menuSubItem("Partial Effects","partial"),
-             menuSubItem("Marginal Effects","marginal"))
+             menuSubItem("Marginal Effects","marginal")),
+    menuItem("Model Predictions", icon = icon("fa fa-cog"),
+             menuSubItem("Predictions","prediction"),
+             menuSubItem("Volume Inegrated","volumeIntegrated"))
   )
   
 )###end side bar
@@ -169,7 +172,6 @@ body <- dashboardBody(
             ),###end current tab
     tabItem(tabName = "partial",
             box(title="Partial Effects",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
-                tabPanel(title="Partial Effects",value="marginal",
                          fluidRow(
                            column(width=2,
                                   uiOutput("PartialEffect"),
@@ -182,13 +184,11 @@ body <- dashboardBody(
                            column(width=10,
                                   plotOutput("PartialPlot")
                            )
-                         )
+                           )
                 )
-            )
     ),###end current tab
     tabItem(tabName = "marginal",
             box(title="Marginal Model Effects",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
-                   tabPanel(title="Marginal Effects",value="marginal",
                             fluidRow(
                               column(width=2,
                                      uiOutput("MarginalEffect")
@@ -196,14 +196,56 @@ body <- dashboardBody(
                               column(width=10,
                                     plotOutput("MarginalPlot")
                               )
+                              )
+                )
+    ),###end current tab
+    tabItem(tabName = "prediction",
+            tabBox(title="Model Predictions",width=NULL,id="predicitonPlot",
+                   tabPanel(title="Prediction Plot",value="predictionPlot",
+                            fluidRow(
+                              column(width=2,
+                                     uiOutput("DateRange"),
+                                     uiOutput("PredictionLevels")
+                                     ),
+                              column(width=10,
+                                     dygraphOutput("PredictionPlotInteractive")
+                                     )
+                              )
+                            ),
+                   tabPanel(title="Table of Predictions",value="predictionTable",
+                            fluidRow(
+                              column(width=12,
+                                     dataTableOutput("PredicitonTable")
+                              )
                             )
-                   )
+                            )
+                   ),
+            box(title="Full Data Plot",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                fluidRow(
+                  column(width=2,
+                         checkboxGroupInput("PredictionPartial","Select Layers",
+                                            c("Fitted","Observed","Predicted"),
+                                            selected=c("Fitted","Observed","Predicted"))
+                  ),
+                  column(width=10,
+                         plotOutput("PredictionFullPlot")
+                  )
+                )
+            )
+            
+            ),###end current tab
+    tabItem(tabName = "volumeIntegrated",
+            box(title="Volume Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                fluidRow(
+                  column(width=2,
+                         h2(NULL)
+                  ),
+                  column(width=10,
+                         h2("figure out next")
+                  )
+                )
             )
     )###end current tab
-
-    
-    
-    
   )###end tab items
 )###end body
 

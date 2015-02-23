@@ -876,6 +876,156 @@ shinyServer(function(input, output, session) {
       
       
       
+      ###########################################################
+      #######Model Predictions
+      ###########################################################
+      output$DateRange <- renderUI({
+        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        start_date <-max(data$EntryDate)
+        yr <- format(start_date,format="%Y")
+        mo <- format(start_date,format="%m")
+        day <- format(start_date,format="%d")
+        yr <- as.numeric(yr)+1
+        end_date <- as.Date(format(paste(yr,mo,day,sep="-"),
+                                   format="%y-%m-%d"))
+        dateRangeInput("DateRange","Select Prediction Date Range ",
+                       start=start_date,
+                       min=start_date,
+                       end=end_date
+                       )
+      })
+      
+      
+      output$PredictionLevels = renderUI({
+        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        fit <- MODELFIT()
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms
+        myUIs <- lapply(1:length(terms), function(i) {
+          inputname <- paste("PredictorTerms_", terms[i], sep="")
+          selectInput(inputname, 
+                      paste0("Set ",terms[i]," at:"),
+                      unique(data[,terms[i]]),
+                      unique(data[,terms[i]])[1])
+        })
+        do.call(tagList, myUIs)
+      })
+      
+      
+      
+      PREDICTIONDATA <- reactive({
+        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        fit <- MODELFIT()
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        PredTerms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms
+        DateTerms <- terms[(terms %in% c("NumericDate","Day365"))]###get rid of date terms
+        if(is.null(terms)){return(NULL)}
+        if(is.null(input$DateRange)){return(NULL)}
+        date_window <- input$DateRange
+        predDays <- difftime(date_window[2],date_window[1],units="days")
+        date_sequence <- date_window[1]+1:predDays
+        PredData <- data.frame(EntryDate=date_sequence)
+
+        ###construct prediction matrix terms
+        for(i in DateTerms){
+          if(i=="NumericDate"){
+            PredData <- cbind(PredData,NumericDate=as.numeric(date_sequence))
+          }
+          if(i=="Day365"){
+            PredData <- cbind(PredData,Day365=as.numeric(format(date_sequence,format="%j")))
+          }
+        }
+        
+        for(i in PredTerms){
+          eval(parse(text=paste("value <- input$PredictorTerms_", i, sep="")))
+          class(value) <- class(data[,i])
+          eval(parse(text=paste0("PredData <- cbind(PredData,",i,"=value)")))
+        }
+        
+        y_hat <- predict(fit,newdata=PredData)
+        response <- as.character(formula(fit))[2]
+        eval(parse(text=paste0("prediction_data <- data.frame(",response,"=y_hat,PredData)")))
+        
+        
+        ###now we have to generate adjusted response data for this to work
+        ###since there are nusiance factors that need to be integrated out
+        ids <- length(PredTerms)
+        data2 <- data
+        
+        ####Run the partial predictions
+        y_hat <- predict(fit,newdata=data)
+        y <- data[,as.character(formula(fit))[2]]
+        residual <- y-y_hat
+        
+        ####fix the data at the constant integration value
+        if(ids>0){for(i in 1:ids){
+          var <- PredTerms[i]
+          eval(parse(text=paste0("value <- input$PredictorTerms_",var)))
+          class(value) <- class(data2[,var])
+          data2[,var] <- value
+        }}
+        
+        y_delta <- -(y_hat-predict(fit,newdata=data2))
+        y_partial <- y_hat+y_delta
+        y_residual <- y_partial+residual
+        
+        observed_data <- data.frame("y_partial"=y_partial,
+                          "y_residual"=y_residual,
+                          "y_hat"=y_hat,
+                          "residual"=residual,
+                          data)
+        
+        out <- list(prediction_data=prediction_data,observed_data=observed_data)
+        return(out)
+      })
+      
+      
+      output$PredictionPlotInteractive <- renderDygraph({
+        preds <- PREDICTIONDATA()[["prediction_data"]]
+        data <- PREDICTIONDATA()[["observed_data"]]
+        if(is.null(preds)){return(NULL)}
+        fit <- MODELFIT()
+        response <- as.character(formula(fit))[2]
+        idx_date_data <- colnames(data) %in% c("EntryDate")
+        idx_date_preds <- colnames(preds) %in% c("EntryDate")
+        preds <- xts(preds[,c(response),drop=F],preds[,idx_date_preds])
+        data <- xts(data[,c("y_partial"),drop=F],data[,idx_date_data])
+        series <- cbind(data,preds)
+        dygraph(series,"Adjusted RPM given Covariate Levels") %>%
+          dySeries("y_partial",label="Adjusted Historical") %>%
+          dySeries(response,label="Predicted") %>%
+          dyAxis("y",label="Normalized Rate Per Mile ($)")
+      })
+      
+      
+      
+      output$PredicitonTable <- renderDataTable({
+        PREDICTIONDATA()[["prediction_data"]]
+      })
+      
+      output$PredictionFullPlot <- renderPlot({
+        dat <- PREDICTIONDATA()[["observed_data"]]
+        preds <- PREDICTIONDATA()[["prediction_data"]]
+        if(is.null(dat)){return(NULL)}
+        if(is.null(input$PredictionPartial)){return(NULL)}
+        selected <- input$PredictionPartial
+        var <- "EntryDate"
+        fit <- MODELFIT()
+        wkdata <- data.frame()
+        wkdata1 <- data.frame(y=dat[,"y_partial"],x=dat[,var],group="Partial Prediction")
+        wkdata2 <- data.frame(y=dat[,"y_residual"],x=dat[,var],group="Adjusted Observation")
+        wkdata3 <- data.frame(y=preds[,as.character(formula(fit))[2]],x=preds[,var],group="Predicted")
+        if("Fitted" %in% selected){wkdata <- bind_rows(wkdata,wkdata1)}
+        if("Observed" %in% selected){wkdata <- bind_rows(wkdata,wkdata2)}
+        if("Predicted" %in% selected){wkdata <- bind_rows(wkdata,wkdata3)}
+        p <- ggplot(wkdata,aes(y=y,x=x,color=group))
+        p <- p+geom_point()+xlab(var)+ylab(paste("Partial",as.character(formula(fit))[2]))
+        print(p)
+      })
+      
+      
 
   
 })###end server here
