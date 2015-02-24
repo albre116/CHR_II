@@ -220,7 +220,7 @@ body <- dashboardBody(
                             )
                             )
                    ),
-            box(title="Full Data Plot",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+            box(title="Model Fit To Raw Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=2,
                          checkboxGroupInput("PredictionPartial","Select Layers",

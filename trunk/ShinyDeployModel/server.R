@@ -971,32 +971,47 @@ shinyServer(function(input, output, session) {
         y_partial <- y_hat+y_delta
         y_residual <- y_partial+residual
         
-        observed_data <- data.frame("y_partial"=y_partial,
-                          "y_residual"=y_residual,
-                          "y_hat"=y_hat,
-                          "residual"=residual,
+        observed_data <- data.frame("y_partial"=as.numeric(y_partial),
+                          "y_residual"=as.numeric(y_residual),
+                          "y_hat"=as.numeric(y_hat),
+                          "residual"=as.numeric(residual),
                           data)
+        observed_summary <- observed_data %>% 
+          group_by(EntryDate) %>%
+          summarise(RPM_daily = mean(y_residual,na.rm=T),
+                    Prediction = mean(y_partial,na.rm=T))
+        observed_summary <- as.data.frame(observed_summary)
+        event <- prediction_data$EntryDate[1]-0.5
+        out <- list(prediction_data=prediction_data,
+                    observed_data=observed_data,
+                    event=event,
+                    observed_summary=observed_summary)
         
-        out <- list(prediction_data=prediction_data,observed_data=observed_data)
         return(out)
       })
       
       
       output$PredictionPlotInteractive <- renderDygraph({
         preds <- PREDICTIONDATA()[["prediction_data"]]
-        data <- PREDICTIONDATA()[["observed_data"]]
-        if(is.null(preds)){return(NULL)}
+        data <- PREDICTIONDATA()[["observed_summary"]]
+        event <- PREDICTIONDATA()[["event"]]
         fit <- MODELFIT()
+        if(is.null(preds)){return(NULL)}
         response <- as.character(formula(fit))[2]
         idx_date_data <- colnames(data) %in% c("EntryDate")
         idx_date_preds <- colnames(preds) %in% c("EntryDate")
         preds <- xts(preds[,c(response),drop=F],preds[,idx_date_preds])
-        data <- xts(data[,c("y_partial"),drop=F],data[,idx_date_data])
+        data <- xts(data[,c("RPM_daily","Prediction"),drop=F],data[,idx_date_data])
         series <- cbind(data,preds)
-        dygraph(series,"Adjusted RPM given Covariate Levels") %>%
-          dySeries("y_partial",label="Adjusted Historical") %>%
-          dySeries(response,label="Predicted") %>%
-          dyAxis("y",label="Normalized Rate Per Mile ($)")
+        
+        dygraph(series,"Observed & Predicted RPM (Adjusted for Factors)") %>%
+          dySeries("RPM_daily",label="Daily RPM") %>%
+          dySeries("Prediction",label="Model Fit") %>%
+          dySeries(response,label="Predicted RPM") %>%
+          dyAxis("y",label="Normalized Rate Per Mile ($)") %>%
+          dyRoller(rollPeriod = 1) %>%
+          dyEvent(date = event, "Model Fit To Observed Data/Predicted", labelLoc = "bottom") %>%
+          dyRangeSelector()
       })
       
       
@@ -1014,14 +1029,14 @@ shinyServer(function(input, output, session) {
         var <- "EntryDate"
         fit <- MODELFIT()
         wkdata <- data.frame()
-        wkdata1 <- data.frame(y=dat[,"y_partial"],x=dat[,var],group="Partial Prediction")
+        wkdata1 <- data.frame(y=dat[,"y_partial"],x=dat[,var],group="Model Fit")
         wkdata2 <- data.frame(y=dat[,"y_residual"],x=dat[,var],group="Adjusted Observation")
         wkdata3 <- data.frame(y=preds[,as.character(formula(fit))[2]],x=preds[,var],group="Predicted")
         if("Fitted" %in% selected){wkdata <- bind_rows(wkdata,wkdata1)}
         if("Observed" %in% selected){wkdata <- bind_rows(wkdata,wkdata2)}
         if("Predicted" %in% selected){wkdata <- bind_rows(wkdata,wkdata3)}
         p <- ggplot(wkdata,aes(y=y,x=x,color=group))
-        p <- p+geom_point()+xlab(var)+ylab(paste("Partial",as.character(formula(fit))[2]))
+        p <- p+geom_point()+xlab(var)+ylab(paste(as.character(formula(fit))[2]))
         print(p)
       })
       
