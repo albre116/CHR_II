@@ -91,7 +91,7 @@ body <- dashboardBody(
             box(title="Select Date Range For Analysis By Dragging on Screen",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=2,
-                         sliderInput("lowerTau","Lower Percentile",min=0,max=1,value=0.10),
+                         sliderInput("lowerTau","Lower Percentile",min=0,max=1,value=0.05),
                          sliderInput("centralTau","Center Percentile",min=0,max=1,value=0.5),
                          sliderInput("upperTau","Upper Percentile",min=0,max=1,value=0.95),
                          numericInput("dfspline","Spline df",value=20,min=1,max=50,step=1),
@@ -108,7 +108,7 @@ body <- dashboardBody(
                          h3(textOutput("RemoveCustomerCarrierHover")),
                          uiOutput("UpperLower"),
                          actionButton("applyUpperLower","Apply Rate Per Mile Filter",icon=icon("fa fa-refresh")),
-                         checkboxGroupInput("QuantileFilter","Apply Quantile Filter",c("Lower Quantile","Upper Quantile")),
+                         checkboxGroupInput("QuantileFilter","Apply Quantile Filter",c("Lower Quantile","Upper Quantile"),c("Lower Quantile","Upper Quantile")),
                          checkboxGroupInput("TypeRemoval","Point Click Removal Method",c("Customer Carrier","Individual Load"),selected = c("Customer Carrier")),
                          uiOutput("RemoveCustomerCarrier"),
                          uiOutput("RemoveIndividual"),
