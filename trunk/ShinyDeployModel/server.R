@@ -815,10 +815,11 @@ shinyServer(function(input, output, session) {
         if(is.null(input$NusianceEffect)){return(NULL)}
         myUIs <- lapply(1:length(input$NusianceEffect), function(i) {
           inputname <- paste("NusianceLevels", i, sep="")
+          levs <- data[,input$NusianceEffect[i]]
+          levs <- unique(levs[order(levs)])
           selectInput(inputname, 
                       paste0("Fix ",input$NusianceEffect[i]," at:"),
-                      unique(data[,input$NusianceEffect[i]]),
-                      unique(data[,input$NusianceEffect[i]])[1])
+                      levs,levs[1])
         })
         do.call(tagList, myUIs)
       })
@@ -904,10 +905,12 @@ shinyServer(function(input, output, session) {
         terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms
         myUIs <- lapply(1:length(terms), function(i) {
           inputname <- paste("PredictorTerms_", terms[i], sep="")
+          levs <- data[,terms[i]]
+          levs <- unique(levs[order(levs)])
+          
           selectInput(inputname, 
                       paste0("Set ",terms[i]," at:"),
-                      unique(data[,terms[i]]),
-                      unique(data[,terms[i]])[1])
+                      levs,levs[1])
         })
         do.call(tagList, myUIs)
       })
@@ -1010,7 +1013,7 @@ shinyServer(function(input, output, session) {
           dySeries(response,label="Predicted RPM") %>%
           dyAxis("y",label="Normalized Rate Per Mile ($)") %>%
           dyRoller(rollPeriod = 1) %>%
-          dyEvent(date = event, "Model Fit To Observed Data/Predicted", labelLoc = "bottom") %>%
+          dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom") %>%
           dyRangeSelector()
       })
       
@@ -1039,6 +1042,72 @@ shinyServer(function(input, output, session) {
         p <- p+geom_point()+xlab(var)+ylab(paste(as.character(formula(fit))[2]))
         print(p)
       })
+      
+      
+      ###########################################################
+      #######Volume Integrated Quote
+      ###########################################################
+      
+      
+      
+      TransactionalVolume <- reactive({
+        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        date_window <- input$DateRange
+        predDays <- difftime(date_window[2],date_window[1],units="days")
+        date_sequence <- date_window[1]+1:predDays
+        PredData <- data.frame(EntryDate=date_sequence)
+        volume <- data %>% 
+          group_by(EntryDate) %>%
+          summarise(TransVolume= n())
+        volume <- as.data.frame(volume)
+        interval <- difftime(max(volume$EntryDate),min(volume$EntryDate),units = "days")
+        dateseq <- min(volume$EntryDate)+1:interval
+        JoinDat <- data.frame(EntryDate =dateseq)
+        volume <- JoinDat %>% left_join(volume)
+        volume <- as.data.frame(volume)
+        volume$TransVolume[is.na(volume$TransVolume)] <- 0
+        volume <- xts(volume[,"TransVolume",drop=F],volume$EntryDate)
+        yr <- as.numeric(format(min(dateseq),format="%Y"))
+        day <- as.numeric(format(min(dateseq),format="%j"))
+        volume_ts <- ts(volume,frequency=365)
+        fit <- ets(volume)
+        pred_volume <- forecast(fit,h=as.numeric(predDays))
+        pred_volume <- data.frame(TransFcst=pred_volume$mean)
+        pred_volume <- xts(pred_volume,date_sequence)
+        return(list(volume=volume,pred_volume=pred_volume))
+      })
+      
+      
+      output$VolumeIntegrated <- renderDygraph({
+        preds <- PREDICTIONDATA()[["prediction_data"]]
+        data <- PREDICTIONDATA()[["observed_summary"]]
+        event <- PREDICTIONDATA()[["event"]]
+        volume <- TransactionalVolume()[["volume"]]
+        pred_volume <- TransactionalVolume()[["pred_volume"]]
+        fit <- MODELFIT()
+        if(is.null(preds)){return(NULL)}
+        response <- as.character(formula(fit))[2]
+        idx_date_data <- colnames(data) %in% c("EntryDate")
+        idx_date_preds <- colnames(preds) %in% c("EntryDate")
+        preds <- xts(preds[,c(response),drop=F],preds[,idx_date_preds])
+        data <- xts(data[,c("RPM_daily"),drop=F],data[,idx_date_data])
+        series <- cbind(data,preds,volume,pred_volume)
+        
+        dygraph(series,"Volume Integrated Quote") %>%
+          dySeries("RPM_daily",label="Daily RPM") %>%
+          dySeries("TransVolume",label="Transactional Volume",
+                   axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%
+          dySeries("TransFcst",label="Transactional Volume FCST",
+                   axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%
+          dySeries(response,label="Predicted RPM") %>%
+          dyAxis("y",label="Normalized Rate Per Mile ($)",c(0, max(max(data),max(preds)))) %>%
+          dyAxis("y2", label = "Transacitonal Volume", 
+                 independentTicks = TRUE, valueRange = c(0, max(volume)*1.5)) %>%
+          dyRoller(rollPeriod = 1) %>%
+          dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
+      })
+
+
       
       
 

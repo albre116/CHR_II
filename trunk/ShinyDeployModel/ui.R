@@ -237,11 +237,8 @@ body <- dashboardBody(
     tabItem(tabName = "volumeIntegrated",
             box(title="Volume Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
-                  column(width=2,
-                         h2(NULL)
-                  ),
-                  column(width=10,
-                         h2("figure out next")
+                  column(width=12,
+                        dygraphOutput("VolumeIntegrated")
                   )
                 )
             )
