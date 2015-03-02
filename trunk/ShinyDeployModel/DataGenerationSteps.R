@@ -1,3 +1,6 @@
+RAW$CustomerCarrier <- paste0(RAW$CustomerCCode,RAW$CarrierTCode)
+
+
 
 ###Reprocess the data
 source("global.R")
@@ -85,6 +88,8 @@ dygraph(plot_dat,main=paste(paste(paste0(params*100,"th"),collapse=" "),"Percent
   dyRangeSelector()
   
 
+
+RAW
 
 
 
