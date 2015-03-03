@@ -1089,6 +1089,8 @@ shinyServer(function(input, output, session) {
         volume <- TransactionalVolume()[["volume"]]
         dyPencilgraph(pred_volume,"Draw Your Desired Volume Curve") %>%
         dyAxis("y",valueRange=c(min(volume),max(volume))) %>%  
+        dySeries("TransFcst",label="Transactional Volume FCST",
+                   stepPlot = TRUE, fillGraph = TRUE) %>%
         dyRangeSelector() 
       })
       
