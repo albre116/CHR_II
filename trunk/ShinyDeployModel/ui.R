@@ -16,7 +16,7 @@ sidebar <- dashboardSidebar(
              menuSubItem("Marginal Effects","marginal")),
     menuItem("Model Predictions", icon = icon("fa fa-cog"),
              menuSubItem("Predictions","prediction"),
-             menuSubItem("Volume Inegrated","volumeIntegrated"))
+             menuSubItem("Volume Integrated","volumeIntegrated"))
   )
   
 )###end side bar
