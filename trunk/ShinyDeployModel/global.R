@@ -80,6 +80,11 @@ if(!require('DataPull')) {
   devtools::install_github(c("albre116/CHR_II/trunk/DataPull"),auth_token="ffcaf9fb4036981ec6022f13d2a1d05df97a5ff3")
 }
 
+###custom and local packages
+if(!require('dyPencilgraphs')) {
+  devtools::install_github(c("albre116/DygraphsPencil"))
+}
+
 
 ####Generate the data if it doesn't exist
 
