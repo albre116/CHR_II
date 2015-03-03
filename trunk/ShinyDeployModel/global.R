@@ -62,6 +62,8 @@ if(!require("maptools"))
   install.packages("maptools")
 if(!require("ggplot2"))
   install.packages("ggplot2")
+if(!require("zoo"))
+  install.packages("zoo")
 if(!require("shinydashboard"))
   devtools::install_github("rstudio/shinydashboard")
 if(!require("bubbles"))
@@ -140,6 +142,27 @@ modelCPDS <- function(f,       #pass in the model formula
   ###return the model image
   return(fit)
 }
+
+
+
+####simple fourier transformation for seasonal decomposition
+fourier <- function(t,terms,period)
+{
+  n <- length(t)
+  X <- matrix(,nrow=n,ncol=2*terms)
+  for(i in 1:terms)
+  {
+    X[,2*i-1] <- sin(2*pi*i*t/period)
+    X[,2*i] <- cos(2*pi*i*t/period)
+  }
+  colnames(X) <- paste(c("S","C"),rep(1:terms,rep(2,terms)),sep="")
+  return(X)
+}
+
+
+
+
+
 
 
 

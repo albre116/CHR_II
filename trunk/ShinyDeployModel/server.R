@@ -1069,13 +1069,43 @@ shinyServer(function(input, output, session) {
         volume <- xts(volume[,"TransVolume",drop=F],volume$EntryDate)
         yr <- as.numeric(format(min(dateseq),format="%Y"))
         day <- as.numeric(format(min(dateseq),format="%j"))
-        volume_ts <- ts(volume,frequency=365)
-        fit <- ets(volume)
-        pred_volume <- forecast(fit,h=as.numeric(predDays))
+        n <- length(volume)
+        m <- 365 ###cyclic period for the volume
+        components <- 6
+        volume_ts  <- ts(coredata(volume), f=m)
+        fit <- Arima(volume_ts, order=c(2,0,1), xreg=fourier(1:n,components,m))
+        #fit <- auto.arima(volume_ts, seasonal=FALSE, xreg=fourier(1:n,components,m))
+        #plot(forecast(fit, h=2*m, xreg=fourier(n+1:(2*m),4,m)))
+        len <- as.numeric(predDays)
+        pred_volume <- forecast(fit,h=len,xreg=fourier(n+1:len,components,len))
         pred_volume <- data.frame(TransFcst=pred_volume$mean)
         pred_volume <- xts(pred_volume,date_sequence)
         return(list(volume=volume,pred_volume=pred_volume))
       })
+      
+      
+      output$VolumeDraw <- renderdyPencilgraph({
+        pred_volume <- TransactionalVolume()[["pred_volume"]]
+        volume <- TransactionalVolume()[["volume"]]
+        dyPencilgraph(pred_volume,"Draw Your Desired Volume Curve") %>%
+        dyAxis("y",valueRange=c(min(volume),max(volume))) %>%  
+        dyRangeSelector() 
+      })
+      
+      
+      PASSVOLUME <- reactive({
+        pred_volume <- TransactionalVolume()[["pred_volume"]]
+        if(input$DrawUpdate==0){
+          return(list(pred_volume=pred_volume))
+        }
+        raw <- isolate(input$VolumeDraw_data_extract) 
+        dimension <- isolate(input$VolumeDraw_data_dimension_RowCol) 
+        out <- matrix(raw,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T) 
+        out <- as.data.frame(out) 
+        coredata(pred_volume) <- out[,2]
+        return(list(pred_volume=pred_volume))
+      })
+      
       
       
       output$VolumeIntegrated <- renderDygraph({
@@ -1083,7 +1113,7 @@ shinyServer(function(input, output, session) {
         data <- PREDICTIONDATA()[["observed_summary"]]
         event <- PREDICTIONDATA()[["event"]]
         volume <- TransactionalVolume()[["volume"]]
-        pred_volume <- TransactionalVolume()[["pred_volume"]]
+        pred_volume <- PASSVOLUME()[["pred_volume"]]
         fit <- MODELFIT()
         if(is.null(preds)){return(NULL)}
         response <- as.character(formula(fit))[2]
@@ -1091,9 +1121,10 @@ shinyServer(function(input, output, session) {
         idx_date_preds <- colnames(preds) %in% c("EntryDate")
         preds <- xts(preds[,c(response),drop=F],preds[,idx_date_preds])
         data <- xts(data[,c("RPM_daily"),drop=F],data[,idx_date_data])
+        vol_int_rate <- weighted.mean(coredata(preds),coredata(pred_volume))
+        vol_int_rate <- round(vol_int_rate,2)
         series <- cbind(data,preds,volume,pred_volume)
-        
-        dygraph(series,"Volume Integrated Quote") %>%
+        dygraph(series,paste0("Volume Integrated Quote: $",vol_int_rate," Per Mile")) %>%
           dySeries("RPM_daily",label="Daily RPM") %>%
           dySeries("TransVolume",label="Transactional Volume",
                    axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%
@@ -1106,6 +1137,11 @@ shinyServer(function(input, output, session) {
           dyRoller(rollPeriod = 1) %>%
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
       })
+      
+      
+      
+      
+      
 
 
       

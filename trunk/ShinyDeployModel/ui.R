@@ -241,6 +241,16 @@ body <- dashboardBody(
                         dygraphOutput("VolumeIntegrated")
                   )
                 )
+            ),
+            box(title="Draw Desired Volume",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                fluidRow(
+                  column(width=2,
+                         actionButton("DrawUpdate","Update Curve for Prediction")
+                         ),
+                  column(width=10,
+                         dyPencilgraphOutput("VolumeDraw")
+                  )
+                )
             )
     )###end current tab
   )###end tab items
