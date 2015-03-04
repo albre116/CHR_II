@@ -15,7 +15,7 @@ modelCPDS <- function(f,       #pass in the model formula
 ){
   ###put all of the model functions here in the switch statement
   fit <- switch(kernel,
-                "Generalized Additive Model"=bam(f,data=data,gamma=gamma)
+                "Generalized Additive Model"=mgcv::bam(f,data=data,gamma=gamma)
   )
   
   ###return the model image
@@ -760,7 +760,7 @@ shinyServer(function(input, output, session) {
       output$ModelPlot <- renderPlot({
         fit <- MODELFIT()
         if(is.null(fit)){return(NULL)}
-        return(plot(fit,pages=1,shade=TRUE,residuals=F,all.terms=T))
+        return(plot.gam(fit,pages=1,shade=TRUE,residuals=F,all.terms=T))
       })
       
       output$ModelDiagnostics <- renderPlot({
