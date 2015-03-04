@@ -745,7 +745,6 @@ shinyServer(function(input, output, session) {
           eval(parse(text=paste0("f_add=.~.+s(",t,",bs=\"cc\")")))
           f <- do.call("update",list(f,f_add))
         }
-        
         fit <- modelCPDS(f=f,data=data,kernel=isolate(input$ModelFamily),gamma=1.4)
         return(fit)
       })
@@ -760,7 +759,8 @@ shinyServer(function(input, output, session) {
       output$ModelPlot <- renderPlot({
         fit <- MODELFIT()
         if(is.null(fit)){return(NULL)}
-        return(plot.gam(fit,pages=1,shade=TRUE,residuals=F,all.terms=T))
+        out <- plot(fit)
+        return(out)
       })
       
       output$ModelDiagnostics <- renderPlot({
