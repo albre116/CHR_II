@@ -1,44 +1,3 @@
-###########################################################################
-###########################################################################
-########## Modeling Kernel Functions
-########## Will be moved to its own package
-########## With Documentation
-###########################################################################
-###########################################################################
-
-
-modelCPDS <- function(f,       #pass in the model formula
-                      data,          #data to be fit
-                      kernel="GAM",  #type of modeling kernel
-                      gamma=1.4,
-                      ...            #additional parameters to the model
-){
-  ###put all of the model functions here in the switch statement
-  fit <- switch(kernel,
-                "Generalized Additive Model"=mgcv::bam(f,data=data,gamma=gamma)
-  )
-  
-  ###return the model image
-  return(fit)
-}
-
-
-
-####simple fourier transformation for seasonal decomposition
-fourier <- function(t,terms,period)
-{
-  n <- length(t)
-  X <- matrix(,nrow=n,ncol=2*terms)
-  for(i in 1:terms)
-  {
-    X[,2*i-1] <- sin(2*pi*i*t/period)
-    X[,2*i] <- cos(2*pi*i*t/period)
-  }
-  colnames(X) <- paste(c("S","C"),rep(1:terms,rep(2,terms)),sep="")
-  return(X)
-}
-
-
 
 
 flag <<-0
@@ -756,11 +715,10 @@ shinyServer(function(input, output, session) {
         }
       })
       
-      output$ModelPlot <- renderPlot({
+      output$ModelPlot <- renderPlot(function(){
         fit <- MODELFIT()
         if(is.null(fit)){return(NULL)}
-        out <- plot(fit)
-        return(out)
+        plot(fit,pages=1,all.terms=FALSE)
       })
       
       output$ModelDiagnostics <- renderPlot({
@@ -988,10 +946,13 @@ shinyServer(function(input, output, session) {
           class(value) <- class(data[,i])
           eval(parse(text=paste0("PredData <- cbind(PredData,",i,"=value)")))
         }
-        
-        y_hat <- predict(fit,newdata=PredData)
+        preds <- predict(fit,newdata=PredData,se.fit=T)
+        y_hat <- preds$fit
+        y_se <- sqrt(preds$se.fit^2+fit$sig2)
+        LCL <- y_hat+qnorm(input$ConfLimits[1])*y_se
+        UCL <- y_hat+qnorm(input$ConfLimits[2])*y_se
         response <- as.character(formula(fit))[2]
-        eval(parse(text=paste0("prediction_data <- data.frame(",response,"=y_hat,PredData)")))
+        eval(parse(text=paste0("prediction_data <- data.frame(",response,"=y_hat,LCL=LCL,UCL=UCL,PredData)")))
         
         
         ###now we have to generate adjusted response data for this to work
@@ -1045,14 +1006,13 @@ shinyServer(function(input, output, session) {
         response <- as.character(formula(fit))[2]
         idx_date_data <- colnames(data) %in% c("EntryDate")
         idx_date_preds <- colnames(preds) %in% c("EntryDate")
-        preds <- xts(preds[,c(response),drop=F],preds[,idx_date_preds])
+        preds <- xts(preds[,c(response,"LCL","UCL"),drop=F],preds[,idx_date_preds])
         data <- xts(data[,c("RPM_daily","Prediction"),drop=F],data[,idx_date_data])
         series <- cbind(data,preds)
-        
         dygraph(series,"Observed & Predicted RPM (Adjusted for Factors)") %>%
           dySeries("RPM_daily",label="Daily RPM") %>%
           dySeries("Prediction",label="Model Fit") %>%
-          dySeries(response,label="Predicted RPM") %>%
+          dySeries(c("LCL",response,"UCL"),label="Predicted RPM") %>%
           dyAxis("y",label="Normalized Rate Per Mile ($)") %>%
           dyRoller(rollPeriod = 1) %>%
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom") %>%
@@ -1168,6 +1128,7 @@ shinyServer(function(input, output, session) {
         vol_int_rate <- weighted.mean(coredata(preds),coredata(pred_volume))
         vol_int_rate <- round(vol_int_rate,2)
         series <- cbind(data,preds,volume,pred_volume)
+        series$RPM_daily[index(series)<index(preds)[1]] <- na.approx(series$RPM_daily[index(series)<index(preds)[1]])
         dygraph(series,paste0("Volume Integrated Quote: $",vol_int_rate," Per Mile")) %>%
           dySeries("RPM_daily",label="Daily RPM") %>%
           dySeries("TransVolume",label="Transactional Volume",

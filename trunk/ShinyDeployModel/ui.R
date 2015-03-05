@@ -205,6 +205,7 @@ body <- dashboardBody(
                             fluidRow(
                               column(width=2,
                                      uiOutput("DateRange"),
+                                     sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.05,0.95)),
                                      uiOutput("PredictionLevels")
                                      ),
                               column(width=10,

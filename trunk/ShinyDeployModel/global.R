@@ -120,6 +120,47 @@ state_labs <- states
 state_labs$names <- as.character(states_labels$abb)
 
 
+###########################################################################
+###########################################################################
+########## Modeling Kernel Functions
+########## Will be moved to its own package
+########## With Documentation
+###########################################################################
+###########################################################################
+
+
+modelCPDS <- function(f,       #pass in the model formula
+                      data,          #data to be fit
+                      kernel="GAM",  #type of modeling kernel
+                      gamma=1.4,
+                      ...            #additional parameters to the model
+){
+  ###put all of the model functions here in the switch statement
+  fit <- switch(kernel,
+                "Generalized Additive Model"=mgcv::bam(f,data=data,gamma=gamma)
+  )
+  
+  ###return the model image
+  return(fit)
+}
+
+
+
+####simple fourier transformation for seasonal decomposition
+fourier <- function(t,terms,period)
+{
+  n <- length(t)
+  X <- matrix(,nrow=n,ncol=2*terms)
+  for(i in 1:terms)
+  {
+    X[,2*i-1] <- sin(2*pi*i*t/period)
+    X[,2*i] <- cos(2*pi*i*t/period)
+  }
+  colnames(X) <- paste(c("S","C"),rep(1:terms,rep(2,terms)),sep="")
+  return(X)
+}
+
+
 
 
 
