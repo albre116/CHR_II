@@ -16,7 +16,9 @@ sidebar <- dashboardSidebar(
              menuSubItem("Marginal Effects","marginal")),
     menuItem("Model Predictions", icon = icon("fa fa-cog"),
              menuSubItem("Predictions","prediction"),
-             menuSubItem("Volume Integrated","volumeIntegrated"))
+             menuSubItem("Volume Integrated","volumeIntegrated"),
+             menuSubItem("Historical Integrated","HistoricalIntegrated")
+             )
   )
   
 )###end side bar
@@ -246,16 +248,26 @@ body <- dashboardBody(
             box(title="Draw Desired Volume",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=2,
-                         actionButton("DrawUpdate","Update Curve for Prediction")
+                         actionButton("DrawUpdate","Update Curve for Prediction"),
+                         uiOutput("fourierComp")
                          ),
                   column(width=10,
                          dyPencilgraphOutput("VolumeDraw")
                   )
                 )
             )
+    ),###end current tab
+    tabItem(tabName = "HistoricalIntegrated",
+            box(title="HIstorical Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                fluidRow(
+                  column(width=12,
+                         dygraphOutput("Historical")
+                  )
+                )
+            )
     )###end current tab
   )###end tab items
-)###end body
+)# ##end body
 
 
 
