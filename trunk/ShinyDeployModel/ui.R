@@ -267,8 +267,11 @@ body <- dashboardBody(
             ),
             box(title="Yearly Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
-                  column(width=12,
+                  column(width=6,
                          dygraphOutput("HistVolIntegrated")
+                  ),
+                  column(width=6,
+                         dataTableOutput("HistVolIntegratedTable")
                   )
                 )
             )

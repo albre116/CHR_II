@@ -1263,7 +1263,11 @@ shinyServer(function(input, output, session) {
       })
       
 
-      
+      output$HistVolIntegratedTable<- renderDataTable({
+        if(is.null(HistoricalData())){return(NULL)}
+        quote <- HistoricalData()[["quote"]]
+        return(quote)
+      })
 
 
       
