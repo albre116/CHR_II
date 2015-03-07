@@ -258,10 +258,17 @@ body <- dashboardBody(
             )
     ),###end current tab
     tabItem(tabName = "HistoricalIntegrated",
-            box(title="HIstorical Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+            box(title="HIstorical Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=12,
                          dygraphOutput("Historical")
+                  )
+                )
+            ),
+            box(title="Yearly Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                fluidRow(
+                  column(width=12,
+                         dygraphOutput("HistVolIntegrated")
                   )
                 )
             )

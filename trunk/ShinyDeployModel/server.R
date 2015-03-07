@@ -1186,26 +1186,45 @@ shinyServer(function(input, output, session) {
       day <- format(date,format="%d")
       data <- as.data.frame(coredata(series))
       idx <- !is.na(data$TransFcst)###get the forecast portion
-      dte_window <- c(min(date[idx]),max(date[idx]))
       fcst <- data$TransFcst[idx]
-      
       for(i in 1:length(date[!idx])){
         id <- day[idx]==day[i] & month[idx]==month[i]
         if(any(id)){data$TransFcst[i] <- fcst[id]}
       }
-
+      data$TransFcst[!idx] <- na.approx(data$TransFcst[!idx])
       rm <- colnames(data) %in% "TransVolume"
       data <- data[,!rm]
-      
-      
-      
-      
       series <- xts(data,date)
+      ###now get the date window to do a historical volume pass
+      ###loop over all of the past values
+      dte_window <- c(min(date[idx]),max(date[idx]))
+      loop <- as.numeric(format(dte_window[1],format="%Y"))-as.numeric(format(min(index(series)),format="%Y"))
+      quote <- data.frame()
+      for(i in 1:loop){
+        lower <- paste(as.numeric(format(dte_window[1],format="%Y"))-i,format(dte_window[1],format="%m-%d"),sep="-")
+        upper <- paste(as.numeric(format(dte_window[2],format="%Y"))-i,format(dte_window[2],format="%m-%d"),sep="-")
+        tmp <- series[paste(lower,upper,sep="::")]
+        if(i==loop & (min(index(tmp))>as.Date(lower))){break}###dont add value if not complete cycle
+        quote <- rbind(quote,data.frame(
+                            "StartDate"=as.Date(lower),
+                            "EndDate"=as.Date(upper),
+                            "MidPoint"=as.Date(lower)+difftime(as.Date(upper),as.Date(lower))/2,
+                            "WeightedRPM"=weighted.mean(tmp$RPM_daily,tmp$TransFcst,na.rm = T)))
+      }
+      
+
+      ###add on the predicted quote
+      quote <- rbind(data.frame(
+        "StartDate"=dte_window[1],
+        "EndDate"=dte_window[2],
+        "MidPoint"=dte_window[1]+difftime(dte_window[2],dte_window[1])/2,
+        "WeightedRPM"=as.numeric(vol_int_rate[2])),quote)
       
       return(list(series=series,vol_int_rate=vol_int_rate,event=event,
                   response=response,data=data,preds=preds,volume=volume,
-                  name=name))
+                  name=name,quote=quote))
       })
+      
       
       output$Historical <- renderDygraph({
         if(is.null(HistoricalData())){return(NULL)}
@@ -1217,7 +1236,7 @@ shinyServer(function(input, output, session) {
         volume <- HistoricalData()[["volume"]]
         event <- HistoricalData()[["event"]]
         name <- HistoricalData()[["name"]]
-        dygraph(series,"Historical RPM & Volume Pattern (Not Complete)") %>%
+        dygraph(series,"Historical RPM & Volume Pattern") %>%
           dySeries("RPM_daily",label="Daily RPM") %>%
           dySeries("TransFcst",label="Repeated Volume FCST",
                    axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%
@@ -1230,6 +1249,18 @@ shinyServer(function(input, output, session) {
       })
       
       
+      
+      output$HistVolIntegrated<- renderDygraph({
+        if(is.null(HistoricalData())){return(NULL)}
+        quote <- HistoricalData()[["quote"]]
+        event <- HistoricalData()[["event"]]
+        quote <- xts(quote[,"WeightedRPM",drop=F],quote$MidPoint)
+        dygraph(quote,"Historical RPM") %>%
+          dySeries("WeightedRPM",label="Volume Weighted RPM") %>%
+          dyAxis("y",label="Normalized Rate Per Mile ($)") %>%
+          dyOptions(drawPoints = TRUE, pointSize = 5) %>%
+          dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
+      })
       
 
       
