@@ -369,12 +369,16 @@ shinyServer(function(input, output, session) {
       ###########################################################
       #######Select the Appropriate Time Window
       ###########################################################
+      
+
+      
       PERCENTILES <- reactive({
         if(is.null(DATA())){return(NULL)}
         if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATA()[["SELECTED"]]
         input$applyDygraph
         isolate(df <- input$dfspline)
+        isolate(df_fixed <- input$LambdaFixed)
         isolate(tau_lower <- input$lowerTau)
         isolate(tau_center <- input$centralTau)
         isolate(tau_upper <- input$upperTau)
@@ -384,21 +388,20 @@ shinyServer(function(input, output, session) {
           filter(!is.infinite(RPM_NormalizedCustomer),
                  !is.na(RPM_NormalizedCustomer)) %>%
           arrange(EntryDate)
-        #X <- model.matrix(CLEAN$RPM_NormalizedCustomer ~ bs(CLEAN$EntryDate, df=df))
         quantiles <- data.frame()
         y=CLEAN$RPM_NormalizedCustomer
         x=as.numeric(CLEAN$EntryDate)
         params <- c(tau_lower,tau_center,tau_upper)
         for(tau in params){
-          #g <- function(lam,y,x,tau) AIC(rq(y ~ bs(x, df = lam),tau=tau),k = -1)
-          #lamstar <- optimize(g, interval = c(15, df), x = x, y = y, tau= tau)
-          #fit <- rq(y ~ bs(x, df = lamstar$min),tau=tau)
+          if(isolate(input$doEstimation==T)){
+            g <- function(lam,y,x,tau) AIC(rqss(y ~ qss(x, lambda = lam),tau=tau),k = -1)
+            lamstar <- optimize(g, interval = c(df[1], df[2]), x = x, y = y, tau= tau)
+            fit <- rqss(y ~ qss(x, lambda = lamstar$min),tau=tau)
+          }else{
+            fit <- rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
+          }
           
-          g <- function(lam,y,x,tau) AIC(rqss(y ~ qss(x, lambda = lam),tau=tau),k = -1)
-          lamstar <- optimize(g, interval = c(df[1], df[2]), x = x, y = y, tau= tau)
-          fit <- rqss(y ~ qss(x, lambda = lamstar$min),tau=tau)
-          
-          #quantile.fit <- X %*% fit$coef
+
           quantile.fit <- predict(fit,newdata=data.frame(y=y,x=x))
           quant <- data.frame(EntryDate=CLEAN$EntryDate,fit=quantile.fit,quantile=tau)
           quant <- quant %>%
@@ -408,7 +411,7 @@ shinyServer(function(input, output, session) {
             arrange(EntryDate)
           quantiles <- bind_rows(quantiles,quant)
         }
-        rm(fit,X)
+        rm(fit)
         quantiles <- as.data.frame(quantiles)
         EntryDate<- unique(quantiles$EntryDate)
         quantiles <- unstack(quantiles,fit~quantile,data=quantiles)
@@ -441,7 +444,7 @@ shinyServer(function(input, output, session) {
         low <- floor(low*100)/100
         high <- max(DATA$RPM_NormalizedCustomer,na.rm = TRUE)
         high <- ceiling(high*100)/100
-        sliderInput("UpperLower","Rate Per Mile Limits",min=low,max=high,value=c(0.5,high))
+        sliderInput("UpperLower","Rate Per Mile Limits",min=low,max=high,value=c(low,high))
       })
       
       

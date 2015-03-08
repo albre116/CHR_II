@@ -8,8 +8,10 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe"),
              badgeLabel = "Step 1",badgeColor = "red"),
-    menuItem("Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog"),
+    menuItem("Model & Volume", tabName = "VolumeEntry", icon = icon("fa fa-car"),
              badgeLabel = "Step 2",badgeColor = "red"),
+    menuItem("Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog"),
+             badgeLabel = "Step 3",badgeColor = "red"),
     menuItem("Advanced Options",icon = icon("fa fa-line-chart"),
              menuSubItem("Map of Selected Data","MapSelected"),
              menuSubItem("Date Range & Outliers","DateRange"),
@@ -75,6 +77,51 @@ body <- dashboardBody(
               )###end second column
             )###end fluid row
     ),
+    tabItem(tabName = "VolumeEntry",
+            fluidRow(
+              column(width=6,
+                     box(
+                       title="Prediction Model Parameters",width=NULL,status="primary",solidHeader = TRUE,
+                       fluidRow(
+                         column(width=6,
+                                selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=c("Generalized Additive Model")),
+                                actionButton("FitModel","Update Model"),
+                                uiOutput("DateRange"),
+                                sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.05,0.95)),
+                                uiOutput("PredictionLevels")
+                         ),
+                         column(width=6,
+                                uiOutput("FactorTerms"),
+                                uiOutput("LinearTerms"),
+                                uiOutput("SplineTerms"),
+                                uiOutput("SplineTermsCyclic")
+                         )
+                       )
+
+                     ),
+                     tabBox(title="Model Fit & Predictions",width=NULL,id="predicitonPlot",
+                            tabPanel(title="Prediction Plot",value="predictionPlot",
+                                     dygraphOutput("PredictionPlotInteractive")
+                                     ),
+                            tabPanel(title="Table of Predictions",value="predictionTable",
+                                     dataTableOutput("PredicitonTable")
+                                     )
+                     )
+              ),###end first column
+              column(width=6,
+                     box(
+                       title="Customer Volume Pattern",width=NULL,status="primary",solidHeader = TRUE,
+                       h2("stuff")
+
+                     ),
+                     box(
+                       title="Draw Desired Volume Profile",width=NULL,status="primary",solidHeader = TRUE,
+                       h2("stuff")
+
+                     )
+              )###end second column
+            )###end fluid row
+    ),
     
     tabItem(tabName = "MapSelected",
             box(title="Map of Selected Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
@@ -98,7 +145,9 @@ body <- dashboardBody(
                          sliderInput("lowerTau","Lower Percentile",min=0,max=1,value=0.05),
                          sliderInput("centralTau","Center Percentile",min=0,max=1,value=0.5),
                          sliderInput("upperTau","Upper Percentile",min=0,max=1,value=0.95),
+                         checkboxInput("doEstimation","Optimize Spline Fit",FALSE),
                          sliderInput("dfspline","Spline df Penalty Range",min=1,max=50,value=c(1,20)),
+                         sliderInput("LambdaFixed","Fixed df Penalty",min=1,max=50,value=c(10)),
                          actionButton("applyDygraph","Apply Date & Percentile Selections",icon=icon("fa fa-refresh"))
                   ),
                   column(width=10,
@@ -128,18 +177,7 @@ body <- dashboardBody(
     ),###end current tab
     tabItem(tabName = "modeling",
             box(title="Model Selection and Options",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
-                fluidRow(
-                  column(width=2,
-                         selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=c("Generalized Additive Model")),
-                         actionButton("FitModel","Update Model")
-                  ),
-                  column(width=4,
-                         uiOutput("FactorTerms"),
-                         uiOutput("LinearTerms"),
-                         uiOutput("SplineTerms"),
-                         uiOutput("SplineTermsCyclic")
-                  )
-                )
+                h2("stuff")
             ),
             tabBox(title="Model Fit Diagnostics",width=NULL,id="diagnostics",
                 tabPanel(title="Partial Effects",value="partial",
@@ -204,27 +242,6 @@ body <- dashboardBody(
                 )
     ),###end current tab
     tabItem(tabName = "prediction",
-            tabBox(title="Model Predictions",width=NULL,id="predicitonPlot",
-                   tabPanel(title="Prediction Plot",value="predictionPlot",
-                            fluidRow(
-                              column(width=2,
-                                     uiOutput("DateRange"),
-                                     sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.05,0.95)),
-                                     uiOutput("PredictionLevels")
-                                     ),
-                              column(width=10,
-                                     dygraphOutput("PredictionPlotInteractive")
-                                     )
-                              )
-                            ),
-                   tabPanel(title="Table of Predictions",value="predictionTable",
-                            fluidRow(
-                              column(width=12,
-                                     dataTableOutput("PredicitonTable")
-                              )
-                            )
-                            )
-                   ),
             box(title="Model Fit To Raw Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=2,
