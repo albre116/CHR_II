@@ -18,8 +18,7 @@ sidebar <- dashboardSidebar(
              menuSubItem("Model Diagnostics","modeling"),
              menuSubItem("Partial Effects","partial"),
              menuSubItem("Marginal Effects","marginal"),
-             menuSubItem("Predictions","prediction"),
-             menuSubItem("Volume Integrated","volumeIntegrated")
+             menuSubItem("Adjusted Predictions","prediction")
              )
   )
   
@@ -281,21 +280,7 @@ body <- dashboardBody(
                 )
             )
             
-            ),###end current tab
-    tabItem(tabName = "volumeIntegrated",
-            box(title="Volume Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
-                fluidRow(
-                  column(width=12,
-                         h2("stuff")
-
-                  )
-                )
-            ),
-            box(title="Draw Desired Volume",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
-                h2("stuff")
-
-            )
-    )###end current tab
+            )###end current tab
   )###end tab items
 )# ##end body
 
