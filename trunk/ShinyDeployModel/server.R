@@ -1034,7 +1034,7 @@ shinyServer(function(input, output, session) {
           dySeries("Prediction",label="Model Fit") %>%
           dySeries(c("LCL",response,"UCL"),label="Predicted RPM") %>%
           dyAxis("y",label="Normalized Rate Per Mile ($)") %>%
-          dyRoller(rollPeriod = 1) %>%
+          dyRoller(rollPeriod = 5) %>%
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom") %>%
           dyRangeSelector()
       })
@@ -1171,17 +1171,17 @@ shinyServer(function(input, output, session) {
         volume <- VolumeDataPrep()[["volume"]]
         event <- VolumeDataPrep()[["event"]]
         name <- VolumeDataPrep()[["name"]]
-        dygraph(series,name) %>%
-          dySeries("RPM_daily",label="Daily RPM") %>%
-          dySeries("TransVolume",label="Transactional Volume",
-                   axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%
-          dySeries("TransFcst",label="Transactional Volume FCST",
-                   axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%
-          dySeries(c("LCL",response,"UCL"),label="Predicted RPM") %>%
-          dyAxis("y",label="Normalized Rate Per Mile ($)",valueRange=c(0, max(max(data),max(preds)))) %>%
-          dyAxis("y2", label = "Transacitonal Volume", 
+        cdat <- coredata(series)
+        idx <- index(series)
+        volplot <- xts(cdat[,c("TransVolume","TransFcst")],idx)
+        dygraph(volplot,"Historical and Predicted Volume for Lane") %>%
+          dySeries("TransVolume",label="Historical Volume",
+                   stepPlot = TRUE, fillGraph = TRUE) %>%
+          dySeries("TransFcst",label="Forecast Volume",
+                   stepPlot = TRUE, fillGraph = TRUE) %>%
+          dyAxis("y", label = "Transacitonal Volume", 
                  independentTicks = TRUE, valueRange = c(0, max(volume)*1.5)) %>%
-          dyRoller(rollPeriod = 1) %>%
+          dyRoller(rollPeriod = 5) %>%
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
       })
       
@@ -1256,7 +1256,7 @@ shinyServer(function(input, output, session) {
         volume <- HistoricalData()[["volume"]]
         event <- HistoricalData()[["event"]]
         name <- HistoricalData()[["name"]]
-        dygraph(series,"Historical RPM & Volume Pattern") %>%
+        dygraph(series,name) %>%
           dySeries("RPM_daily",label="Daily RPM") %>%
           dySeries("TransFcst",label="Repeated Volume FCST",
                    axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%
@@ -1264,7 +1264,7 @@ shinyServer(function(input, output, session) {
           dyAxis("y",label="Normalized Rate Per Mile ($)",valueRange=c(0, max(max(data),max(preds)))) %>%
           dyAxis("y2", label = "Transacitonal Volume", 
                  independentTicks = TRUE, valueRange = c(0, max(volume)*1.5)) %>%
-          dyRoller(rollPeriod = 1) %>%
+          dyRoller(rollPeriod = 5) %>%
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
       })
       

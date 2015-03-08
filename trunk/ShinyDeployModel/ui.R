@@ -15,12 +15,11 @@ sidebar <- dashboardSidebar(
     menuItem("Advanced Options",icon = icon("fa fa-line-chart"),
              menuSubItem("Map of Selected Data","MapSelected"),
              menuSubItem("Date Range & Outliers","DateRange"),
-             menuSubItem("Model Specification","modeling"),
+             menuSubItem("Model Diagnostics","modeling"),
              menuSubItem("Partial Effects","partial"),
              menuSubItem("Marginal Effects","marginal"),
              menuSubItem("Predictions","prediction"),
-             menuSubItem("Volume Integrated","volumeIntegrated"),
-             menuSubItem("Historical Integrated","HistoricalIntegrated")
+             menuSubItem("Volume Integrated","volumeIntegrated")
              )
   )
   
@@ -81,11 +80,12 @@ body <- dashboardBody(
             fluidRow(
               column(width=6,
                      box(
-                       title="Prediction Model Parameters",width=NULL,status="primary",solidHeader = TRUE,
+                       title="Prediction Model Parameters",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                        fluidRow(
                          column(width=6,
                                 selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=c("Generalized Additive Model")),
                                 actionButton("FitModel","Update Model"),
+                                checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=F),
                                 uiOutput("DateRange"),
                                 sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.05,0.95)),
                                 uiOutput("PredictionLevels")
@@ -111,17 +111,44 @@ body <- dashboardBody(
               column(width=6,
                      box(
                        title="Customer Volume Pattern",width=NULL,status="primary",solidHeader = TRUE,
-                       h2("stuff")
+                       dygraphOutput("VolumeIntegrated")
 
                      ),
                      box(
                        title="Draw Desired Volume Profile",width=NULL,status="primary",solidHeader = TRUE,
-                       h2("stuff")
-
+                       fluidRow(
+                         column(width=2,
+                                actionButton("DrawUpdate","Update Curve for Prediction"),
+                                uiOutput("fourierComp")
+                         ),
+                         column(width=10,
+                                dyPencilgraphOutput("VolumeDraw")
+                         )
+                       )
                      )
               )###end second column
             )###end fluid row
     ),
+    
+    tabItem(tabName = "SummaryPredictions",
+            box(title="HIstorical Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                fluidRow(
+                  column(width=12,
+                         dygraphOutput("Historical")
+                  )
+                )
+            ),
+            box(title="Yearly Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                fluidRow(
+                  column(width=6,
+                         dygraphOutput("HistVolIntegrated")
+                  ),
+                  column(width=6,
+                         dataTableOutput("HistVolIntegratedTable")
+                  )
+                )
+            )
+    ),###end current tab
     
     tabItem(tabName = "MapSelected",
             box(title="Map of Selected Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
@@ -141,7 +168,6 @@ body <- dashboardBody(
             box(title="Select Date Range For Analysis By Dragging on Screen",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=2,
-                         checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=T),
                          sliderInput("lowerTau","Lower Percentile",min=0,max=1,value=0.05),
                          sliderInput("centralTau","Center Percentile",min=0,max=1,value=0.5),
                          sliderInput("upperTau","Upper Percentile",min=0,max=1,value=0.95),
@@ -260,39 +286,14 @@ body <- dashboardBody(
             box(title="Volume Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=12,
-                        dygraphOutput("VolumeIntegrated")
+                         h2("stuff")
+
                   )
                 )
             ),
             box(title="Draw Desired Volume",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
-                fluidRow(
-                  column(width=2,
-                         actionButton("DrawUpdate","Update Curve for Prediction"),
-                         uiOutput("fourierComp")
-                         ),
-                  column(width=10,
-                         dyPencilgraphOutput("VolumeDraw")
-                  )
-                )
-            )
-    ),###end current tab
-    tabItem(tabName = "HistoricalIntegrated",
-            box(title="HIstorical Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
-                fluidRow(
-                  column(width=12,
-                         dygraphOutput("Historical")
-                  )
-                )
-            ),
-            box(title="Yearly Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
-                fluidRow(
-                  column(width=6,
-                         dygraphOutput("HistVolIntegrated")
-                  ),
-                  column(width=6,
-                         dataTableOutput("HistVolIntegratedTable")
-                  )
-                )
+                h2("stuff")
+
             )
     )###end current tab
   )###end tab items
