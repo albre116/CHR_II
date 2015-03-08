@@ -6,15 +6,16 @@ header <- dashboardHeader(
 
 sidebar <- dashboardSidebar(
   sidebarMenu(
-    menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe")),
-    menuItem("Data Conditioning",icon = icon("fa fa-line-chart"),
+    menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe"),
+             badgeLabel = "Step 1",badgeColor = "red"),
+    menuItem("Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog"),
+             badgeLabel = "Step 2",badgeColor = "red"),
+    menuItem("Advanced Options",icon = icon("fa fa-line-chart"),
              menuSubItem("Map of Selected Data","MapSelected"),
-             menuSubItem("Date Range & Outliers","DateRange")),
-    menuItem("Model Fitting", icon = icon("fa fa-cog"),
+             menuSubItem("Date Range & Outliers","DateRange"),
              menuSubItem("Model Specification","modeling"),
              menuSubItem("Partial Effects","partial"),
-             menuSubItem("Marginal Effects","marginal")),
-    menuItem("Model Predictions", icon = icon("fa fa-cog"),
+             menuSubItem("Marginal Effects","marginal"),
              menuSubItem("Predictions","prediction"),
              menuSubItem("Volume Integrated","volumeIntegrated"),
              menuSubItem("Historical Integrated","HistoricalIntegrated")
