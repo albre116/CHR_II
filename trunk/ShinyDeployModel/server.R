@@ -332,8 +332,6 @@ shinyServer(function(input, output, session) {
       })
       
       
-      
-      
       output$MapSelectedData <- renderPlot(function(){
         if(is.null(DATA())){return(NULL)}
         layers <- input$maplayers
@@ -373,6 +371,7 @@ shinyServer(function(input, output, session) {
       ###########################################################
       PERCENTILES <- reactive({
         if(is.null(DATA())){return(NULL)}
+        if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATA()[["SELECTED"]]
         input$applyDygraph
         isolate(df <- input$dfspline)
@@ -385,12 +384,22 @@ shinyServer(function(input, output, session) {
           filter(!is.infinite(RPM_NormalizedCustomer),
                  !is.na(RPM_NormalizedCustomer)) %>%
           arrange(EntryDate)
-        X <- model.matrix(CLEAN$RPM_NormalizedCustomer ~ bs(CLEAN$EntryDate, df=df))
+        #X <- model.matrix(CLEAN$RPM_NormalizedCustomer ~ bs(CLEAN$EntryDate, df=df))
         quantiles <- data.frame()
+        y=CLEAN$RPM_NormalizedCustomer
+        x=as.numeric(CLEAN$EntryDate)
         params <- c(tau_lower,tau_center,tau_upper)
         for(tau in params){
-          fit <- rq(RPM_NormalizedCustomer ~ bs(EntryDate, df=df), tau=tau, data=CLEAN)
-          quantile.fit <- X %*% fit$coef
+          #g <- function(lam,y,x,tau) AIC(rq(y ~ bs(x, df = lam),tau=tau),k = -1)
+          #lamstar <- optimize(g, interval = c(15, df), x = x, y = y, tau= tau)
+          #fit <- rq(y ~ bs(x, df = lamstar$min),tau=tau)
+          
+          g <- function(lam,y,x,tau) AIC(rqss(y ~ qss(x, lambda = lam),tau=tau),k = -1)
+          lamstar <- optimize(g, interval = c(df[1], df[2]), x = x, y = y, tau= tau)
+          fit <- rqss(y ~ qss(x, lambda = lamstar$min),tau=tau)
+          
+          #quantile.fit <- X %*% fit$coef
+          quantile.fit <- predict(fit,newdata=data.frame(y=y,x=x))
           quant <- data.frame(EntryDate=CLEAN$EntryDate,fit=quantile.fit,quantile=tau)
           quant <- quant %>%
             group_by(EntryDate) %>%
@@ -408,9 +417,9 @@ shinyServer(function(input, output, session) {
         return(quantiles)
       })
       
-      
-      
+
       output$dygraph <- renderDygraph({
+        if(input$FilterDate==FALSE){return(NULL)}
         quantiles <- PERCENTILES()
         plot_dat <- xts(quantiles[,-4],quantiles[,4])
         dygraph(plot_dat,main=paste(paste(colnames(quantiles)[1:3],collapse=" "),"Percentiles of Raw Data")) %>%
@@ -426,18 +435,20 @@ shinyServer(function(input, output, session) {
       ###########################################################
       
       output$UpperLower <- renderUI({
+        if(input$FilterDate==FALSE){return(NULL)}
         DATA <- DATA()[["SELECTED"]]
         low <- min(DATA$RPM_NormalizedCustomer,na.rm = TRUE)
         low <- floor(low*100)/100
         high <- max(DATA$RPM_NormalizedCustomer,na.rm = TRUE)
         high <- ceiling(high*100)/100
-        sliderInput("UpperLower","Rate Per Mile Limits",min=low,max=high,value=c(low,high))
+        sliderInput("UpperLower","Rate Per Mile Limits",min=low,max=high,value=c(0.5,high))
       })
       
       
       
       DATAWINDOW <- reactive({
         SELECTED <- DATA()[["SELECTED"]]
+        if(input$FilterDate==FALSE){return(list(SELECTED=SELECTED))}
         input$applyDygraph #this is the action button for the percentiles
         input$applyUpperLower #this is the action button for a RAW RPM filter
         if(is.null(SELECTED)){return(NULL)}
@@ -481,6 +492,7 @@ shinyServer(function(input, output, session) {
       })
       
       ClickRemovalPoints<- reactive({
+        if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         if(is.null(SELECTED)){return(NULL)}
         if(is.null(RemoveGroups$x)){return(NULL)}
@@ -506,6 +518,7 @@ shinyServer(function(input, output, session) {
       })
       
       output$RemoveCustomerCarrier <- renderUI({
+        if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         if(is.null(SELECTED)){return(NULL)}
         pick <- SELECTED$CustomerCarrier
@@ -521,6 +534,7 @@ shinyServer(function(input, output, session) {
       
       
       output$RemoveIndividual <- renderUI({
+        if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         if(is.null(SELECTED)){return(NULL)}
         pick <- SELECTED$loadnum
@@ -538,6 +552,7 @@ shinyServer(function(input, output, session) {
       
       
       output$RemoveCustomerCarrierHover <- renderText({
+        if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         if(is.null(SELECTED)){return(NULL)}
         if(is.null(RemoveGroupsHover$x)){return("Mouse Hover:")}
@@ -569,6 +584,7 @@ shinyServer(function(input, output, session) {
       
       DATAFILTERED <- reactive({
         SELECTED <- DATAWINDOW()[["SELECTED"]]
+        if(input$FilterDate==FALSE){return(list(KEEP=SELECTED,TOSS=NULL))}
         if(is.null(SELECTED)){return(NULL)}
         pull <- input$RemoveCustomerCarrier
         pull2 <- input$RemoveIndividual
@@ -595,6 +611,7 @@ shinyServer(function(input, output, session) {
       
       
       output$RemovalPlot <- renderPlot(function(){
+        if(input$FilterDate==FALSE){return(NULL)}
         if(is.null(DATAFILTERED)){return(NULL)}
         KEEP <- DATAFILTERED()[["KEEP"]]
         TOSS <- DATAFILTERED()[["TOSS"]]

@@ -94,10 +94,11 @@ body <- dashboardBody(
             box(title="Select Date Range For Analysis By Dragging on Screen",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=2,
+                         checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=T),
                          sliderInput("lowerTau","Lower Percentile",min=0,max=1,value=0.05),
                          sliderInput("centralTau","Center Percentile",min=0,max=1,value=0.5),
                          sliderInput("upperTau","Upper Percentile",min=0,max=1,value=0.95),
-                         numericInput("dfspline","Spline df",value=20,min=1,max=50,step=1),
+                         sliderInput("dfspline","Spline df Penalty Range",min=1,max=50,value=c(1,20)),
                          actionButton("applyDygraph","Apply Date & Percentile Selections",icon=icon("fa fa-refresh"))
                   ),
                   column(width=10,
