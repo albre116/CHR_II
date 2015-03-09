@@ -8,6 +8,10 @@ shinyServer(function(input, output, session) {
   ###########################################################
   #######Tab Panel 1:  Geography
   ###########################################################
+  output$response<- renderUI({
+    idx <- colnames(RAW)
+    selectInput("response","Response",choices=idx,selected=c("RPM_NormalizedCustomer"))
+  })
   
   ###########################################################
   #######All of the Selection functions for the Origin States
@@ -382,14 +386,12 @@ shinyServer(function(input, output, session) {
         isolate(tau_lower <- input$lowerTau)
         isolate(tau_center <- input$centralTau)
         isolate(tau_upper <- input$upperTau)
-        
-        CLEAN <-  SELECTED %>% 
-          select(RPM_NormalizedCustomer,EntryDate) %>%
-          filter(!is.infinite(RPM_NormalizedCustomer),
-                 !is.na(RPM_NormalizedCustomer)) %>%
-          arrange(EntryDate)
+        r <- input$response
+        CLEAN <- SELECTED[,c(r,"EntryDate")]
+        CLEAN <- CLEAN[!is.infinite(CLEAN[,r]) & !is.na(CLEAN[,r]),]
+        CLEAN <- CLEAN %>%  arrange(EntryDate)
         quantiles <- data.frame()
-        y=CLEAN$RPM_NormalizedCustomer
+        y=CLEAN[,r]
         x=as.numeric(CLEAN$EntryDate)
         params <- c(tau_lower,tau_center,tau_upper)
         for(tau in params){
@@ -401,7 +403,6 @@ shinyServer(function(input, output, session) {
             fit <- rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
           }
           
-
           quantile.fit <- predict(fit,newdata=data.frame(y=y,x=x))
           quant <- data.frame(EntryDate=CLEAN$EntryDate,fit=quantile.fit,quantile=tau)
           quant <- quant %>%
@@ -423,11 +424,12 @@ shinyServer(function(input, output, session) {
 
       output$dygraph <- renderDygraph({
         if(input$FilterDate==FALSE){return(NULL)}
+        r <- input$response
         quantiles <- PERCENTILES()
         plot_dat <- xts(quantiles[,-4],quantiles[,4])
-        dygraph(plot_dat,main=paste(paste(colnames(quantiles)[1:3],collapse=" "),"Percentiles of Raw Data")) %>%
-          dySeries(c(colnames(quantiles)[1:3]),label="Median RPM$") %>%
-          dyAxis("y",label="Normalized Rate Per Mile ($)") %>%
+        dygraph(plot_dat,main=paste(paste(colnames(quantiles)[1:3],collapse=" "),"Percentiles of",input$response)) %>%
+          dySeries(c(colnames(quantiles)[1:3]),label=paste("Median",r)) %>%
+          dyAxis("y",label=r) %>%
           dyRangeSelector()
       })
       
@@ -439,18 +441,20 @@ shinyServer(function(input, output, session) {
       
       output$UpperLower <- renderUI({
         if(input$FilterDate==FALSE){return(NULL)}
+        r <- input$response
         DATA <- DATA()[["SELECTED"]]
-        low <- min(DATA$RPM_NormalizedCustomer,na.rm = TRUE)
+        low <- min(DATA[,r],na.rm = TRUE)
         low <- floor(low*100)/100
-        high <- max(DATA$RPM_NormalizedCustomer,na.rm = TRUE)
+        high <- max(DATA[,r],na.rm = TRUE)
         high <- ceiling(high*100)/100
-        sliderInput("UpperLower","Rate Per Mile Limits",min=low,max=high,value=c(low,high))
+        sliderInput("UpperLower",paste(r,"Limits"),min=low,max=high,value=c(low,high))
       })
       
       
       
       DATAWINDOW <- reactive({
         SELECTED <- DATA()[["SELECTED"]]
+        r <- input$response
         if(input$FilterDate==FALSE){return(list(SELECTED=SELECTED))}
         input$applyDygraph #this is the action button for the percentiles
         input$applyUpperLower #this is the action button for a RAW RPM filter
@@ -460,9 +464,9 @@ shinyServer(function(input, output, session) {
         isolate(max_dte <- input$dygraph_date_window[2])
         isolate(low <-input$UpperLower[1])
         isolate(high <-input$UpperLower[2]) 
-        SELECTED <- SELECTED %>% 
-          filter(EntryDate>=min_dte,EntryDate<=max_dte) %>%
-          filter(RPM_NormalizedCustomer>=low,RPM_NormalizedCustomer<=high)
+        SELECTED <- SELECTED %>%  filter(EntryDate>=min_dte,EntryDate<=max_dte)
+        idx <- (SELECTED[,r] >= low) & (SELECTED[,r] <= high)
+        SELECTED <- SELECTED[idx,]
         return(list(SELECTED=SELECTED))
       })
       
@@ -499,14 +503,14 @@ shinyServer(function(input, output, session) {
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         if(is.null(SELECTED)){return(NULL)}
         if(is.null(RemoveGroups$x)){return(NULL)}
-        train <- data.frame(as.numeric(SELECTED$EntryDate),SELECTED$RPM_NormalizedCustomer)
+        r <- input$response
+        train <- data.frame(as.numeric(SELECTED$EntryDate),SELECTED[,r])
         idx <- complete.cases(train)
         train <- train[idx,]
         lower <- unlist(apply(train,2,min))
         upper <- unlist(apply(train,2,max))
         scaling <- upper-lower
         train <- scale(train,center=F,scale=scaling)
-        #cl <- factor(SELECTED$CustomerCarrier[idx])
         cl <- factor(1:nrow(train))
         test <- data.frame(RemoveGroups$x,RemoveGroups$y)
         test <- scale(test,center=F,scale=scaling)
@@ -559,7 +563,8 @@ shinyServer(function(input, output, session) {
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         if(is.null(SELECTED)){return(NULL)}
         if(is.null(RemoveGroupsHover$x)){return("Mouse Hover:")}
-        train <- data.frame(as.numeric(SELECTED$EntryDate),SELECTED$RPM_NormalizedCustomer)
+        r <- input$response
+        train <- data.frame(as.numeric(SELECTED$EntryDate),SELECTED[,r])
         idx <- complete.cases(train)
         train <- train[idx,]
         lower <- unlist(apply(train,2,min))
@@ -589,21 +594,22 @@ shinyServer(function(input, output, session) {
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         if(input$FilterDate==FALSE){return(list(KEEP=SELECTED,TOSS=NULL))}
         if(is.null(SELECTED)){return(NULL)}
+        r <- input$response
         pull <- input$RemoveCustomerCarrier
         pull2 <- input$RemoveIndividual
         idx_toss <- (SELECTED$CustomerCarrier %in% pull) | (SELECTED$loadnum %in% pull2)
         if(("Lower Quantile" %in% input$QuantileFilter) | ("Upper Quantile" %in% input$QuantileFilter)){
           quantiles <- PERCENTILES()
           ids <- colnames(quantiles)
-          QUANT <-  select(SELECTED,EntryDate,RPM_NormalizedCustomer) %>% 
+          QUANT <-  select_(SELECTED,.dots = c("EntryDate",r)) %>% 
             left_join(quantiles,by=c("EntryDate"="Date"))
           
           if(c("Lower Quantile") %in% input$QuantileFilter){
-            idx_toss <- idx_toss | (QUANT$RPM_NormalizedCustomer<=QUANT[ids[1]])
+            idx_toss <- idx_toss | (QUANT[,r]<=QUANT[ids[1]])
           }
 
           if(c("Upper Quantile") %in% input$QuantileFilter){
-            idx_toss <- idx_toss | (QUANT$RPM_NormalizedCustomer>=QUANT[ids[3]])
+            idx_toss <- idx_toss | (QUANT[,r]>=QUANT[ids[3]])
           }
         }
         
@@ -619,8 +625,9 @@ shinyServer(function(input, output, session) {
         KEEP <- DATAFILTERED()[["KEEP"]]
         TOSS <- DATAFILTERED()[["TOSS"]]
         LIMITS <- bind_rows(KEEP,TOSS)
-        plot(x=LIMITS$EntryDate,y=LIMITS$RPM_NormalizedCustomer,type="n",pch=19,col="black",
-             xlab="Date",ylab="Normalized Rate Per Mile")
+        r <- input$response
+        plot(x=LIMITS$EntryDate,y=LIMITS[,r],type="n",pch=19,col="black",
+             xlab="Date",ylab=r)
         
         if("Percentiles" %in% input$plotControls){
           quantiles <- PERCENTILES()
@@ -630,11 +637,11 @@ shinyServer(function(input, output, session) {
         }
         
         if("Kept" %in% input$plotControls){
-          points(x=KEEP$EntryDate,y=KEEP$RPM_NormalizedCustomer,pch=19,col="black")
+          points(x=KEEP$EntryDate,y=KEEP[,r],pch=19,col="black")
         }
         
       if("Removed" %in% input$plotControls){
-        points(x=TOSS$EntryDate,y=TOSS$RPM_NormalizedCustomer,type="p",pch=19,col="grey75")
+        points(x=TOSS$EntryDate,y=TOSS[,r],type="p",pch=19,col="grey75")
         }
 
         legend("topright",c("Removed","Kept"),pch=19,col=c("grey75","black"))
@@ -679,14 +686,11 @@ shinyServer(function(input, output, session) {
       })
       
       
-      
-      
-      
-      
       MODELFIT <- reactive({
         data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
         if(is.null(data)){return(NULL)}
         input$FitModel
+        r <- input$response
         if(flag==0){
           linear <- input$LinearTerms
           spline <- input$SplineTerms
@@ -700,9 +704,7 @@ shinyServer(function(input, output, session) {
         isolate(factors <- input$FactorTerms)}
         
         if(is.null(linear) & is.null(spline) & is.null(splineCC)){return(NULL)}
-
-        
-        f <- formula(RPM_NormalizedCustomer~1)  ###place holder
+        f <- as.formula(paste(r,"1",sep="~"))  ###place holder
         
         for(t in factors){
           f_add <- paste0(".~.+as.factor(",t,")")
@@ -1004,7 +1006,7 @@ shinyServer(function(input, output, session) {
                           data)
         observed_summary <- observed_data %>% 
           group_by(EntryDate) %>%
-          summarise(RPM_daily = mean(y_residual,na.rm=T),
+          summarise(Y_daily = mean(y_residual,na.rm=T),
                     Prediction = mean(y_partial,na.rm=T))
         observed_summary <- as.data.frame(observed_summary)
         event <- prediction_data$EntryDate[1]-0.5
@@ -1027,13 +1029,13 @@ shinyServer(function(input, output, session) {
         idx_date_data <- colnames(data) %in% c("EntryDate")
         idx_date_preds <- colnames(preds) %in% c("EntryDate")
         preds <- xts(preds[,c(response,"LCL","UCL"),drop=F],preds[,idx_date_preds])
-        data <- xts(data[,c("RPM_daily","Prediction"),drop=F],data[,idx_date_data])
+        data <- xts(data[,c("Y_daily","Prediction"),drop=F],data[,idx_date_data])
         series <- cbind(data,preds)
-        dygraph(series,"Observed & Predicted RPM (Adjusted for Factors)") %>%
-          dySeries("RPM_daily",label="Daily RPM") %>%
+        dygraph(series,paste("Observed & Predicted",response,"(Adjusted for Factors)")) %>%
+          dySeries("Y_daily",label="Historical") %>%
           dySeries("Prediction",label="Model Fit") %>%
-          dySeries(c("LCL",response,"UCL"),label="Predicted RPM") %>%
-          dyAxis("y",label="Normalized Rate Per Mile ($)") %>%
+          dySeries(c("LCL",response,"UCL"),label="Predicted") %>%
+          dyAxis("y",label=response) %>%
           dyRoller(rollPeriod = 5) %>%
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom") %>%
           dyRangeSelector()
@@ -1147,7 +1149,7 @@ shinyServer(function(input, output, session) {
         idx_date_data <- colnames(data) %in% c("EntryDate")
         idx_date_preds <- colnames(preds) %in% c("EntryDate")
         preds <- xts(preds[,c("LCL",response,"UCL"),drop=F],preds[,idx_date_preds])
-        data <- xts(data[,c("RPM_daily"),drop=F],data[,idx_date_data])
+        data <- xts(data[,c("Y_daily"),drop=F],data[,idx_date_data])
         vol_int_rate <- numeric(length=3)
         names(vol_int_rate) <- c("LCL",response,"UCL")
         vol_int_rate[1] <- weighted.mean(coredata(preds)[,1],coredata(pred_volume))
@@ -1155,7 +1157,7 @@ shinyServer(function(input, output, session) {
         vol_int_rate[3] <- weighted.mean(coredata(preds)[,3],coredata(pred_volume))
         vol_int_rate <- round(vol_int_rate,2)
         series <- cbind(data,preds,volume,pred_volume)
-        series$RPM_daily[index(series)<index(preds)[1]] <- na.approx(series$RPM_daily[index(series)<index(preds)[1]])
+        series$Y_daily[index(series)<index(preds)[1]] <- na.approx(series$Y_daily[index(series)<index(preds)[1]])
         name <- paste0("Volume Integrated Quote: $",vol_int_rate[2]," ($",vol_int_rate[1],", $",vol_int_rate[3],") Per Mile")
         return(list(series=series,vol_int_rate=vol_int_rate,event=event,
                     response=response,data=data,preds=preds,volume=volume,
@@ -1229,7 +1231,7 @@ shinyServer(function(input, output, session) {
                             "StartDate"=as.Date(lower),
                             "EndDate"=as.Date(upper),
                             "MidPoint"=as.Date(lower)+difftime(as.Date(upper),as.Date(lower))/2,
-                            "WeightedRPM"=weighted.mean(tmp$RPM_daily,tmp$TransFcst,na.rm = T)))
+                            "WeightedY"=weighted.mean(tmp$Y_daily,tmp$TransFcst,na.rm = T)))
       }
       
 
@@ -1238,7 +1240,7 @@ shinyServer(function(input, output, session) {
         "StartDate"=dte_window[1],
         "EndDate"=dte_window[2],
         "MidPoint"=dte_window[1]+difftime(dte_window[2],dte_window[1])/2,
-        "WeightedRPM"=as.numeric(vol_int_rate[2])),quote)
+        "WeightedY"=as.numeric(vol_int_rate[2])),quote)
       
       return(list(series=series,vol_int_rate=vol_int_rate,event=event,
                   response=response,data=data,preds=preds,volume=volume,
@@ -1257,11 +1259,11 @@ shinyServer(function(input, output, session) {
         event <- HistoricalData()[["event"]]
         name <- HistoricalData()[["name"]]
         dygraph(series,name) %>%
-          dySeries("RPM_daily",label="Daily RPM") %>%
+          dySeries("Y_daily",label="Historical") %>%
           dySeries("TransFcst",label="Repeated Volume FCST",
                    axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%
-          dySeries(c("LCL",response,"UCL"),label="Predicted RPM") %>%
-          dyAxis("y",label="Normalized Rate Per Mile ($)",valueRange=c(0, max(max(data),max(preds)))) %>%
+          dySeries(c("LCL",response,"UCL"),label="Predicted") %>%
+          dyAxis("y",label=response,valueRange=c(0, max(max(data),max(preds)))) %>%
           dyAxis("y2", label = "Transacitonal Volume", 
                  independentTicks = TRUE, valueRange = c(0, max(volume)*1.5)) %>%
           dyRoller(rollPeriod = 5) %>%
@@ -1274,10 +1276,11 @@ shinyServer(function(input, output, session) {
         if(is.null(HistoricalData())){return(NULL)}
         quote <- HistoricalData()[["quote"]]
         event <- HistoricalData()[["event"]]
-        quote <- xts(quote[,"WeightedRPM",drop=F],quote$MidPoint)
-        dygraph(quote,"Historical RPM") %>%
-          dySeries("WeightedRPM",label="Volume Weighted RPM") %>%
-          dyAxis("y",label="Normalized Rate Per Mile ($)") %>%
+        response <- HistoricalData()[["response"]]
+        quote <- xts(quote[,"WeightedY",drop=F],quote$MidPoint)
+        dygraph(quote,paste("Historical",response)) %>%
+          dySeries("WeightedY",label=response) %>%
+          dyAxis("y",label=response) %>%
           dyOptions(drawPoints = TRUE, pointSize = 5) %>%
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
       })
