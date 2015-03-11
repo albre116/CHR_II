@@ -13,6 +13,38 @@ shinyServer(function(input, output, session) {
     selectInput("response","Response",choices=idx,selected=c("RPM_NormalizedCustomer"))
   })
   
+  output$OrigZip3<- renderUI({
+    idx <- unique(RAW$Orig3DigZip)
+    selectizeInput("OrigZip3","3-Digit Origin Zip",choices=idx,selected=NULL,multiple=TRUE)
+  })
+  
+  output$DestZip3<- renderUI({
+    idx <- unique(RAW$Dest3DigZip)
+    selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx,selected=NULL,multiple = TRUE)
+  })
+  
+  output$OrigZip5<- renderUI({
+    idx <- unique(RAW$Orig5DigZip)
+    selectizeInput("OrigZip5","5-Digit Origin Zip",choices=idx,selected=NULL,multiple=TRUE)
+  })
+  
+  output$DestZip5<- renderUI({
+    idx <- unique(RAW$Dest5DigZip)
+    selectizeInput("DestZip5","5-Digit Destination Zip",choices=idx,selected=NULL,multiple = TRUE)
+  })
+  
+  output$OrigCity<- renderUI({
+    idx <- unique(RAW$OrigCity)
+    selectizeInput("OrigCity","Origin City",choices=idx,selected=NULL,multiple=TRUE)
+  })
+  
+  output$DestCity<- renderUI({
+    idx <- unique(RAW$DestCity)
+    selectizeInput("DestCity","Destination City",choices=idx,selected=NULL,multiple = TRUE)
+  })
+  
+  
+  
   ###########################################################
   #######All of the Selection functions for the Origin States
   ###########################################################
@@ -323,15 +355,27 @@ shinyServer(function(input, output, session) {
       ###########################################################
       
       DATA <- reactive({
-        if(is.null(input$SelectDestCounties) | is.null(input$SelectOrigCounties)){return(NULL)}
-        countiesDestination <- input$SelectDestCounties
-        countiesOrigin <- input$SelectOrigCounties
-        selectDestination <- map("county",regions = countiesDestination,fill=T,plot=F)
-        selectOrigin <- map("county",regions = countiesOrigin,fill=T,plot=F)
-        indexDestCounty <- map.where(selectDestination,x=RAW$DestLongitude,y=RAW$DestLatitude)
-        indexOrigCounty <- map.where(selectOrigin,x=RAW$OrigLongitude,y=RAW$OrigLatitude)
-        SELECTED <- RAW %>% filter(!is.na(indexOrigCounty),!is.na(indexDestCounty))
-        NOTSELECTED <- RAW %>% filter(is.na(indexOrigCounty),is.na(indexDestCounty))
+        if(!is.null(input$SelectDestCounties)){
+          countiesDestination <- input$SelectDestCounties
+          selectDestination <- map("county",regions = countiesDestination,fill=T,plot=F)
+          indexDestCounty <- map.where(selectDestination,x=RAW$DestLongitude,y=RAW$DestLatitude)
+        }else{indexDestCounty <- rep(NA,nrow(RAW))}
+          
+        if(!is.null(input$SelectOrigCounties)){
+          countiesOrigin <- input$SelectOrigCounties
+          selectOrigin <- map("county",regions = countiesOrigin,fill=T,plot=F)
+          indexOrigCounty <- map.where(selectOrigin,x=RAW$OrigLongitude,y=RAW$OrigLatitude)
+        }else{indexOrigCounty <- rep(NA,nrow(RAW))}
+        a <- RAW$Orig3DigZip %in% input$OrigZip3
+        b <- RAW$Dest3DigZip %in% input$DestZip3
+        c <- RAW$Orig5DigZip %in% input$OrigZip5
+        d <- RAW$Dest5DigZip %in% input$DestZip5
+        e <- RAW$OrigCity %in% input$OrigCity
+        f <- RAW$DestCity %in% input$DestCity
+        orig <- (a | c | e)
+        dest <- (b | d | f)
+        SELECTED <- RAW %>% filter((!is.na(indexOrigCounty) | orig),(!is.na(indexDestCounty) | dest))
+        NOTSELECTED <- RAW %>% filter((is.na(indexOrigCounty) | !orig),(is.na(indexDestCounty) | !dest))
         return(list(SELECTED=SELECTED,NOTSELECTED=NOTSELECTED))
       })
       
@@ -447,7 +491,7 @@ shinyServer(function(input, output, session) {
         low <- floor(low*100)/100
         high <- max(DATA[,r],na.rm = TRUE)
         high <- ceiling(high*100)/100
-        sliderInput("UpperLower",paste(r,"Limits"),min=low,max=high,value=c(low,high))
+        sliderInput("UpperLower",paste(r,"Limits"),min=low,max=high,value=c(0,high))
       })
       
       
@@ -462,8 +506,8 @@ shinyServer(function(input, output, session) {
         isolate(if(is.null(input$dygraph_date_window)){return(list(SELECTED=SELECTED))})
         isolate(min_dte <- input$dygraph_date_window[1])
         isolate(max_dte <- input$dygraph_date_window[2])
-        isolate(low <-input$UpperLower[1])
-        isolate(high <-input$UpperLower[2]) 
+        low <-input$UpperLower[1]
+        high <-input$UpperLower[2]
         SELECTED <- SELECTED %>%  filter(EntryDate>=min_dte,EntryDate<=max_dte)
         idx <- (SELECTED[,r] >= low) & (SELECTED[,r] <= high)
         SELECTED <- SELECTED[idx,]
@@ -625,6 +669,7 @@ shinyServer(function(input, output, session) {
         KEEP <- DATAFILTERED()[["KEEP"]]
         TOSS <- DATAFILTERED()[["TOSS"]]
         LIMITS <- bind_rows(KEEP,TOSS)
+        LIMITS <- as.data.frame(LIMITS)
         r <- input$response
         plot(x=LIMITS$EntryDate,y=LIMITS[,r],type="n",pch=19,col="black",
              xlab="Date",ylab=r)

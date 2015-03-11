@@ -30,8 +30,28 @@ body <- dashboardBody(
             fluidRow(
               column(width=6,
                      box(
+                       title="Origin Zips & Cities: Select to Include",width=NULL,status="primary",
+                       solidHeader = TRUE,collapsible = T,
+                       uiOutput("OrigZip3"),
+                       uiOutput("OrigZip5"),
+                       uiOutput("OrigCity")
+                     )#end box
+              ),#end column
+              column(width=6,
+                     box(
+                       title="Destination Zips & Cities: Select to Include",width=NULL,status="primary",
+                       solidHeader = TRUE,collapsible = T,
+                       uiOutput("DestZip3"),
+                       uiOutput("DestZip5"),
+                       uiOutput("DestCity")
+                     )#end box
+              )#end column
+            ),#end fluid row
+            fluidRow(
+              column(width=6,
+                     box(
                        title="Origin States: Click To Select or Enter/Delete In List",width=NULL,status="primary",
-                       solidHeader = TRUE,
+                       solidHeader = TRUE,collapsible = T,
                        h3(textOutput("AddStatesHoverSelectedOrigin")),
                        plotOutput(outputId = "OrigPlotState",clickId = "OriginStates",hoverId="OriginStatesHover",hoverDelay=300),
                        uiOutput("SelectOrigStates"),
@@ -41,7 +61,7 @@ body <- dashboardBody(
                      ),
                      box(
                        title="Origin Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
-                       solidHeader = TRUE,
+                       solidHeader = TRUE,collapsible = T,
                        h3(textOutput("AddCountiesHoverSelectedOrigin")),
                        plotOutput(outputId = "OrigPlotCounties",clickId = "OriginCounties",hoverId="OriginCountiesHover",hoverDelay=300),
                        uiOutput("SelectOrigCounties"),
@@ -53,7 +73,7 @@ body <- dashboardBody(
               column(width=6,
                      box(
                        title="Destination States: Click To Select or Enter/Delete In List",width=NULL,status="primary",
-                       solidHeader = TRUE,
+                       solidHeader = TRUE,collapsible = T,
                        h3(textOutput("AddStatesHoverSelectedDestination")),
                        plotOutput(outputId = "DestPlotState",clickId = "DestinationStates",hoverId="DestinationStatesHover",hoverDelay=300),
                        uiOutput("SelectDestStates"),
@@ -63,7 +83,7 @@ body <- dashboardBody(
                      ),
                      box(
                        title="Destination Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
-                       solidHeader = TRUE,
+                       solidHeader = TRUE,collapsible = T,
                        h3(textOutput("AddCountiesHoverSelectedDestination")),
                        plotOutput(outputId = "DestPlotCounties",clickId = "DestinationCounties",hoverId="DestinationCountiesHover",hoverDelay=300),
                        uiOutput("SelectDestCounties"),
