@@ -105,7 +105,7 @@ body <- dashboardBody(
                                 actionButton("FitModel","Update Model"),
                                 checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=T),
                                 uiOutput("DateRange"),
-                                sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.05,0.95)),
+                                sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.15,0.85)),
                                 uiOutput("PredictionLevels")
                          ),
                          column(width=6,

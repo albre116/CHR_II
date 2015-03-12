@@ -1020,6 +1020,7 @@ shinyServer(function(input, output, session) {
         UCL <- y_hat+qnorm(input$ConfLimits[2])*y_se
         response <- as.character(formula(fit))[2]
         eval(parse(text=paste0("prediction_data <- data.frame(",response,"=y_hat,LCL=LCL,UCL=UCL,PredData)")))
+        colnames(prediction_data)[c(2,3)] <- c(paste0("FCST",input$ConfLimits*100,"th"))
         
         
         ###now we have to generate adjusted response data for this to work
@@ -1043,23 +1044,49 @@ shinyServer(function(input, output, session) {
         y_delta <- -(y_hat-predict(fit,newdata=data2))
         y_partial <- y_hat+y_delta
         y_residual <- y_partial+residual
-        
         observed_data <- data.frame("y_partial"=as.numeric(y_partial),
                           "y_residual"=as.numeric(y_residual),
                           "y_hat"=as.numeric(y_hat),
                           "residual"=as.numeric(residual),
                           data)
+        
+        ###now we regress the quantiles of these partials for the historical data
+        df <- input$dfspline
+        df_fixed <- input$LambdaFixed
+        y=observed_data$y_residual
+        x=as.numeric(data$EntryDate)
+        tau_lower <- input$ConfLimits[1]
+        tau_center <- 0.5
+        tau_upper <- input$ConfLimits[2]
+        params <- c(tau_lower,tau_center,tau_upper)
+        for(tau in params){
+          if(isolate(input$doEstimation==T)){
+            g <- function(lam,y,x,tau) AIC(rqss(y ~ qss(x, lambda = lam),tau=tau),k = -1)
+            lamstar <- optimize(g, interval = c(df[1], df[2]), x = x, y = y, tau= tau)
+            fitq <- rqss(y ~ qss(x, lambda = lamstar$min),tau=tau)
+          }else{
+            fitq <- rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
+          }
+          x2=as.numeric(seq(min(data$EntryDate), max(data$EntryDate), "days"))
+          quantile.fit <- predict(fitq,newdata=data.frame(x=x2))
+          quant <- data.frame(fit=quantile.fit)
+          if(tau==params[1]){quantiles <- quant}else{quantiles <- data.frame(quantiles,quant)}
+        }
+        rm(fitq)
+        quantiles <- data.frame(EntryDate=as.Date(seq(min(data$EntryDate), max(data$EntryDate), "days")),quantiles)
+        colnames(quantiles) <- c("EntryDate",paste0("HIST",params*100,"th"))
+
+        ####done with quantile
         observed_summary <- observed_data %>% 
-          group_by(EntryDate) %>%
-          summarise(Y_daily = mean(y_residual,na.rm=T),
-                    Prediction = mean(y_partial,na.rm=T))
+        group_by(EntryDate) %>%
+        summarise(Prediction = mean(y_partial,na.rm=T))
+        observed_summary <- left_join(observed_summary,quantiles)
         observed_summary <- as.data.frame(observed_summary)
         event <- prediction_data$EntryDate[1]-0.5
         out <- list(prediction_data=prediction_data,
                     observed_data=observed_data,
                     event=event,
                     observed_summary=observed_summary)
-        
         return(out)
       })
       
@@ -1070,20 +1097,22 @@ shinyServer(function(input, output, session) {
         event <- PREDICTIONDATA()[["event"]]
         fit <- MODELFIT()
         if(is.null(preds)){return(NULL)}
+        p <- colnames(preds)
+        d <- colnames(data)
         response <- as.character(formula(fit))[2]
         idx_date_data <- colnames(data) %in% c("EntryDate")
         idx_date_preds <- colnames(preds) %in% c("EntryDate")
-        preds <- xts(preds[,c(response,"LCL","UCL"),drop=F],preds[,idx_date_preds])
-        data <- xts(data[,c("Y_daily","Prediction"),drop=F],data[,idx_date_data])
+        preds <- xts(preds[,c(1:3),drop=F],preds[,idx_date_preds])
+        data <- xts(data[,!idx_date_data,drop=F],data[,idx_date_data])
         series <- cbind(data,preds)
-        dygraph(series,paste("Observed & Predicted",response,"(Adjusted for Factors)")) %>%
-          dySeries("Y_daily",label="Historical") %>%
-          dySeries("Prediction",label="Model Fit") %>%
-          dySeries(c("LCL",response,"UCL"),label="Predicted") %>%
+        dygraph(series,paste0("Model Fit, Historical, and Predictions for ",
+                              input$ConfLimits[1]*100,"th, 50th & ",input$ConfLimits[2]*100,"th Percentiles")) %>%
+          dySeries(d[c(3,4,5)],label="Historical 50th") %>%
+          dySeries(p[c(2,1,3)],label="Predicted 50th") %>%
+          dySeries("Prediction",label="Model Fit to 50th") %>%
           dyAxis("y",label=response) %>%
-          dyRoller(rollPeriod = 5) %>%
-          dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom") %>%
-          dyRangeSelector()
+          dyRoller(rollPeriod = 1) %>%
+          dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
       })
       
       
@@ -1193,18 +1222,22 @@ shinyServer(function(input, output, session) {
         response <- as.character(formula(fit))[2]
         idx_date_data <- colnames(data) %in% c("EntryDate")
         idx_date_preds <- colnames(preds) %in% c("EntryDate")
-        preds <- xts(preds[,c("LCL",response,"UCL"),drop=F],preds[,idx_date_preds])
-        data <- xts(data[,c("Y_daily"),drop=F],data[,idx_date_data])
-        vol_int_rate <- numeric(length=3)
-        names(vol_int_rate) <- c("LCL",response,"UCL")
-        vol_int_rate[1] <- weighted.mean(coredata(preds)[,1],coredata(pred_volume))
-        vol_int_rate[2] <- weighted.mean(coredata(preds)[,2],coredata(pred_volume))
-        vol_int_rate[3] <- weighted.mean(coredata(preds)[,3],coredata(pred_volume))
-        vol_int_rate <- round(vol_int_rate,2)
+        preds <- xts(preds[,c(1,2,3),drop=F],preds[,idx_date_preds])
+        data <- xts(data[,c(3,4,5),drop=F],data[,idx_date_data])
+        vol_int_rate_fcst <- numeric(length=ncol(coredata(preds)))
+        names(vol_int_rate_fcst) <- colnames(coredata(preds))
+        for (i in 1:length(vol_int_rate_fcst)){
+          vol_int_rate_fcst[i] <- weighted.mean(coredata(preds)[,i],coredata(pred_volume))
+        }
+        vol_int_rate_fcst <- round(vol_int_rate_fcst,2)
         series <- cbind(data,preds,volume,pred_volume)
-        series$Y_daily[index(series)<index(preds)[1]] <- na.approx(series$Y_daily[index(series)<index(preds)[1]])
-        name <- paste0("Volume Integrated Quote: $",vol_int_rate[2]," ($",vol_int_rate[1],", $",vol_int_rate[3],") Per Mile")
-        return(list(series=series,vol_int_rate=vol_int_rate,event=event,
+        idx <- colnames(coredata(data))
+        for(i in idx){
+          series[index(series)<index(preds)[1],i] <- na.approx(series[index(series)<index(preds)[1],i])
+        }
+
+        name <- paste0("Volume Integrated Quote: $",vol_int_rate_fcst[2]," ($",vol_int_rate_fcst[1],", $",vol_int_rate_fcst[3],") Per Mile")
+        return(list(series=series,vol_int_rate_fcst=vol_int_rate_fcst,event=event,
                     response=response,data=data,preds=preds,volume=volume,
                     name=name))
       })
@@ -1241,7 +1274,7 @@ shinyServer(function(input, output, session) {
       if(is.null(VolumeDataPrep())){return(NULL)}
       series <- VolumeDataPrep()[["series"]]
       response <- VolumeDataPrep()[["response"]]
-      vol_int_rate <- VolumeDataPrep()[["vol_int_rate"]]
+      vol_int_rate_fcst <- VolumeDataPrep()[["vol_int_rate_fcst"]]
       data <- VolumeDataPrep()[["data"]]
       preds <- VolumeDataPrep()[["preds"]]
       volume <- VolumeDataPrep()[["volume"]]
@@ -1276,8 +1309,12 @@ shinyServer(function(input, output, session) {
                             "StartDate"=as.Date(lower),
                             "EndDate"=as.Date(upper),
                             "MidPoint"=as.Date(lower)+difftime(as.Date(upper),as.Date(lower))/2,
-                            "WeightedY"=weighted.mean(tmp$Y_daily,tmp$TransFcst,na.rm = T)))
+                            "WeightedY_LCL"=weighted.mean(tmp[,1],tmp$TransFcst,na.rm = T),
+                            "WeightedY"=weighted.mean(tmp[,2],tmp$TransFcst,na.rm = T),
+                            "WeightedY_UCL"=weighted.mean(tmp[,3],tmp$TransFcst,na.rm = T)
+                            ))
       }
+
       
 
       ###add on the predicted quote
@@ -1285,33 +1322,41 @@ shinyServer(function(input, output, session) {
         "StartDate"=dte_window[1],
         "EndDate"=dte_window[2],
         "MidPoint"=dte_window[1]+difftime(dte_window[2],dte_window[1])/2,
-        "WeightedY"=as.numeric(vol_int_rate[2])),quote)
+        "WeightedY_LCL"=as.numeric(vol_int_rate_fcst[2]),
+        "WeightedY"=as.numeric(vol_int_rate_fcst[1]),
+        "WeightedY_UCL"=as.numeric(vol_int_rate_fcst[3])),
+         quote)
       
-      return(list(series=series,vol_int_rate=vol_int_rate,event=event,
+      colnames(quote)[c(4,5,6)] <- gsub("HIST","Percentile.",colnames(series)[c(1:3)])
+      
+      return(list(series=series,vol_int_rate_fcst=vol_int_rate_fcst,event=event,
                   response=response,data=data,preds=preds,volume=volume,
                   name=name,quote=quote))
       })
       
       
+      
       output$Historical <- renderDygraph({
         if(is.null(HistoricalData())){return(NULL)}
         series <- HistoricalData()[["series"]]
+        series <- series[,c(2,4:7)]
+        p <- colnames(series)
         response <- HistoricalData()[["response"]]
-        vol_int_rate <- HistoricalData()[["vol_int_rate"]]
+        vol_int_rate_fcst <- HistoricalData()[["vol_int_rate_fcst"]]
         data <- HistoricalData()[["data"]]
         preds <- HistoricalData()[["preds"]]
         volume <- HistoricalData()[["volume"]]
         event <- HistoricalData()[["event"]]
         name <- HistoricalData()[["name"]]
         dygraph(series,name) %>%
-          dySeries("Y_daily",label="Historical") %>%
+          dySeries(p[1],label="50th Percentile") %>%
           dySeries("TransFcst",label="Repeated Volume FCST",
                    axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%
-          dySeries(c("LCL",response,"UCL"),label="Predicted") %>%
+          dySeries(p[c(3,2,4)],label="Predicted") %>%
           dyAxis("y",label=response,valueRange=c(0, max(max(data),max(preds)))) %>%
           dyAxis("y2", label = "Transacitonal Volume", 
                  independentTicks = TRUE, valueRange = c(0, max(volume)*1.5)) %>%
-          dyRoller(rollPeriod = 5) %>%
+          dyRoller(rollPeriod = 1) %>%
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
       })
       
@@ -1322,9 +1367,10 @@ shinyServer(function(input, output, session) {
         quote <- HistoricalData()[["quote"]]
         event <- HistoricalData()[["event"]]
         response <- HistoricalData()[["response"]]
-        quote <- xts(quote[,"WeightedY",drop=F],quote$MidPoint)
-        dygraph(quote,paste("Historical",response)) %>%
-          dySeries("WeightedY",label=response) %>%
+        quote <- xts(quote[,c(4:6),drop=F],quote$MidPoint)
+        p <- colnames(quote)
+        dygraph(quote,paste(p)) %>%
+          dySeries(p,label=response) %>%
           dyAxis("y",label=response) %>%
           dyOptions(drawPoints = TRUE, pointSize = 5) %>%
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
