@@ -23,15 +23,15 @@ shinyServer(function(input, output, session) {
     selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx,selected=NULL,multiple = TRUE)
   })
   
-  output$OrigZip5<- renderUI({
-    idx <- unique(RAW$Orig5DigZip)
-    selectizeInput("OrigZip5","5-Digit Origin Zip",choices=idx,selected=NULL,multiple=TRUE)
-  })
+#   output$OrigZip5<- renderUI({
+#     idx <- unique(RAW$Orig5DigZip)
+#     selectizeInput("OrigZip5","5-Digit Origin Zip",choices=idx,selected=NULL,multiple=TRUE)
+#   })
   
-  output$DestZip5<- renderUI({
-    idx <- unique(RAW$Dest5DigZip)
-    selectizeInput("DestZip5","5-Digit Destination Zip",choices=idx,selected=NULL,multiple = TRUE)
-  })
+#   output$DestZip5<- renderUI({
+#     idx <- unique(RAW$Dest5DigZip)
+#     selectizeInput("DestZip5","5-Digit Destination Zip",choices=idx,selected=NULL,multiple = TRUE)
+#   })
   
   output$OrigCity<- renderUI({
     idx <- unique(RAW$OrigCity)
@@ -103,12 +103,12 @@ shinyServer(function(input, output, session) {
       output$OrigPlotState <- renderPlot(function(){
         selectStates <- input$SelectOrigStates
         if(length(selectStates)>0){
-          mapOrig <- map("state",regions = selectStates,plot=F,fill=T,col="grey95")} else{mapOrig <- NULL}
+          mapOrig <- map("state",regions = selectStates,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
         map(states)
-        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="grey95")}
+        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
         if("State Names" %in% input$maplayersOrigStates){map.text(state_labs,add=T)}
         if("Data" %in% input$maplayersOrigStates){
-          points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="grey",pch=19)
+          points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="blue",pch=19)
           }
       })
       
@@ -170,12 +170,12 @@ shinyServer(function(input, output, session) {
       output$DestPlotState <- renderPlot(function(){
         selectStates <- input$SelectDestStates
         if(length(selectStates)>0){
-          mapDest <- map("state",regions = selectStates,plot=F,fill=T,col="grey95")} else{mapDest <- NULL}
+          mapDest <- map("state",regions = selectStates,plot=F,fill=T,col="yellow")} else{mapDest <- NULL}
         map(states)
-        if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="grey95")}
+        if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="yellow")}
         if("State Names" %in% input$maplayersDestStates){map.text(state_labs,add=T)}
         if("Data" %in% input$maplayersDestStates){
-          points(x=RAW$DestLongitude,y=RAW$DestLatitude,cex=0.1,col="grey",pch=19)
+          points(x=RAW$DestLongitude,y=RAW$DestLatitude,cex=0.1,col="red",pch=19)
         }
       })
       
@@ -254,11 +254,11 @@ shinyServer(function(input, output, session) {
         if(is.null(counties)){return(NULL)}
         selectCounties <- input$SelectOrigCounties
         if(length(selectCounties)>0){
-          mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="grey95")} else{mapOrig <- NULL}
+          mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
         map(counties)
-        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="grey95")}
+        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
         if("Data" %in% input$maplayersOrigCounties){
-          points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="grey",pch=19)
+          points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="blue",pch=19)
         }
       })
       
@@ -337,11 +337,11 @@ shinyServer(function(input, output, session) {
         if(is.null(counties)){return(NULL)}
         selectCounties <- input$SelectDestCounties
         if(length(selectCounties)>0){
-          mapDest <- map("county",regions = selectCounties,plot=F,fill=T,col="grey95")} else{mapDest <- NULL}
+          mapDest <- map("county",regions = selectCounties,plot=F,fill=T,col="yellow")} else{mapDest <- NULL}
         map(counties)
-        if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="grey95")}
+        if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="yellow")}
         if("Data" %in% input$maplayersDestCounties){
-          points(x=RAW$DestLongitude,y=RAW$DestLatitude,cex=0.1,col="grey",pch=19)
+          points(x=RAW$DestLongitude,y=RAW$DestLatitude,cex=0.1,col="red",pch=19)
         }
       })
       
@@ -368,12 +368,12 @@ shinyServer(function(input, output, session) {
         }else{indexOrigCounty <- rep(NA,nrow(RAW))}
         a <- RAW$Orig3DigZip %in% input$OrigZip3
         b <- RAW$Dest3DigZip %in% input$DestZip3
-        c <- RAW$Orig5DigZip %in% input$OrigZip5
-        d <- RAW$Dest5DigZip %in% input$DestZip5
+#         c <- RAW$Orig5DigZip %in% input$OrigZip5
+#         d <- RAW$Dest5DigZip %in% input$DestZip5
         e <- RAW$OrigCity %in% input$OrigCity
         f <- RAW$DestCity %in% input$DestCity
-        orig <- (a | c | e)
-        dest <- (b | d | f)
+        orig <- (a |  e)
+        dest <- (b |  f)
         SELECTED <- RAW %>% filter((!is.na(indexOrigCounty) | orig),(!is.na(indexDestCounty) | dest))
         NOTSELECTED <- RAW %>% filter((is.na(indexOrigCounty) | !orig),(is.na(indexDestCounty) | !dest))
         return(list(SELECTED=SELECTED,NOTSELECTED=NOTSELECTED))

@@ -80,42 +80,59 @@ tallyDailyVolume <- function(RAW,dist=50,volume_lag=2){
   span<-difftime(max_time,min_time)
   time_sequence<-min_time+0:span  ##this is the date set over which to compute the summary measures
   ii=1
+
+  ###this section became unstable using dplyr commands
+  ###rewritten with primitive r commands
   for (i in 1:length(time_sequence)){
     t=time_sequence[i]
     print(t)
     t_min<-t-volume_lag
-    DATA <- RAW %>% filter(EntryDate==t)
-    DATA_WINDOW <-RAW %>% filter(EntryDate<=t & EntryDate>=t_min)
+    #DATA <- RAW %>% filter(EntryDate==t)
+    DATA <- RAW[RAW$EntryDate==t,]
+    #DATA_WINDOW <-RAW %>% filter(EntryDate<=t & EntryDate>=t_min)
+    DATA_WINDOW <-RAW[(RAW$EntryDate<=t & RAW$EntryDate>=t_min),]
 
     if(nrow(DATA)>0){
       ####Code the Origin volume
       OrigGrid_Summary<- apply(DATA[c("orig_long_lower","orig_long_upper","orig_lat_lower","orig_lat_upper")],1,function(b){
-        tmp<-filter(DATA_WINDOW,(OrigLongitude>=b[1] & OrigLongitude<=b[2]) &
-                      (OrigLatitude>=b[3] & OrigLatitude<=b[4]))
-        summarise(tmp,OrigVolume=n())
+        #tmp<-filter(DATA_WINDOW,(OrigLongitude>=b[1] & OrigLongitude<=b[2]) &
+        #              (OrigLatitude>=b[3] & OrigLatitude<=b[4]))
+        tmp<-DATA_WINDOW[((DATA_WINDOW$OrigLongitude>=b[1] & DATA_WINDOW$OrigLongitude<=b[2]) &
+                      (DATA_WINDOW$OrigLatitude>=b[3] & DATA_WINDOW$OrigLatitude<=b[4])),]
+        #summarise(tmp,OrigVolume=n())
+        return(nrow(tmp))
       })
-      Colnames <- colnames(OrigGrid_Summary[[1]])
-      Ncol <- ncol(OrigGrid_Summary[[1]])
+      #Colnames <- colnames(OrigGrid_Summary[[1]])
+      #Ncol <- ncol(OrigGrid_Summary[[1]])
+      Ncol=1
       OrigGrid_Summary <- as.data.frame(matrix(unlist(OrigGrid_Summary),ncol=Ncol,byrow=T))
-      colnames(OrigGrid_Summary) <- Colnames
+      #colnames(OrigGrid_Summary) <- Colnames
+      colnames(OrigGrid_Summary) <- "OrigVolume"
 
       ####Code the Destination volume
       DestGrid_Summary<- apply(DATA[c("dest_long_lower","dest_long_upper","dest_lat_lower","dest_lat_upper")],1,function(b){
-        tmp<-filter(DATA_WINDOW,(DestLongitude>=b[1] & DestLongitude<=b[2]) &
-                      (DestLatitude>=b[3] & DestLatitude<=b[4]))
-        summarise(tmp,DestVolume=n())
+        #tmp<-filter(DATA_WINDOW,(DestLongitude>=b[1] & DestLongitude<=b[2]) &
+        #              (DestLatitude>=b[3] & DestLatitude<=b[4]))
+        tmp<-DATA_WINDOW[((DATA_WINDOW$DestLongitude>=b[1] & DATA_WINDOW$DestLongitude<=b[2]) &
+                            (DATA_WINDOW$DestLatitude>=b[3] & DATA_WINDOW$DestLatitude<=b[4])),]
+        #summarise(tmp,DestVolume=n())
+        return(nrow(tmp))
       })
-      Colnames <- colnames(DestGrid_Summary[[1]])
-      Ncol <- ncol(DestGrid_Summary[[1]])
+      #Colnames <- colnames(DestGrid_Summary[[1]])
+      #Ncol <- ncol(DestGrid_Summary[[1]])
+      Ncol=1
       DestGrid_Summary <- as.data.frame(matrix(unlist(DestGrid_Summary),ncol=Ncol,byrow=T))
-      colnames(DestGrid_Summary) <- Colnames
-      ADD <- bind_cols(DATA,OrigGrid_Summary,DestGrid_Summary)
+      #colnames(DestGrid_Summary) <- Colnames
+      colnames(DestGrid_Summary) <- "DestVolume"
+      
+      #ADD <- bind_cols(DATA,OrigGrid_Summary,DestGrid_Summary)
+      ADD <- cbind(DATA,OrigGrid_Summary,DestGrid_Summary)
       RAW_FINAL[[ii]] <-ADD
       ii=ii+1
     }
   }
 
-  RAW_FINAL <- rbind_all(RAW_FINAL)
+  RAW_FINAL <- rbind_all(RAW_FINAL) ###leave this dplyr function to collapse the array (I don't think this is an error point)
   RAW_FINAL <- RAW_FINAL %>% select(-(orig_long_lower:dest_lat_upper))
   RAW_FINAL <- as.data.frame(RAW_FINAL)
   return(RAW_FINAL)

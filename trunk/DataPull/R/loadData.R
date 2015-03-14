@@ -67,7 +67,8 @@ loadData <- function(path,sample_pct){
   }
 
 
-  CHR<-select(raw_data, one_of(include))
+  #CHR<-dplyr::select(raw_data, one_of(include))
+  CHR <- raw_data[,include]
   CHR<-CHR[complete.cases(CHR[c("TotalCustomerCharges","TotalCarrierCharges")]),]###minimum quantities needed to make any inference
   CHR$RPM_NormalizedCustomer <- CHR$NormalizedCustomerLineHaul/CHR$NormalizedDistanceByCity
   CHR$RPM_AllInCustomer <- CHR$TotalCustomerCharges/CHR$LoadMiles ###should I use normalized miles
@@ -80,7 +81,8 @@ loadData <- function(path,sample_pct){
   ###do some data cleanup that should be moved to the DataPull package
   shipped <- unique(CHR$LoadCondition)[grep("F",unique(CHR$LoadCondition))]
   #Cutout Non-shipped and Shippers Agent Loads (check about the SA thing)
-  CHR <- dplyr::filter(CHR,LoadCondition == shipped & SAFlag == "False")
+  #CHR <- dplyr::filter(CHR,LoadCondition == shipped & SAFlag == "False")
+  CHR <- CHR[(CHR$LoadCondition == shipped & CHR$SAFlag == "False"),]
   CHR$Day365<-as.numeric(format(CHR$EntryDate,format="%j"))
   #CHR$Day<-as.numeric(format(CHR$EntryDate,format="%d"))
   #CHR$Month<-as.numeric(format(CHR$EntryDate,format="%m"))
