@@ -78,6 +78,8 @@ if(!require("dygraphs"))
   devtools::install_github("rstudio/dygraphs")
 if(!require("Matrix"))
   install.packages("Matrix")
+if(!require("shape"))
+  install.packages("shape")
 
 
 
@@ -163,6 +165,16 @@ fourier <- function(t,terms,period)
   colnames(X) <- paste(c("S","C"),rep(1:terms,rep(2,terms)),sep="")
   return(X)
 }
+
+
+######circle plotting function
+radius_xyunits<-function(miles=50,earth_radius = 3960.0, radians_to_degrees = 180.0/pi){
+  #"Given a distance north, return the change in latitude."
+  degrees<-(miles/earth_radius)*radians_to_degrees
+  return(degrees)
+}
+
+
 
 
 

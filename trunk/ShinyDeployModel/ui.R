@@ -33,7 +33,7 @@ body <- dashboardBody(
                        title="Origin Zips & Cities: Select to Include",width=NULL,status="primary",
                        solidHeader = TRUE,collapsible = T,
                        uiOutput("OrigZip3"),
-                       uiOutput("OrigZip5"),
+                       #uiOutput("OrigZip5"),
                        uiOutput("OrigCity")
                      )#end box
               ),#end column
@@ -42,7 +42,7 @@ body <- dashboardBody(
                        title="Destination Zips & Cities: Select to Include",width=NULL,status="primary",
                        solidHeader = TRUE,collapsible = T,
                        uiOutput("DestZip3"),
-                       uiOutput("DestZip5"),
+                       #uiOutput("DestZip5"),
                        uiOutput("DestCity")
                      )#end box
               )#end column
@@ -65,9 +65,17 @@ body <- dashboardBody(
                        h3(textOutput("AddCountiesHoverSelectedOrigin")),
                        plotOutput(outputId = "OrigPlotCounties",clickId = "OriginCounties",hoverId="OriginCountiesHover",hoverDelay=300),
                        uiOutput("SelectOrigCounties"),
-                       checkboxGroupInput("maplayersOrigCounties","Map Layers to Display",
+                       uiOutput("SelectOrigCircles"),
+                       fluidRow(column(width=6,checkboxGroupInput("maplayersOrigCounties","Map Layers to Display",
                                           c("Data"),
-                                          selected=NULL,inline=TRUE)
+                                          selected=NULL,inline=T)
+                                       ),
+                                column(width=6,
+                                       selectInput("OrigCircle","Select Method:",
+                                                          c("Counties","Bounding Circle"),selected="Counties"),
+                                       numericInput("CircleRadiusOrig","Radius of Circle (mi)", value=50,min=0,step=25)
+                                       )
+                                )
                         )
                      ),###end first column
               column(width=6,
@@ -87,9 +95,17 @@ body <- dashboardBody(
                        h3(textOutput("AddCountiesHoverSelectedDestination")),
                        plotOutput(outputId = "DestPlotCounties",clickId = "DestinationCounties",hoverId="DestinationCountiesHover",hoverDelay=300),
                        uiOutput("SelectDestCounties"),
-                       checkboxGroupInput("maplayersDestCounties","Map Layers to Display",
-                                          c("Data"),
-                                          selected=NULL,inline=TRUE)
+                       uiOutput("SelectDestCircles"),
+                       fluidRow(column(width=6,checkboxGroupInput("maplayersDestCounties","Map Layers to Display",
+                                                                  c("Data"),
+                                                                  selected=NULL,inline=T)
+                       ),
+                       column(width=6,
+                              selectInput("DestCircle","Select Method:",
+                                          c("Counties","Bounding Circle"),selected="Counties"),
+                              numericInput("CircleRadiusDest","Radius of Circle (mi)", value=50,min=0,step=25)
+                       )
+                       )
                      )
               )###end second column
             )###end fluid row

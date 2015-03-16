@@ -220,10 +220,13 @@ shinyServer(function(input, output, session) {
       ClickCountiesAddOrig<- reactive({
         counties <- CountiesOrigin()
         if(is.null(counties)){return(NULL)}
+        if(isolate(input$OrigCircle)=="Counties"){
         AddOrigCounties <- map.where(counties,x=OriginAddCounties$x,y=OriginAddCounties$y)
         AddOrigCounties <- AddOrigCounties[!is.na(AddOrigCounties)]
         if (length(AddOrigCounties)==0){AddOrigCounties <- NULL}
-        return(AddOrigCounties)
+        return(AddOrigCounties)}else{
+          OriginAddCounties$x###put to activate switch
+          return(NULL)}
       })
       
       output$SelectOrigCounties <- renderUI({
@@ -237,6 +240,25 @@ shinyServer(function(input, output, session) {
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectOrigCounties","Selected Origin Counties or Entire State",choices=pick,selected=selected,multiple=T)
       })
+      
+      OrigCircles <- reactive({
+        pts <- data.frame(x=OriginAddCounties$x,y=OriginAddCounties$y)
+        if(isolate(input$OrigCircle=="Bounding Circle")){
+          return(data.frame(pts,r=isolate(input$CircleRadiusOrig)))
+        }else{return(data.frame())}
+      })
+      
+      output$SelectOrigCircles<- renderUI({
+        pts <- OrigCircles()
+        isolate(pick <- input$SelectOrigCircles)
+        pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
+        pick <- pick[!is.na(pick)]
+        selected <- pick
+        selected <- unique(selected)
+        selected <- selected[!is.na(selected)]
+        selectizeInput("SelectOrigCircles","Selected Circle Coordinates",choices=pick,selected=selected,multiple=T)
+      })
+      
       
       output$AddCountiesHoverSelectedOrigin <- renderText({
         counties <- CountiesOrigin()
@@ -257,6 +279,14 @@ shinyServer(function(input, output, session) {
           mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
         map(counties)
         if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
+        if(!is.null(input$SelectOrigCircles)){
+          tmp <- input$SelectOrigCircles
+          lapply(tmp,function(b){
+            b <- strsplit(b,":")
+            b <- unlist(b)
+            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+          })
+        }
         if("Data" %in% input$maplayersOrigCounties){
           points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="blue",pch=19)
         }
@@ -303,10 +333,13 @@ shinyServer(function(input, output, session) {
       ClickCountiesAddDest<- reactive({
         counties <- CountiesDestination()
         if(is.null(counties)){return(NULL)}
+        if(isolate(input$DestCircle)=="Counties"){
         AddDestCounties <- map.where(counties,x=DestinationAddCounties$x,y=DestinationAddCounties$y)
         AddDestCounties <- AddDestCounties[!is.na(AddDestCounties)]
         if (length(AddDestCounties)==0){AddDestCounties <- NULL}
-        return(AddDestCounties)
+        return(AddDestCounties)}else{
+          DestinationAddCounties$x###put here to activate switch
+          return(NULL)}
       })
       
       output$SelectDestCounties <- renderUI({
@@ -319,6 +352,24 @@ shinyServer(function(input, output, session) {
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectDestCounties","Selected Destination Counties or Entire State",choices=pick,selected=selected,multiple=T)
+      })
+      
+      DestCircles <- reactive({
+        pts <- data.frame(x=DestinationAddCounties$x,y=DestinationAddCounties$y)
+        if(isolate(input$DestCircle=="Bounding Circle")){
+          return(data.frame(pts,r=isolate(input$CircleRadiusDest)))
+        }else{return(data.frame())}
+      })
+      
+      output$SelectDestCircles<- renderUI({
+        pts <- DestCircles()
+        isolate(pick <- input$SelectDestCircles)
+        pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
+        pick <- pick[!is.na(pick)]
+        selected <- pick
+        selected <- unique(selected)
+        selected <- selected[!is.na(selected)]
+        selectizeInput("SelectDestCircles","Selected Circle Coordinates",choices=pick,selected=selected,multiple=T)
       })
       
       output$AddCountiesHoverSelectedDestination <- renderText({
@@ -340,6 +391,14 @@ shinyServer(function(input, output, session) {
           mapDest <- map("county",regions = selectCounties,plot=F,fill=T,col="yellow")} else{mapDest <- NULL}
         map(counties)
         if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="yellow")}
+        if(!is.null(input$SelectDestCircles)){
+          tmp <- input$SelectDestCircles
+          lapply(tmp,function(b){
+            b <- strsplit(b,":")
+            b <- unlist(b)
+            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+          })
+        }
         if("Data" %in% input$maplayersDestCounties){
           points(x=RAW$DestLongitude,y=RAW$DestLatitude,cex=0.1,col="red",pch=19)
         }
@@ -366,14 +425,61 @@ shinyServer(function(input, output, session) {
           selectOrigin <- map("county",regions = countiesOrigin,fill=T,plot=F)
           indexOrigCounty <- map.where(selectOrigin,x=RAW$OrigLongitude,y=RAW$OrigLatitude)
         }else{indexOrigCounty <- rep(NA,nrow(RAW))}
+        
+        if(!is.null(input$SelectDestCircles)){
+          circles <- input$SelectDestCircles
+          circles <- lapply(circles,function(b){
+            b <- strsplit(b,":")
+            b <- unlist(b)
+            x_center <- as.numeric(b[1])
+            y_center <- as.numeric(b[2])
+            r <- radius_xyunits(miles=as.numeric(b[3]))
+            return(data.frame(x_center=x_center,y_center=y_center,r=r))
+          })
+          
+         idx <- lapply(circles,function(b){
+           x=RAW$DestLongitude-b$x_center
+           y=RAW$DestLatitude-b$y_center
+           dist <- sqrt(x^2+y^2)
+           idx <- dist<=b$r
+           return(idx)
+         })
+         
+         idx <- matrix(unlist(idx),ncol=length(idx),byrow=F)
+         indexDestCircle <- apply(idx,1,any)
+         indexDestCircle[is.na(indexDestCircle)] <- FALSE
+        }else{indexDestCircle <- rep(FALSE,nrow(RAW))}
+        
+        if(!is.null(input$SelectOrigCircles)){
+          circles <- input$SelectOrigCircles
+          circles <- lapply(circles,function(b){
+            b <- strsplit(b,":")
+            b <- unlist(b)
+            x_center <- as.numeric(b[1])
+            y_center <- as.numeric(b[2])
+            r <- radius_xyunits(miles=as.numeric(b[3]))
+            return(data.frame(x_center=x_center,y_center=y_center,r=r))
+          })
+          
+          idx <- lapply(circles,function(b){
+            x=RAW$OrigLongitude-b$x_center
+            y=RAW$OrigLatitude-b$y_center
+            dist <- sqrt(x^2+y^2)
+            idx <- dist<=b$r
+            return(idx)
+          })
+          
+          idx <- matrix(unlist(idx),ncol=length(idx),byrow=F)
+          indexOrigCircle <- apply(idx,1,any)
+          indexOrigCircle[is.na(indexOrigCircle)] <- FALSE
+        }else{indexOrigCircle <- rep(FALSE,nrow(RAW))}
+          
         a <- RAW$Orig3DigZip %in% input$OrigZip3
         b <- RAW$Dest3DigZip %in% input$DestZip3
-#         c <- RAW$Orig5DigZip %in% input$OrigZip5
-#         d <- RAW$Dest5DigZip %in% input$DestZip5
         e <- RAW$OrigCity %in% input$OrigCity
         f <- RAW$DestCity %in% input$DestCity
-        orig <- (a |  e)
-        dest <- (b |  f)
+        orig <- ((a |  e) | indexOrigCircle)
+        dest <- ((b |  f) | indexDestCircle)
         SELECTED <- RAW %>% filter((!is.na(indexOrigCounty) | orig),(!is.na(indexDestCounty) | dest))
         NOTSELECTED <- RAW %>% filter((is.na(indexOrigCounty) | !orig),(is.na(indexDestCounty) | !dest))
         return(list(SELECTED=SELECTED,NOTSELECTED=NOTSELECTED))
