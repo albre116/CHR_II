@@ -103,7 +103,7 @@ if(!file.exists("RAW.RData")){
   RAW <- DataPull::geocodeData(RAW)   ###Geocoding the Data
   RAW <- DataPull::tallyDailyVolume(RAW)
   save(RAW,file="RAW.RData")###save it so we don't always have to run this
-}else{load("RAW_10.RData")}###identify the data path from the datapull package
+}else{load("RAW.RData")}###identify the data path from the datapull package
 
 
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota", 
