@@ -1181,7 +1181,7 @@ shinyServer(function(input, output, session) {
         quantiles <- data.frame(EntryDate=as.Date(seq(min(data$EntryDate), max(data$EntryDate), "days")),quantiles)
         colnames(quantiles) <- c("EntryDate",paste0("HIST",params*100,"th"))
 
-        ####done with quantile
+        ####done with quantiles
         observed_summary <- observed_data %>% 
         group_by(EntryDate) %>%
         summarise(Prediction = mean(y_partial,na.rm=T))
