@@ -180,6 +180,3 @@ radius_xyunits<-function(miles=50,earth_radius = 3960.0, radians_to_degrees = 18
 
 
 
-
-
-

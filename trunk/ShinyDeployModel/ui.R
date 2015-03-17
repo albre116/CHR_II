@@ -18,7 +18,8 @@ sidebar <- dashboardSidebar(
              menuSubItem("Model Diagnostics","modeling"),
              menuSubItem("Partial Effects","partial"),
              menuSubItem("Marginal Effects","marginal"),
-             menuSubItem("Adjusted Predictions","prediction")
+             menuSubItem("Adjusted Predictions","prediction"),
+             menuSubItem("Session Info","sessionInfo")
              )),
   uiOutput("response")
 )###end side bar
@@ -119,7 +120,7 @@ body <- dashboardBody(
                          column(width=6,
                                 selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=c("Generalized Additive Model")),
                                 actionButton("FitModel","Update Model"),
-                                checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=T),
+                                checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=F),
                                 uiOutput("DateRange"),
                                 sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.15,0.85)),
                                 uiOutput("PredictionLevels")
@@ -246,7 +247,8 @@ body <- dashboardBody(
                          h3("stuff here")
                          ),
                          column(width=10,
-                                plotOutput("ModelPlot",height="600px")
+                                #plotOutput("ModelPlot",height="600px")
+                                h2("turned off")
                                 )
                          )
                          ),
@@ -256,7 +258,8 @@ body <- dashboardBody(
                                   h3("stuff here")
                            ),
                            column(width=10,
-                                  plotOutput("ModelDiagnostics",height="600px")
+                                  #plotOutput("ModelDiagnostics",height="600px")
+                                  h2("turned off")
                            )
                          )
                 ),
@@ -266,7 +269,8 @@ body <- dashboardBody(
                                   h3("stuff here")
                                   ),
                            column(width=10,
-                                  div(class="span7", verbatimTextOutput("ModelSummary"))
+                                  #div(class="span7", verbatimTextOutput("ModelSummary"))
+                                  h2("turned off")
                                   )
                            )
                          )
@@ -276,15 +280,17 @@ body <- dashboardBody(
             box(title="Partial Effects",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                          fluidRow(
                            column(width=2,
-                                  uiOutput("PartialEffect"),
-                                  uiOutput("NusianceEffect"),
-                                  uiOutput("NusianceLevels"),
-                                  checkboxGroupInput("PartialSeries","Select Layers",
-                                                     c("Fitted","Observed"),
-                                                     selected=c("Fitted","Observed"))
+                                  #uiOutput("PartialEffect"),
+                                  #uiOutput("NusianceEffect"),
+                                  #uiOutput("NusianceLevels"),
+                                  #checkboxGroupInput("PartialSeries","Select Layers",
+                                  #                   c("Fitted","Observed"),
+                                  #                   selected=c("Fitted","Observed"))
+                                  h2("turned off")
                            ),
                            column(width=10,
-                                  plotOutput("PartialPlot")
+                                  #plotOutput("PartialPlot")
+                                  h2("turned off")
                            )
                            )
                 )
@@ -293,10 +299,12 @@ body <- dashboardBody(
             box(title="Marginal Model Effects",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                             fluidRow(
                               column(width=2,
-                                     uiOutput("MarginalEffect")
+                                     #uiOutput("MarginalEffect")
+                                     h2("turned off")
                               ),
                               column(width=10,
-                                    plotOutput("MarginalPlot")
+                                    #plotOutput("MarginalPlot")
+                                    h2("turned off")
                               )
                               )
                 )
@@ -305,17 +313,24 @@ body <- dashboardBody(
             box(title="Model Fit To Raw Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=2,
-                         checkboxGroupInput("PredictionPartial","Select Layers",
-                                            c("Fitted","Observed","Predicted"),
-                                            selected=c("Fitted","Observed","Predicted"))
+                         #checkboxGroupInput("PredictionPartial","Select Layers",
+                          #                  c("Fitted","Observed","Predicted"),
+                          #                  selected=c("Fitted","Observed","Predicted"))
+                         h2("turned off")
                   ),
                   column(width=10,
-                         plotOutput("PredictionFullPlot")
+                         #plotOutput("PredictionFullPlot")
+                         h2("turned off")
                   )
                 )
             )
             
-            )###end current tab
+            ),###end current tab
+    tabItem(tabName = "sessionInfo",
+            box(title="Session Info",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                div(class="span7", verbatimTextOutput("session"))
+            )###end box
+    )###end current tab
   )###end tab items
 )# ##end body
 

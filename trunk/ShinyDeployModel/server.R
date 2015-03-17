@@ -2,8 +2,7 @@
 
 flag <<-0
 shinyServer(function(input, output, session) {
-  
-  
+
 
   ###########################################################
   #######Tab Panel 1:  Geography
@@ -888,7 +887,7 @@ shinyServer(function(input, output, session) {
         }
       })
       
-      output$ModelPlot <- renderPlot(function(){
+      output$ModelPlot <- renderPlot(function(){ 
         fit <- MODELFIT()
         if(is.null(fit)){return(NULL)}
         plot(fit,pages=1,all.terms=FALSE)
@@ -1487,6 +1486,14 @@ shinyServer(function(input, output, session) {
         if(is.null(HistoricalData())){return(NULL)}
         quote <- HistoricalData()[["quote"]]
         return(quote)
+      })
+      
+      
+    #########################################################################
+    ######Output Session Info
+    #########################################################################
+      output$session <- renderPrint({
+        devtools::session_info()
       })
 
 
