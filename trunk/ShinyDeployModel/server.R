@@ -526,8 +526,8 @@ shinyServer(function(input, output, session) {
 
       
       PERCENTILES <- reactive({
-        if(is.null(DATA())){return(NULL)}
-        if(input$FilterDate==FALSE){return(NULL)}
+        #if(is.null(DATA())){return(NULL)}
+        #if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATA()[["SELECTED"]]
         input$applyDygraph
         isolate(df <- input$dfspline)
@@ -607,7 +607,7 @@ shinyServer(function(input, output, session) {
         if(input$FilterDate==FALSE){return(list(SELECTED=SELECTED))}
         input$applyDygraph #this is the action button for the percentiles
         input$applyUpperLower #this is the action button for a RAW RPM filter
-        if(is.null(SELECTED)){return(NULL)}
+        #if(is.null(SELECTED)){return(NULL)}
         isolate(if(is.null(input$dygraph_date_window)){return(list(SELECTED=SELECTED))})
         isolate(min_dte <- input$dygraph_date_window[1])
         isolate(max_dte <- input$dygraph_date_window[2])
@@ -650,7 +650,7 @@ shinyServer(function(input, output, session) {
       ClickRemovalPoints<- reactive({
         if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
-        if(is.null(SELECTED)){return(NULL)}
+        #if(is.null(SELECTED)){return(NULL)}
         if(is.null(RemoveGroups$x)){return(NULL)}
         r <- input$response
         train <- data.frame(as.numeric(SELECTED$EntryDate),SELECTED[,r])
@@ -676,7 +676,7 @@ shinyServer(function(input, output, session) {
       output$RemoveCustomerCarrier <- renderUI({
         if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
-        if(is.null(SELECTED)){return(NULL)}
+        #if(is.null(SELECTED)){return(NULL)}
         pick <- SELECTED$CustomerCarrier
         remove <- ClickRemovalPoints()[["p"]]
         if(!("Customer Carrier" %in% isolate(input$TypeRemoval))){remove=NULL}
@@ -692,7 +692,7 @@ shinyServer(function(input, output, session) {
       output$RemoveIndividual <- renderUI({
         if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
-        if(is.null(SELECTED)){return(NULL)}
+        #if(is.null(SELECTED)){return(NULL)}
         pick <- SELECTED$loadnum
         remove <- ClickRemovalPoints()[["id"]]
         remove <- pick[remove]
@@ -710,7 +710,7 @@ shinyServer(function(input, output, session) {
       output$RemoveCustomerCarrierHover <- renderText({
         if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
-        if(is.null(SELECTED)){return(NULL)}
+        #if(is.null(SELECTED)){return(NULL)}
         if(is.null(RemoveGroupsHover$x)){return("Mouse Hover:")}
         r <- input$response
         train <- data.frame(as.numeric(SELECTED$EntryDate),SELECTED[,r])
@@ -742,7 +742,7 @@ shinyServer(function(input, output, session) {
       DATAFILTERED <- reactive({
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         if(input$FilterDate==FALSE){return(list(KEEP=SELECTED,TOSS=NULL))}
-        if(is.null(SELECTED)){return(NULL)}
+        #if(is.null(SELECTED)){return(NULL)}
         r <- input$response
         pull <- input$RemoveCustomerCarrier
         pull2 <- input$RemoveIndividual
@@ -770,7 +770,7 @@ shinyServer(function(input, output, session) {
       
       output$RemovalPlot <- renderPlot(function(){
         if(input$FilterDate==FALSE){return(NULL)}
-        if(is.null(DATAFILTERED)){return(NULL)}
+        #if(is.null(DATAFILTERED)){return(NULL)}
         KEEP <- DATAFILTERED()[["KEEP"]]
         TOSS <- DATAFILTERED()[["TOSS"]]
         LIMITS <- bind_rows(KEEP,TOSS)
@@ -838,7 +838,7 @@ shinyServer(function(input, output, session) {
       
       MODELFIT <- reactive({
         data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
-        if(is.null(data)){return(NULL)}
+        #if(is.null(data)){return(NULL)}
         input$FitModel
         r <- input$response
         if(flag==0){
@@ -889,7 +889,7 @@ shinyServer(function(input, output, session) {
       
       output$ModelPlot <- renderPlot(function(){ 
         fit <- MODELFIT()
-        if(is.null(fit)){return(NULL)}
+        #if(is.null(fit)){return(NULL)}
         plot(fit,pages=1,all.terms=FALSE)
       })
       
@@ -918,7 +918,7 @@ shinyServer(function(input, output, session) {
         fit <- MODELFIT()
         data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
         idx <- input$MarginalEffect
-        if(is.null(idx)){return(NULL)}
+        #if(is.null(idx)){return(NULL)}
         xs <- data[,idx,drop=F]
         isolate(factors <- input$FactorTerms)
         class_xs <- idx %in% factors
@@ -950,7 +950,7 @@ shinyServer(function(input, output, session) {
       
       output$MarginalPlot <- renderPlot({
         MarginalData <- MarginalData()
-        if(is.null(MarginalData)){return(NULL)}
+        #if(is.null(MarginalData)){return(NULL)}
         name <- colnames(MarginalData)
         eval(parse(text=paste0("plot <- ggplot(MarginalData,aes(x=",name[2],",y=",name[1],"))")))
         plot <- plot+geom_point()+geom_line()
@@ -1031,7 +1031,7 @@ shinyServer(function(input, output, session) {
       
       output$PartialPlot <- renderPlot({
         dat <- PARTIALDATA()
-        if(is.null(dat)){return(NULL)}
+        #if(is.null(dat)){return(NULL)}
         if(is.null(input$PartialEffect)){return(NULL)}
         selected <- input$PartialSeries
         var <- input$PartialEffect
@@ -1201,7 +1201,7 @@ shinyServer(function(input, output, session) {
         data <- PREDICTIONDATA()[["observed_summary"]]
         event <- PREDICTIONDATA()[["event"]]
         fit <- MODELFIT()
-        if(is.null(preds)){return(NULL)}
+        #if(is.null(preds)){return(NULL)}
         p <- colnames(preds)
         d <- colnames(data)
         response <- as.character(formula(fit))[2]
@@ -1229,7 +1229,7 @@ shinyServer(function(input, output, session) {
       output$PredictionFullPlot <- renderPlot({
         dat <- PREDICTIONDATA()[["observed_data"]]
         preds <- PREDICTIONDATA()[["prediction_data"]]
-        if(is.null(dat)){return(NULL)}
+        #if(is.null(dat)){return(NULL)}
         if(is.null(input$PredictionPartial)){return(NULL)}
         selected <- input$PredictionPartial
         var <- "EntryDate"
@@ -1303,11 +1303,10 @@ shinyServer(function(input, output, session) {
       
       PASSVOLUME <- reactive({
         pred_volume <- TransactionalVolume()[["pred_volume"]]
-        if(input$DrawUpdate==0){
-          return(list(pred_volume=pred_volume))
-        }
-        raw <- isolate(input$VolumeDraw_data_extract) 
-        dimension <- isolate(input$VolumeDraw_data_dimension_RowCol) 
+        #raw <- isolate(input$VolumeDraw_data_extract) 
+        raw <- input$VolumeDraw_data_extract
+        #dimension <- isolate(input$VolumeDraw_data_dimension_RowCol) 
+        dimension <- input$VolumeDraw_data_dimension_RowCol
         out <- matrix(raw,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T) 
         out <- as.data.frame(out) 
         coredata(pred_volume) <- out[,2]
@@ -1323,7 +1322,7 @@ shinyServer(function(input, output, session) {
         volume <- TransactionalVolume()[["volume"]]
         pred_volume <- PASSVOLUME()[["pred_volume"]]
         fit <- MODELFIT()
-        if(is.null(preds)){return(NULL)}
+        #if(is.null(preds)){return(NULL)}
         response <- as.character(formula(fit))[2]
         idx_date_data <- colnames(data) %in% c("EntryDate")
         idx_date_preds <- colnames(preds) %in% c("EntryDate")
@@ -1376,7 +1375,7 @@ shinyServer(function(input, output, session) {
       #######Historical Volume Integrated Quote
       ###########################################################
       HistoricalData <- reactive({
-      if(is.null(VolumeDataPrep())){return(NULL)}
+      #if(is.null(VolumeDataPrep())){return(NULL)}
       series <- VolumeDataPrep()[["series"]]
       response <- VolumeDataPrep()[["response"]]
       vol_int_rate_fcst <- VolumeDataPrep()[["vol_int_rate_fcst"]]
@@ -1442,7 +1441,7 @@ shinyServer(function(input, output, session) {
       
       
       output$Historical <- renderDygraph({
-        if(is.null(HistoricalData())){return(NULL)}
+        #if(is.null(HistoricalData())){return(NULL)}
         series <- HistoricalData()[["series"]]
         series <- series[,c(2,4:7)]
         p <- colnames(series)
@@ -1468,7 +1467,7 @@ shinyServer(function(input, output, session) {
       
       
       output$HistVolIntegrated<- renderDygraph({
-        if(is.null(HistoricalData())){return(NULL)}
+        #if(is.null(HistoricalData())){return(NULL)}
         quote <- HistoricalData()[["quote"]]
         event <- HistoricalData()[["event"]]
         response <- HistoricalData()[["response"]]
@@ -1482,11 +1481,11 @@ shinyServer(function(input, output, session) {
       })
       
 
-      output$HistVolIntegratedTable<- renderDataTable({
-        if(is.null(HistoricalData())){return(NULL)}
-        quote <- HistoricalData()[["quote"]]
-        return(quote)
-      })
+      output$HistVolIntegratedTable<- renderDataTable(
+        #if(is.null(HistoricalData())){return(NULL)}
+        HistoricalData()[["quote"]],
+        options=list(scrollX=TRUE)
+      )
       
       
     #########################################################################

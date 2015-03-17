@@ -153,7 +153,6 @@ body <- dashboardBody(
                        title="Draw Desired Volume Profile",width=NULL,status="primary",solidHeader = TRUE,
                        fluidRow(
                          column(width=2,
-                                actionButton("DrawUpdate","Update Curve for Prediction"),
                                 uiOutput("fourierComp")
                          ),
                          column(width=10,
