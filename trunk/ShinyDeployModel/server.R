@@ -1493,6 +1493,11 @@ shinyServer(function(input, output, session) {
       output$session <- renderPrint({
         devtools::session_info()
       })
+      
+      output$session2 <- renderPrint({
+        sessionInfo()
+      })
+      
 
 
       

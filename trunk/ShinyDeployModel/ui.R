@@ -19,7 +19,8 @@ sidebar <- dashboardSidebar(
              menuSubItem("Partial Effects","partial"),
              menuSubItem("Marginal Effects","marginal"),
              menuSubItem("Adjusted Predictions","prediction"),
-             menuSubItem("Session Info","sessionInfo")
+             menuSubItem("Session Info 1","sessionInfo"),
+             menuSubItem("Session Info 2","sessionInfo2")
              )),
   uiOutput("response")
 )###end side bar
@@ -329,6 +330,11 @@ body <- dashboardBody(
     tabItem(tabName = "sessionInfo",
             box(title="Session Info",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 div(class="span7", verbatimTextOutput("session"))
+            )###end box
+    ),###end current tab
+    tabItem(tabName = "sessionInfo2",
+            box(title="Session Info 2",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                div(class="span7", verbatimTextOutput("session2"))
             )###end box
     )###end current tab
   )###end tab items
