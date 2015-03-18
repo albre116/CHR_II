@@ -169,7 +169,7 @@ body <- dashboardBody(
                 fluidRow(
                   column(width=12,
                          #dygraphOutput("Historical")
-                         h2("turned off")
+                         h2("turned off debugging")
                   )
                 )
             ),
@@ -177,11 +177,11 @@ body <- dashboardBody(
                 fluidRow(
                   column(width=6,
                          #dygraphOutput("HistVolIntegrated")
-                         h2("turned off")
+                         h2("turned off debugging")
                   ),
                   column(width=6,
                          #dataTableOutput("HistVolIntegratedTable")
-                         h2("turned off")
+                         h2("turned off debugging")
                   )
                 )
             )
@@ -250,7 +250,7 @@ body <- dashboardBody(
                          ),
                          column(width=10,
                                 #plotOutput("ModelPlot",height="600px")
-                                h2("turned off")
+                                h2("turned off debugging")
                                 )
                          )
                          ),
@@ -261,7 +261,7 @@ body <- dashboardBody(
                            ),
                            column(width=10,
                                   #plotOutput("ModelDiagnostics",height="600px")
-                                  h2("turned off")
+                                  h2("turned off debugging")
                            )
                          )
                 ),
@@ -272,7 +272,7 @@ body <- dashboardBody(
                                   ),
                            column(width=10,
                                   #div(class="span7", verbatimTextOutput("ModelSummary"))
-                                  h2("turned off")
+                                  h2("turned off debugging")
                                   )
                            )
                          )
@@ -288,11 +288,11 @@ body <- dashboardBody(
                                   #checkboxGroupInput("PartialSeries","Select Layers",
                                   #                   c("Fitted","Observed"),
                                   #                   selected=c("Fitted","Observed"))
-                                  h2("turned off")
+                                  h2("turned off debugging")
                            ),
                            column(width=10,
                                   #plotOutput("PartialPlot")
-                                  h2("turned off")
+                                  h2("turned off debugging")
                            )
                            )
                 )
@@ -302,11 +302,11 @@ body <- dashboardBody(
                             fluidRow(
                               column(width=2,
                                      #uiOutput("MarginalEffect")
-                                     h2("turned off")
+                                     h2("turned off debugging")
                               ),
                               column(width=10,
                                     #plotOutput("MarginalPlot")
-                                    h2("turned off")
+                                    h2("turned off debugging")
                               )
                               )
                 )
@@ -318,11 +318,11 @@ body <- dashboardBody(
                          #checkboxGroupInput("PredictionPartial","Select Layers",
                           #                  c("Fitted","Observed","Predicted"),
                           #                  selected=c("Fitted","Observed","Predicted"))
-                         h2("turned off")
+                         h2("turned off debugging")
                   ),
                   column(width=10,
                          #plotOutput("PredictionFullPlot")
-                         h2("turned off")
+                         h2("turned off debugging")
                   )
                 )
             )
