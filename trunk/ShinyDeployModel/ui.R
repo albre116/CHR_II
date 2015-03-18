@@ -214,7 +214,7 @@ body <- dashboardBody(
                          actionButton("applyDygraph","Apply Date & Percentile Selections",icon=icon("fa fa-refresh"))
                   ),
                   column(width=10,
-                         dygraphOutput("dygraph",height="400px")
+                         dygraphOutput("dygraph_cut",height="400px")
                   )
                 )
             ),
