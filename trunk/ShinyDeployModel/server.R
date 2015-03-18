@@ -571,7 +571,7 @@ shinyServer(function(input, output, session) {
       })
       
 
-      output$dygraph <- renderDygraph({
+      output$dygraph_cut <- renderDygraph({
         if(input$FilterDate==FALSE){return(NULL)}
         r <- input$response
         quantiles <- PERCENTILES()
@@ -608,9 +608,9 @@ shinyServer(function(input, output, session) {
         input$applyDygraph #this is the action button for the percentiles
         input$applyUpperLower #this is the action button for a RAW RPM filter
         #if(is.null(SELECTED)){return(NULL)}
-        isolate(if(is.null(input$dygraph_date_window)){return(list(SELECTED=SELECTED))})
-        isolate(min_dte <- input$dygraph_date_window[1])
-        isolate(max_dte <- input$dygraph_date_window[2])
+        isolate(if(is.null(input$dygraph_cut_date_window)){return(list(SELECTED=SELECTED))})
+        isolate(min_dte <- input$dygraph_cut_date_window[1])
+        isolate(max_dte <- input$dygraph_cut_date_window[2])
         low <-input$UpperLower[1]
         high <-input$UpperLower[2]
         SELECTED <- SELECTED %>%  filter(EntryDate>=min_dte,EntryDate<=max_dte)
