@@ -22,16 +22,6 @@ shinyServer(function(input, output, session) {
     selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx,selected=NULL,multiple = TRUE)
   })
   
-#   output$OrigZip5<- renderUI({
-#     idx <- unique(RAW$Orig5DigZip)
-#     selectizeInput("OrigZip5","5-Digit Origin Zip",choices=idx,selected=NULL,multiple=TRUE)
-#   })
-  
-#   output$DestZip5<- renderUI({
-#     idx <- unique(RAW$Dest5DigZip)
-#     selectizeInput("DestZip5","5-Digit Destination Zip",choices=idx,selected=NULL,multiple = TRUE)
-#   })
-  
   output$OrigCity<- renderUI({
     idx <- unique(RAW$OrigCity)
     selectizeInput("OrigCity","Origin City",choices=idx,selected=NULL,multiple=TRUE)
@@ -408,9 +398,6 @@ shinyServer(function(input, output, session) {
       #######Tab Panel 2:  Data Conditioning
       ###########################################################
       
-      ###########################################################
-      #######Plot Map of chosen data
-      ###########################################################
       
       DATA <- reactive({
         if(!is.null(input$SelectDestCounties)){
@@ -484,50 +471,15 @@ shinyServer(function(input, output, session) {
         return(list(SELECTED=SELECTED,NOTSELECTED=NOTSELECTED))
       })
       
-      
-      output$MapSelectedData <- renderPlot(function(){
-        if(is.null(DATA())){return(NULL)}
-        layers <- input$maplayers
-        SELECTED <- DATA()[["SELECTED"]]
-        NOTSELECTED <- DATA()[["NOTSELECTED"]]
-        
-        map("state",interior=F)
-        if("State Borders" %in% layers){map("state")}
-        
-        if("Selected Counties" %in% layers){
-          selectCounties <- input$SelectDestCounties
-          map("county",regions = selectCounties,plot=T,fill=T,col="grey95",add=T)
-          selectCounties <- input$SelectOrigCounties
-          map("county",regions = selectCounties,plot=T,fill=T,col="grey95",add=T)}
-        
-        if("Unselected Data" %in% layers){
-          points(x=NOTSELECTED$OrigLongitude,y=NOTSELECTED$OrigLatitude,cex=0.1,col="grey",pch=19)
-          points(x=NOTSELECTED$DestLongitude,y=NOTSELECTED$DestLatitude,cex=0.1,col="grey",pch=19)}
-        
-        if("Selected Data" %in% layers){
-        points(x=SELECTED$OrigLongitude,y=SELECTED$OrigLatitude,cex=0.1,col="blue",pch=19)
-        points(x=SELECTED$DestLongitude,y=SELECTED$DestLatitude,cex=0.1,col="red",pch=19)}
-        
-        if(("Unselected Data" %in% layers) & ("Selected Data" %in% layers)){
-            legend("bottomright",c("Orig Transaction","Dest Transaction","Unselected"),pch=19,col=c("blue","red","grey"))}
-        
-        if(("Unselected Data" %in% layers) & !("Selected Data" %in% layers)){
-          legend("bottomright",c("Unselected"),pch=19,col=c("grey"))}
-        
-        if(!("Unselected Data" %in% layers) & ("Selected Data" %in% layers)){
-          legend("bottomright",c("Orig Transaction","Dest Transaction"),pch=19,col=c("blue","red"))}
-      })
-      
-      
+
       ###########################################################
       #######Select the Appropriate Time Window
       ###########################################################
-      
-
+    
       
       PERCENTILES <- reactive({
         #if(is.null(DATA())){return(NULL)}
-        #if(input$FilterDate==FALSE){return(NULL)}
+        if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATA()[["SELECTED"]]
         input$applyDygraph
         isolate(df <- input$dfspline)
@@ -899,157 +851,6 @@ shinyServer(function(input, output, session) {
       
 
       ###########################################################
-      #######Marginal Effects Plot
-      ###########################################################
-      
-      output$MarginalEffect <- renderUI({
-        linear <- input$LinearTerms
-        spline <- input$SplineTerms
-        splineCC <- input$SplineTermsCyclic
-        factors <- input$FactorTerms
-        terms <- c(linear,spline,splineCC,factors)
-        selectInput("MarginalEffect","Select Variable to Display Marginal Effect",
-                     choices=terms,selected=NULL)
-      })
-      
-      
-      
-      MarginalData <- reactive({
-        fit <- MODELFIT()
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
-        idx <- input$MarginalEffect
-        #if(is.null(idx)){return(NULL)}
-        xs <- data[,idx,drop=F]
-        isolate(factors <- input$FactorTerms)
-        class_xs <- idx %in% factors
-        if(!(class_xs)){
-          tmp <- data.frame(seq(min(xs),max(xs),length.out = 50))
-          colnames(tmp) <- colnames(xs)
-          xs <- tmp
-        }else{
-          tmp <- unique(xs)
-          colnames(tmp) <- colnames(xs)
-          xs <- tmp
-        }
-        
-        y_hat <- apply(xs,1,function(x){
-          ndat <- data
-          ndat[,idx] <- x
-          tmp <- predict(fit,newdata=ndat)
-          return(mean(tmp))
-        })
-        
-        y_hat <- unlist(y_hat)
-        name <- as.character(formula(fit))[2]
-        y_hat <- data.frame(y_hat)
-        colnames(y_hat) <- name
-        tmp <- data.frame(y_hat,xs)
-        return(tmp)
-        
-      })
-      
-      output$MarginalPlot <- renderPlot({
-        MarginalData <- MarginalData()
-        #if(is.null(MarginalData)){return(NULL)}
-        name <- colnames(MarginalData)
-        eval(parse(text=paste0("plot <- ggplot(MarginalData,aes(x=",name[2],",y=",name[1],"))")))
-        plot <- plot+geom_point()+geom_line()
-        print(plot)
-        
-      })
-      
-      
-      ###########################################################
-      #######Partial Effects Plot (adjusted by nusiance factors)
-      ###########################################################
-      
-      output$PartialEffect <- renderUI({
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
-        terms <- colnames(data)
-        selectInput("PartialEffect","Select Variable to Display Partial Effect",
-                    choices=terms,selected="EntryDate")
-      })
-      
-      output$NusianceEffect <- renderUI({
-        linear <- input$LinearTerms
-        spline <- input$SplineTerms
-        splineCC <- input$SplineTermsCyclic
-        factors <- input$FactorTerms
-        terms <- c(linear,spline,splineCC,factors)
-        selectizeInput("NusianceEffect","Select Nusiance Variables to Adjust Effect out of Plot",
-                    choices=terms,selected=NULL,multiple = TRUE)
-      })
-      
-      
-      output$NusianceLevels = renderUI({
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
-        if(is.null(input$PartialEffect)){return(NULL)}
-        if(is.null(input$NusianceEffect)){return(NULL)}
-        myUIs <- lapply(1:length(input$NusianceEffect), function(i) {
-          inputname <- paste("NusianceLevels", i, sep="")
-          levs <- data[,input$NusianceEffect[i]]
-          levs <- unique(levs[order(levs)])
-          selectInput(inputname, 
-                      paste0("Fix ",input$NusianceEffect[i]," at:"),
-                      levs,levs[1])
-        })
-        do.call(tagList, myUIs)
-      })
-      
-      PARTIALDATA <- reactive({
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
-        data2 <- data
-        fit <- MODELFIT()
-        if(is.null(input$PartialEffect)){return(NULL)}
-        ids <- unlist(reactiveValuesToList(input))
-        ids <- length(input$NusianceEffect)
-        
-        ####Run the partial predictions
-        y_hat <- predict(fit,newdata=data)
-        y <- data[,as.character(formula(fit))[2]]
-        residual <- y-y_hat
-        
-        ####fix the data at the constant integration value
-        if(ids>0){for(i in 1:ids){
-          var <- input$NusianceEffect[i]
-          eval(parse(text=paste0("value <- input$NusianceLevels",i)))
-          class(value) <- class(data2[,var])
-          data2[,var] <- value
-        }}
-        
-        y_delta <- -(y_hat-predict(fit,newdata=data2))
-        y_partial <- y_hat+y_delta
-        y_residual <- y_partial+residual
-        
-        out <- data.frame("y_partial"=y_partial,
-                          "y_residual"=y_residual,
-                          "y_hat"=y_hat,
-                          "residual"=residual,
-                          data)
-        return(out)
-      })
-      
-      output$PartialPlot <- renderPlot({
-        dat <- PARTIALDATA()
-        #if(is.null(dat)){return(NULL)}
-        if(is.null(input$PartialEffect)){return(NULL)}
-        selected <- input$PartialSeries
-        var <- input$PartialEffect
-        fit <- MODELFIT()
-        wkdata1 <- data.frame(y=dat[,"y_partial"],x=dat[,var],group="Partial Prediction")
-        wkdata2 <- data.frame(y=dat[,"y_residual"],x=dat[,var],group="Adjusted Observation")
-        if(("Fitted" %in% selected) & !("Observed" %in% selected)){wkdata <- wkdata1}
-        if(!("Fitted" %in% selected) & ("Observed" %in% selected)){wkdata <- wkdata2}
-        if(("Fitted" %in% selected) & ("Observed" %in% selected)){wkdata <- bind_rows(wkdata1,wkdata2)}
-        if(!("Fitted" %in% selected) & !("Observed" %in% selected)){return(NULL)}
-        p <- ggplot(wkdata,aes(y=y,x=x,color=group))
-        p <- p+geom_point()+xlab(var)+ylab(paste("Partial",as.character(formula(fit))[2]))
-        print(p)
-      })
-      
-      
-      
-      ###########################################################
       #######Model Predictions
       ###########################################################
       output$DateRange <- renderUI({
@@ -1160,6 +961,10 @@ shinyServer(function(input, output, session) {
         df_fixed <- input$LambdaFixed
         y=observed_data$y_residual
         x=as.numeric(data$EntryDate)
+        xy=data.frame(y=y,x=x)
+        xy <- xy[complete.cases(xy),]
+        y=xy$y
+        x=xy$x
         tau_lower <- input$ConfLimits[1]
         tau_center <- 0.5
         tau_upper <- input$ConfLimits[2]
@@ -1168,9 +973,9 @@ shinyServer(function(input, output, session) {
           if(isolate(input$doEstimation==T)){
             g <- function(lam,y,x,tau) AIC(rqss(y ~ qss(x, lambda = lam),tau=tau),k = -1)
             lamstar <- optimize(g, interval = c(df[1], df[2]), x = x, y = y, tau= tau)
-            fitq <- rqss(y ~ qss(x, lambda = lamstar$min),tau=tau)
+            fitq <- quantreg::rqss(y ~ qss(x, lambda = lamstar$min),tau=tau)
           }else{
-            fitq <- rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
+            fitq <- quantreg::rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
           }
           x2=as.numeric(seq(min(data$EntryDate), max(data$EntryDate), "days"))
           quantile.fit <- predict(fitq,newdata=data.frame(x=x2))
@@ -1489,6 +1294,200 @@ shinyServer(function(input, output, session) {
         HistoricalData()[["quote"]],
         options=list(scrollX=TRUE)
       )
+      
+      
+      
+      
+      ###########################################################
+      #######Plot Map of chosen data
+      ###########################################################
+      
+      output$MapSelectedData <- renderPlot(function(){
+        if(is.null(DATA())){return(NULL)}
+        layers <- input$maplayers
+        SELECTED <- DATA()[["SELECTED"]]
+        NOTSELECTED <- DATA()[["NOTSELECTED"]]
+        
+        map("state",interior=F)
+        if("State Borders" %in% layers){map("state")}
+        
+        if("Selected Counties" %in% layers){
+          selectCounties <- input$SelectDestCounties
+          map("county",regions = selectCounties,plot=T,fill=T,col="grey95",add=T)
+          selectCounties <- input$SelectOrigCounties
+          map("county",regions = selectCounties,plot=T,fill=T,col="grey95",add=T)}
+        
+        if("Unselected Data" %in% layers){
+          points(x=NOTSELECTED$OrigLongitude,y=NOTSELECTED$OrigLatitude,cex=0.1,col="grey",pch=19)
+          points(x=NOTSELECTED$DestLongitude,y=NOTSELECTED$DestLatitude,cex=0.1,col="grey",pch=19)}
+        
+        if("Selected Data" %in% layers){
+          points(x=SELECTED$OrigLongitude,y=SELECTED$OrigLatitude,cex=0.1,col="blue",pch=19)
+          points(x=SELECTED$DestLongitude,y=SELECTED$DestLatitude,cex=0.1,col="red",pch=19)}
+        
+        if(("Unselected Data" %in% layers) & ("Selected Data" %in% layers)){
+          legend("bottomright",c("Orig Transaction","Dest Transaction","Unselected"),pch=19,col=c("blue","red","grey"))}
+        
+        if(("Unselected Data" %in% layers) & !("Selected Data" %in% layers)){
+          legend("bottomright",c("Unselected"),pch=19,col=c("grey"))}
+        
+        if(!("Unselected Data" %in% layers) & ("Selected Data" %in% layers)){
+          legend("bottomright",c("Orig Transaction","Dest Transaction"),pch=19,col=c("blue","red"))}
+      })
+      
+      
+      
+      ###########################################################
+      #######Marginal Effects Plot
+      ###########################################################
+      
+      output$MarginalEffect <- renderUI({
+        linear <- input$LinearTerms
+        spline <- input$SplineTerms
+        splineCC <- input$SplineTermsCyclic
+        factors <- input$FactorTerms
+        terms <- c(linear,spline,splineCC,factors)
+        selectInput("MarginalEffect","Select Variable to Display Marginal Effect",
+                    choices=terms,selected=NULL)
+      })
+      
+      
+      
+      MarginalData <- reactive({
+        fit <- MODELFIT()
+        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        idx <- input$MarginalEffect
+        #if(is.null(idx)){return(NULL)}
+        xs <- data[,idx,drop=F]
+        isolate(factors <- input$FactorTerms)
+        class_xs <- idx %in% factors
+        if(!(class_xs)){
+          tmp <- data.frame(seq(min(xs),max(xs),length.out = 50))
+          colnames(tmp) <- colnames(xs)
+          xs <- tmp
+        }else{
+          tmp <- unique(xs)
+          colnames(tmp) <- colnames(xs)
+          xs <- tmp
+        }
+        
+        y_hat <- apply(xs,1,function(x){
+          ndat <- data
+          ndat[,idx] <- x
+          tmp <- predict(fit,newdata=ndat)
+          return(mean(tmp))
+        })
+        
+        y_hat <- unlist(y_hat)
+        name <- as.character(formula(fit))[2]
+        y_hat <- data.frame(y_hat)
+        colnames(y_hat) <- name
+        tmp <- data.frame(y_hat,xs)
+        return(tmp)
+        
+      })
+      
+      output$MarginalPlot <- renderPlot({
+        MarginalData <- MarginalData()
+        #if(is.null(MarginalData)){return(NULL)}
+        name <- colnames(MarginalData)
+        eval(parse(text=paste0("plot <- ggplot(MarginalData,aes(x=",name[2],",y=",name[1],"))")))
+        plot <- plot+geom_point()+geom_line()
+        print(plot)
+        
+      })
+      
+      
+      ###########################################################
+      #######Partial Effects Plot (adjusted by nusiance factors)
+      ###########################################################
+      
+      output$PartialEffect <- renderUI({
+        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        terms <- colnames(data)
+        selectInput("PartialEffect","Select Variable to Display Partial Effect",
+                    choices=terms,selected="EntryDate")
+      })
+      
+      output$NusianceEffect <- renderUI({
+        linear <- input$LinearTerms
+        spline <- input$SplineTerms
+        splineCC <- input$SplineTermsCyclic
+        factors <- input$FactorTerms
+        terms <- c(linear,spline,splineCC,factors)
+        selectizeInput("NusianceEffect","Select Nusiance Variables to Adjust Effect out of Plot",
+                       choices=terms,selected=NULL,multiple = TRUE)
+      })
+      
+      
+      output$NusianceLevels = renderUI({
+        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        if(is.null(input$PartialEffect)){return(NULL)}
+        if(is.null(input$NusianceEffect)){return(NULL)}
+        myUIs <- lapply(1:length(input$NusianceEffect), function(i) {
+          inputname <- paste("NusianceLevels", i, sep="")
+          levs <- data[,input$NusianceEffect[i]]
+          levs <- unique(levs[order(levs)])
+          selectInput(inputname, 
+                      paste0("Fix ",input$NusianceEffect[i]," at:"),
+                      levs,levs[1])
+        })
+        do.call(tagList, myUIs)
+      })
+      
+      PARTIALDATA <- reactive({
+        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        data2 <- data
+        fit <- MODELFIT()
+        if(is.null(input$PartialEffect)){return(NULL)}
+        ids <- unlist(reactiveValuesToList(input))
+        ids <- length(input$NusianceEffect)
+        
+        ####Run the partial predictions
+        y_hat <- predict(fit,newdata=data)
+        y <- data[,as.character(formula(fit))[2]]
+        residual <- y-y_hat
+        
+        ####fix the data at the constant integration value
+        if(ids>0){for(i in 1:ids){
+          var <- input$NusianceEffect[i]
+          eval(parse(text=paste0("value <- input$NusianceLevels",i)))
+          class(value) <- class(data2[,var])
+          data2[,var] <- value
+        }}
+        
+        y_delta <- -(y_hat-predict(fit,newdata=data2))
+        y_partial <- y_hat+y_delta
+        y_residual <- y_partial+residual
+        
+        out <- data.frame("y_partial"=y_partial,
+                          "y_residual"=y_residual,
+                          "y_hat"=y_hat,
+                          "residual"=residual,
+                          data)
+        return(out)
+      })
+      
+      output$PartialPlot <- renderPlot({
+        dat <- PARTIALDATA()
+        #if(is.null(dat)){return(NULL)}
+        if(is.null(input$PartialEffect)){return(NULL)}
+        selected <- input$PartialSeries
+        var <- input$PartialEffect
+        fit <- MODELFIT()
+        wkdata1 <- data.frame(y=dat[,"y_partial"],x=dat[,var],group="Partial Prediction")
+        wkdata2 <- data.frame(y=dat[,"y_residual"],x=dat[,var],group="Adjusted Observation")
+        if(("Fitted" %in% selected) & !("Observed" %in% selected)){wkdata <- wkdata1}
+        if(!("Fitted" %in% selected) & ("Observed" %in% selected)){wkdata <- wkdata2}
+        if(("Fitted" %in% selected) & ("Observed" %in% selected)){wkdata <- bind_rows(wkdata1,wkdata2)}
+        if(!("Fitted" %in% selected) & !("Observed" %in% selected)){return(NULL)}
+        p <- ggplot(wkdata,aes(y=y,x=x,color=group))
+        p <- p+geom_point()+xlab(var)+ylab(paste("Partial",as.character(formula(fit))[2]))
+        print(p)
+      })
+      
+      
+      
       
       
     #########################################################################

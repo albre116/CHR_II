@@ -34,7 +34,6 @@ body <- dashboardBody(
                        title="Origin Zips & Cities: Select to Include",width=NULL,status="primary",
                        solidHeader = TRUE,collapsible = T,
                        uiOutput("OrigZip3"),
-                       #uiOutput("OrigZip5"),
                        uiOutput("OrigCity")
                      )#end box
               ),#end column
@@ -43,7 +42,6 @@ body <- dashboardBody(
                        title="Destination Zips & Cities: Select to Include",width=NULL,status="primary",
                        solidHeader = TRUE,collapsible = T,
                        uiOutput("DestZip3"),
-                       #uiOutput("DestZip5"),
                        uiOutput("DestCity")
                      )#end box
               )#end column
