@@ -1376,6 +1376,7 @@ shinyServer(function(input, output, session) {
       ###########################################################
       HistoricalData <- reactive({
       #if(is.null(VolumeDataPrep())){return(NULL)}
+      browser()
       series <- VolumeDataPrep()[["series"]]
       response <- VolumeDataPrep()[["response"]]
       vol_int_rate_fcst <- VolumeDataPrep()[["vol_int_rate_fcst"]]
@@ -1442,6 +1443,7 @@ shinyServer(function(input, output, session) {
       
       output$Historical <- renderDygraph({
         #if(is.null(HistoricalData())){return(NULL)}
+        browser()
         series <- HistoricalData()[["series"]]
         series <- series[,c(2,4:7)]
         p <- colnames(series)
@@ -1468,6 +1470,7 @@ shinyServer(function(input, output, session) {
       
       output$HistVolIntegrated<- renderDygraph({
         #if(is.null(HistoricalData())){return(NULL)}
+        browser()
         quote <- HistoricalData()[["quote"]]
         event <- HistoricalData()[["event"]]
         response <- HistoricalData()[["response"]]
