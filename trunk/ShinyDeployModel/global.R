@@ -96,14 +96,14 @@ if(!require('dyPencilgraphs')) {
 
 ####Generate the data if it doesn't exist
 
-if(!file.exists("RAW.RData")){
+if(!file.exists("RAW_100.RData")){
   path <- c('~/CHR_Reference_Data/FullDataSet_AllYearsCombined.txt')  ###set this to file path location for raw data
   sample_pct <- 1 ###set between [0,1]
   RAW <- DataPull::loadData(path,sample_pct)  ### see help file for documentation
   RAW <- DataPull::geocodeData(RAW)   ###Geocoding the Data
   RAW <- DataPull::tallyDailyVolume(RAW)
-  save(RAW,file="RAW.RData")###save it so we don't always have to run this
-}else{load("RAW.RData")}###identify the data path from the datapull package
+  save(RAW,file="RAW_100.RData")###save it so we don't always have to run this
+}else{load("RAW_100.RData")}###identify the data path from the datapull package
 
 
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota", 

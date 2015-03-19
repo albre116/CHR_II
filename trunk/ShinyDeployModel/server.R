@@ -800,9 +800,21 @@ shinyServer(function(input, output, session) {
                        choices=terms,selected=c("Day365"),multiple=T)
       })
       
+      DATAFILTERED2 <- reactive({
+        r <- input$response
+        linear <- input$LinearTerms
+        spline <- input$SplineTerms
+        splineCC <- input$SplineTermsCyclic
+        factors <- input$FactorTerms
+        data <- DATAFILTERED()[["KEEP"]]
+        idx <- complete.cases(data[,c(r,linear,spline,splineCC,factors)])
+        data <- data[idx,]
+        return(list(KEEP=data))
+      })
+      
       
       MODELFIT <- reactive({
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         if(is.null(data)){return(NULL)}
         r <- input$response
         linear <- input$LinearTerms
@@ -859,7 +871,7 @@ shinyServer(function(input, output, session) {
       #######Model Predictions
       ###########################################################
       output$DateRange <- renderUI({
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         start_date <-max(data$EntryDate)
         yr <- format(start_date,format="%Y")
         mo <- format(start_date,format="%m")
@@ -876,7 +888,7 @@ shinyServer(function(input, output, session) {
       
       
       output$PredictionLevels = renderUI({
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         fit <- MODELFIT()
         terms <- as.character(fit$pred.formula)[2]
         terms <- unlist(strsplit(terms," + ",fixed=T))
@@ -896,7 +908,7 @@ shinyServer(function(input, output, session) {
       
       
       PREDICTIONDATA <- reactive({
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         fit <- MODELFIT()
         terms <- as.character(fit$pred.formula)[2]
         terms <- unlist(strsplit(terms," + ",fixed=T))
@@ -1069,7 +1081,7 @@ shinyServer(function(input, output, session) {
       })
       
       TransactionalVolume <- reactive({
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         date_window <- input$DateRange
         predDays <- difftime(date_window[2],date_window[1],units="days")
         date_sequence <- date_window[1]+1:predDays
@@ -1364,7 +1376,7 @@ shinyServer(function(input, output, session) {
       
       MarginalData <- reactive({
         fit <- MODELFIT()
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         idx <- input$MarginalEffect
         #if(is.null(idx)){return(NULL)}
         xs <- data[,idx,drop=F]
@@ -1412,7 +1424,7 @@ shinyServer(function(input, output, session) {
       ###########################################################
       
       output$PartialEffect <- renderUI({
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         terms <- colnames(data)
         selectInput("PartialEffect","Select Variable to Display Partial Effect",
                     choices=terms,selected="EntryDate")
@@ -1430,7 +1442,7 @@ shinyServer(function(input, output, session) {
       
       
       output$NusianceLevels = renderUI({
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         if(is.null(input$PartialEffect)){return(NULL)}
         if(is.null(input$NusianceEffect)){return(NULL)}
         myUIs <- lapply(1:length(input$NusianceEffect), function(i) {
@@ -1445,7 +1457,7 @@ shinyServer(function(input, output, session) {
       })
       
       PARTIALDATA <- reactive({
-        data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         data2 <- data
         fit <- MODELFIT()
         if(is.null(input$PartialEffect)){return(NULL)}
