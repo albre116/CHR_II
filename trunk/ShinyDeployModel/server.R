@@ -496,27 +496,35 @@ shinyServer(function(input, output, session) {
         quantiles <- data.frame()
         y=CLEAN[,r]
         x=as.numeric(CLEAN$EntryDate)
+        xy=data.frame(y=y,x=x)
+        xy <- xy[complete.cases(xy),]
+        y=xy$y
+        x=xy$x
         params <- c(tau_lower,tau_center,tau_upper)
         for(tau in params){
           if(isolate(input$doEstimation==T)){
             g <- function(lam,y,x,tau) AIC(rqss(y ~ qss(x, lambda = lam),tau=tau),k = -1)
             lamstar <- optimize(g, interval = c(df[1], df[2]), x = x, y = y, tau= tau)
-            fit <- rqss(y ~ qss(x, lambda = lamstar$min),tau=tau)
+            fit <- quantreg::rqss(y ~ qss(x, lambda = lamstar$min),tau=tau)
           }else{
-            fit <- rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
+            fit <- quantreg::rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
           }
           
           quantile.fit <- predict(fit,newdata=data.frame(y=y,x=x))
-          quant <- data.frame(EntryDate=CLEAN$EntryDate,fit=quantile.fit,quantile=tau)
-          quant <- quant %>%
-            group_by(EntryDate) %>%
-            summarise(fit=unique(fit),
-                      quantile=unique(tau)) %>%
-            arrange(EntryDate)
-          quantiles <- bind_rows(quantiles,quant)
+          quant <- data.frame(EntryDate=CLEAN$EntryDate,fit=quantile.fit)
+#           quant <- quant %>%
+#             group_by(EntryDate) %>%
+#             summarise(fit=unique(fit),
+#                       quantile=unique(tau)) %>%
+#             arrange(EntryDate)
+          
+          quant <- tapply(quant$fit,quant$EntryDate,unique)
+          quant <- data.frame(EntryDate=as.Date(names(quant)),fit=quant,quantile=tau)
+          rownames(quant)=NULL
+          quant <- quant[order(quant$EntryDate),]
+          quantiles <- rbind(quantiles,quant)
         }
         rm(fit)
-        quantiles <- as.data.frame(quantiles)
         EntryDate<- unique(quantiles$EntryDate)
         quantiles <- unstack(quantiles,fit~quantile,data=quantiles)
         quantiles$EntryDate <- EntryDate
@@ -567,7 +575,7 @@ shinyServer(function(input, output, session) {
         isolate(max_dte <- input$dygraph_cut_date_window[2])
         low <-input$UpperLower[1]
         high <-input$UpperLower[2]
-        SELECTED <- SELECTED %>%  filter(EntryDate>=min_dte,EntryDate<=max_dte)
+        SELECTED <- SELECTED[(EntryDate>=min_dte & EntryDate<=max_dte),]
         idx <- (SELECTED[,r] >= low) & (SELECTED[,r] <= high)
         SELECTED <- SELECTED[idx,]
         return(list(SELECTED=SELECTED))
@@ -704,8 +712,11 @@ shinyServer(function(input, output, session) {
         if(("Lower Quantile" %in% input$QuantileFilter) | ("Upper Quantile" %in% input$QuantileFilter)){
           quantiles <- PERCENTILES()
           ids <- colnames(quantiles)
-          QUANT <-  select_(SELECTED,.dots = c("EntryDate",r)) %>% 
-            left_join(quantiles,by=c("EntryDate"="Date"))
+#           QUANT <-  select_(SELECTED,.dots = c("EntryDate",r)) %>% 
+#             left_join(quantiles,by=c("EntryDate"="Date"))
+          QUANT <- SELECTED[,c("EntryDate",r)]
+          QUANT <- base::merge(QUANT,quantiles,by.x="EntryDate",by.y="Date",all.x=TRUE)
+          
           
           if(c("Lower Quantile") %in% input$QuantileFilter){
             idx_toss <- idx_toss | (QUANT[,r]<=QUANT[ids[1]])
@@ -716,8 +727,8 @@ shinyServer(function(input, output, session) {
           }
         }
         
-        KEEP <- SELECTED %>% filter(!idx_toss)
-        TOSS <- SELECTED %>% filter(idx_toss)
+        KEEP <- SELECTED[!idx_toss,]
+        TOSS <- SELECTED[idx_toss,]
         return(list(KEEP=KEEP,TOSS=TOSS))
       })
       
@@ -727,8 +738,7 @@ shinyServer(function(input, output, session) {
         #if(is.null(DATAFILTERED())){return(NULL)}
         KEEP <- DATAFILTERED()[["KEEP"]]
         TOSS <- DATAFILTERED()[["TOSS"]]
-        LIMITS <- bind_rows(KEEP,TOSS)
-        LIMITS <- as.data.frame(LIMITS)
+        LIMITS <- rbind(KEEP,TOSS)
         r <- input$response
         plot(x=LIMITS$EntryDate,y=LIMITS[,r],type="n",pch=19,col="black",
              xlab="Date",ylab=r)
@@ -988,7 +998,7 @@ shinyServer(function(input, output, session) {
         observed_summary <- data.frame(EntryDate=as.Date(names(observed_summary)),Prediction=observed_summary)
         rownames(observed_summary)=NULL
         #observed_summary <- left_join(observed_summary,quantiles)
-        observed_summary <- base::merge(observed_summary,quantiles)
+        observed_summary <- base::merge(observed_summary,quantiles,all.x=TRUE)
         event <- prediction_data$EntryDate[1]-0.5
         out <- list(prediction_data=prediction_data,
                     observed_data=observed_data,
@@ -1074,7 +1084,7 @@ shinyServer(function(input, output, session) {
         dateseq <- min(volume$EntryDate)+1:interval
         JoinDat <- data.frame(EntryDate =dateseq)
         #volume <- JoinDat %>% left_join(volume)
-        volume <- base::merge(JoinDat,volume,all=TRUE)
+        volume <- base::merge(JoinDat,volume,all.x=TRUE)
         volume$TransVolume[is.na(volume$TransVolume)] <- 0
         volume <- xts(volume[,"TransVolume",drop=F],volume$EntryDate)
         yr <- as.numeric(format(min(dateseq),format="%Y"))
