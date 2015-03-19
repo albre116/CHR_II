@@ -467,7 +467,8 @@ shinyServer(function(input, output, session) {
         orig <- ((a |  e) | indexOrigCircle)
         dest <- ((b |  f) | indexDestCircle)
         #SELECTED <- RAW %>% filter((!is.na(indexOrigCounty) | orig),(!is.na(indexDestCounty) | dest))
-        idxx <- (!is.na(indexOrigCounty) | orig) & (!is.na(indexDestCounty) | dest)
+        r <- input$response
+        idxx <- (!is.na(indexOrigCounty) | orig) & (!is.na(indexDestCounty) | dest) & (!is.infinite(RAW[,r]) & !is.na(RAW[,r]))
         SELECTED <- RAW[idxx,]
         #NOTSELECTED <- RAW %>% filter((is.na(indexOrigCounty) | !orig),(is.na(indexDestCounty) | !dest))
         NOTSELECTED <- RAW[!idxx,]
