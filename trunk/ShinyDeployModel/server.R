@@ -466,8 +466,11 @@ shinyServer(function(input, output, session) {
         f <- RAW$DestCity %in% input$DestCity
         orig <- ((a |  e) | indexOrigCircle)
         dest <- ((b |  f) | indexDestCircle)
-        SELECTED <- RAW %>% filter((!is.na(indexOrigCounty) | orig),(!is.na(indexDestCounty) | dest))
-        NOTSELECTED <- RAW %>% filter((is.na(indexOrigCounty) | !orig),(is.na(indexDestCounty) | !dest))
+        #SELECTED <- RAW %>% filter((!is.na(indexOrigCounty) | orig),(!is.na(indexDestCounty) | dest))
+        idxx <- (!is.na(indexOrigCounty) | orig) & (!is.na(indexDestCounty) | dest)
+        SELECTED <- RAW[idxx,]
+        #NOTSELECTED <- RAW %>% filter((is.na(indexOrigCounty) | !orig),(is.na(indexDestCounty) | !dest))
+        NOTSELECTED <- RAW[!idxx,]
         return(list(SELECTED=SELECTED,NOTSELECTED=NOTSELECTED))
       })
       
@@ -478,7 +481,6 @@ shinyServer(function(input, output, session) {
     
       
       PERCENTILES <- reactive({
-        #if(is.null(DATA())){return(NULL)}
         if(input$FilterDate==FALSE){return(NULL)}
         SELECTED <- DATA()[["SELECTED"]]
         input$applyDygraph
@@ -722,7 +724,7 @@ shinyServer(function(input, output, session) {
       
       output$RemovalPlot <- renderPlot(function(){
         if(input$FilterDate==FALSE){return(NULL)}
-        #if(is.null(DATAFILTERED)){return(NULL)}
+        #if(is.null(DATAFILTERED())){return(NULL)}
         KEEP <- DATAFILTERED()[["KEEP"]]
         TOSS <- DATAFILTERED()[["TOSS"]]
         LIMITS <- bind_rows(KEEP,TOSS)
@@ -790,20 +792,12 @@ shinyServer(function(input, output, session) {
       
       MODELFIT <- reactive({
         data <- DATAFILTERED()[["KEEP"]]###data brought in after filtering is complete
-        #if(is.null(data)){return(NULL)}
-        input$FitModel
+        if(is.null(data)){return(NULL)}
         r <- input$response
-        if(flag==0){
-          linear <- input$LinearTerms
-          spline <- input$SplineTerms
-          splineCC <- input$SplineTermsCyclic
-          factors <- input$FactorTerms
-          flag<<-flag+1
-        }else{
-        isolate(linear <- input$LinearTerms)
-        isolate(spline <- input$SplineTerms)
-        isolate(splineCC <- input$SplineTermsCyclic)
-        isolate(factors <- input$FactorTerms)}
+        linear <- input$LinearTerms
+        spline <- input$SplineTerms
+        splineCC <- input$SplineTermsCyclic
+        factors <- input$FactorTerms
         
         if(is.null(linear) & is.null(spline) & is.null(splineCC)){return(NULL)}
         f <- as.formula(paste(r,"1",sep="~"))  ###place holder
@@ -828,7 +822,7 @@ shinyServer(function(input, output, session) {
           eval(parse(text=paste0("f_add=.~.+s(",t,",bs=\"cc\")")))
           f <- do.call("update",list(f,f_add))
         }
-        fit <- modelCPDS(f=f,data=data,kernel=isolate(input$ModelFamily),gamma=1.4)
+        fit <- modelCPDS(f=f,data=data,kernel=input$ModelFamily,gamma=1.4)
         return(fit)
       })
       
@@ -987,11 +981,14 @@ shinyServer(function(input, output, session) {
         colnames(quantiles) <- c("EntryDate",paste0("HIST",params*100,"th"))
 
         ####done with quantiles
-        observed_summary <- observed_data %>% 
-        group_by(EntryDate) %>%
-        summarise(Prediction = mean(y_partial,na.rm=T))
-        observed_summary <- left_join(observed_summary,quantiles)
-        observed_summary <- as.data.frame(observed_summary)
+#         observed_summary <- observed_data %>% 
+#         group_by(EntryDate) %>%
+#         summarise(Prediction = mean(y_partial,na.rm=T))
+        observed_summary <- tapply(observed_data$y_partial,observed_data$EntryDate,mean,na.rm=T)
+        observed_summary <- data.frame(EntryDate=as.Date(names(observed_summary)),Prediction=observed_summary)
+        rownames(observed_summary)=NULL
+        #observed_summary <- left_join(observed_summary,quantiles)
+        observed_summary <- base::merge(observed_summary,quantiles)
         event <- prediction_data$EntryDate[1]-0.5
         out <- list(prediction_data=prediction_data,
                     observed_data=observed_data,
@@ -1043,9 +1040,9 @@ shinyServer(function(input, output, session) {
         wkdata1 <- data.frame(y=dat[,"y_partial"],x=dat[,var],group="Model Fit")
         wkdata2 <- data.frame(y=dat[,"y_residual"],x=dat[,var],group="Adjusted Observation")
         wkdata3 <- data.frame(y=preds[,as.character(formula(fit))[2]],x=preds[,var],group="Predicted")
-        if("Fitted" %in% selected){wkdata <- bind_rows(wkdata,wkdata1)}
-        if("Observed" %in% selected){wkdata <- bind_rows(wkdata,wkdata2)}
-        if("Predicted" %in% selected){wkdata <- bind_rows(wkdata,wkdata3)}
+        if("Fitted" %in% selected){wkdata <- rbind(wkdata,wkdata1)}
+        if("Observed" %in% selected){wkdata <- rbind(wkdata,wkdata2)}
+        if("Predicted" %in% selected){wkdata <- rbind(wkdata,wkdata3)}
         p <- ggplot(wkdata,aes(y=y,x=x,color=group))
         p <- p+geom_point()+xlab(var)+ylab(paste(as.character(formula(fit))[2]))
         print(p)
@@ -1066,15 +1063,18 @@ shinyServer(function(input, output, session) {
         predDays <- difftime(date_window[2],date_window[1],units="days")
         date_sequence <- date_window[1]+1:predDays
         PredData <- data.frame(EntryDate=date_sequence)
-        volume <- data %>% 
-          group_by(EntryDate) %>%
-          summarise(TransVolume= n())
-        volume <- as.data.frame(volume)
+#         volume <- data %>% 
+#           group_by(EntryDate) %>%
+#           summarise(TransVolume= n())
+        
+        volume <- tapply(data$EntryDate,data$EntryDate,length)
+        volume <- data.frame(EntryDate=as.Date(names(volume)),TransVolume=volume)
+        rownames(volume)=NULL
         interval <- difftime(max(volume$EntryDate),min(volume$EntryDate),units = "days")
         dateseq <- min(volume$EntryDate)+1:interval
         JoinDat <- data.frame(EntryDate =dateseq)
-        volume <- JoinDat %>% left_join(volume)
-        volume <- as.data.frame(volume)
+        #volume <- JoinDat %>% left_join(volume)
+        volume <- base::merge(JoinDat,volume,all=TRUE)
         volume$TransVolume[is.na(volume$TransVolume)] <- 0
         volume <- xts(volume[,"TransVolume",drop=F],volume$EntryDate)
         yr <- as.numeric(format(min(dateseq),format="%Y"))

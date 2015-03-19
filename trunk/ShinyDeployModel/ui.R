@@ -118,7 +118,6 @@ body <- dashboardBody(
                        fluidRow(
                          column(width=6,
                                 selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=c("Generalized Additive Model")),
-                                actionButton("FitModel","Update Model"),
                                 checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=F),
                                 uiOutput("DateRange"),
                                 sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.15,0.85)),
@@ -167,20 +166,20 @@ body <- dashboardBody(
             box(title="HIstorical Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=12,
-                         dygraphOutput("Historical")
-                         #h2("turned off debugging")
+                         #dygraphOutput("Historical")
+                         h2("turned off debugging")
                   )
                 )
             ),
             box(title="Yearly Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=6,
-                         dygraphOutput("HistVolIntegrated")
-                         #h2("turned off debugging")
+                         #dygraphOutput("HistVolIntegrated")
+                         h2("turned off debugging")
                   ),
                   column(width=6,
-                         dataTableOutput("HistVolIntegratedTable")
-                         #h2("turned off debugging")
+                         #dataTableOutput("HistVolIntegratedTable")
+                         h2("turned off debugging")
                   )
                 )
             )

@@ -143,7 +143,7 @@ modelCPDS <- function(f,       #pass in the model formula
 ){
   ###put all of the model functions here in the switch statement
   fit <- switch(kernel,
-                "Generalized Additive Model"=mgcv::bam(f,data=data,gamma=gamma)
+                "Generalized Additive Model"=mgcv::gam(f,data=data,gamma=gamma)
   )
   
   ###return the model image
