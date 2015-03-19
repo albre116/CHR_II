@@ -166,20 +166,20 @@ body <- dashboardBody(
             box(title="HIstorical Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=12,
-                         #dygraphOutput("Historical")
-                         h2("turned off debugging")
+                         dygraphOutput("Historical")
+                         #h2("turned off debugging")
                   )
                 )
             ),
             box(title="Yearly Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=6,
-                         #dygraphOutput("HistVolIntegrated")
-                         h2("turned off debugging")
+                         dygraphOutput("HistVolIntegrated")
+                         #h2("turned off debugging")
                   ),
                   column(width=6,
-                         #dataTableOutput("HistVolIntegratedTable")
-                         h2("turned off debugging")
+                         dataTableOutput("HistVolIntegratedTable")
+                         #h2("turned off debugging")
                   )
                 )
             )

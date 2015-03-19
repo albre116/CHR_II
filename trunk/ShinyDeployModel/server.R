@@ -1212,7 +1212,8 @@ shinyServer(function(input, output, session) {
       for(i in 1:loop){
         lower <- paste(as.numeric(format(dte_window[1],format="%Y"))-i,format(dte_window[1],format="%m-%d"),sep="-")
         upper <- paste(as.numeric(format(dte_window[2],format="%Y"))-i,format(dte_window[2],format="%m-%d"),sep="-")
-        tmp <- series[paste(lower,upper,sep="::")]
+        wdow <- paste(lower,upper,sep="::")
+        tmp <- series[wdow]
         if(i==loop & (min(index(tmp))>as.Date(lower))){break}###dont add value if not complete cycle
         quote <- rbind(quote,data.frame(
                             "StartDate"=as.Date(lower),
