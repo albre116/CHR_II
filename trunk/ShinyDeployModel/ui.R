@@ -118,7 +118,7 @@ body <- dashboardBody(
                        fluidRow(
                          column(width=6,
                                 selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=c("Generalized Additive Model")),
-                                checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=F),
+                                checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=T),
                                 uiOutput("DateRange"),
                                 sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.15,0.85)),
                                 uiOutput("PredictionLevels")
