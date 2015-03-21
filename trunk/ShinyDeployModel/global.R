@@ -177,7 +177,11 @@ radius_xyunits<-function(miles=50,earth_radius = 3960.0, radians_to_degrees = 18
 
 
 ####ok lets tackle this damn encoding problem between windows and unix
-#summary(RAW$DestCity)
+#sessionInfo()
+#localeToCharset("English_United States.1252")
+RAW$DestCity<- iconv(RAW$DestCity,from="ISO8859-1",to="ASCII")
+
+
 ###encoding type for unix en_US.UTF-8
 
 
