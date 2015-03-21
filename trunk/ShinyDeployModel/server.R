@@ -89,7 +89,7 @@ shinyServer(function(input, output, session) {
       })
       
       
-      output$OrigPlotState <- renderPlot(function(){
+      output$OrigPlotState <- renderPlot({
         selectStates <- input$SelectOrigStates
         if(length(selectStates)>0){
           mapOrig <- map("state",regions = selectStates,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
@@ -156,7 +156,7 @@ shinyServer(function(input, output, session) {
       })
       
       
-      output$DestPlotState <- renderPlot(function(){
+      output$DestPlotState <- renderPlot({
         selectStates <- input$SelectDestStates
         if(length(selectStates)>0){
           mapDest <- map("state",regions = selectStates,plot=F,fill=T,col="yellow")} else{mapDest <- NULL}
@@ -260,7 +260,7 @@ shinyServer(function(input, output, session) {
       })
       
       
-      output$OrigPlotCounties <- renderPlot(function(){
+      output$OrigPlotCounties <- renderPlot({
         counties <- CountiesOrigin()
         if(is.null(counties)){return(NULL)}
         selectCounties <- input$SelectOrigCounties
@@ -372,7 +372,7 @@ shinyServer(function(input, output, session) {
       })
       
       
-      output$DestPlotCounties <- renderPlot(function(){
+      output$DestPlotCounties <- renderPlot({
         counties <- CountiesDestination()
         if(is.null(counties)){return(NULL)}
         selectCounties <- input$SelectDestCounties
@@ -734,7 +734,7 @@ shinyServer(function(input, output, session) {
       })
       
       
-      output$RemovalPlot <- renderPlot(function(){
+      output$RemovalPlot <- renderPlot({
         if(input$FilterDate==FALSE){return(NULL)}
         #if(is.null(DATAFILTERED())){return(NULL)}
         KEEP <- DATAFILTERED()[["KEEP"]]
@@ -856,7 +856,7 @@ shinyServer(function(input, output, session) {
         }
       })
       
-      output$ModelPlot <- renderPlot(function(){ 
+      output$ModelPlot <- renderPlot({ 
         fit <- MODELFIT()
         #if(is.null(fit)){return(NULL)}
         plot(fit,pages=1,all.terms=FALSE)
@@ -1323,7 +1323,7 @@ shinyServer(function(input, output, session) {
       #######Plot Map of chosen data
       ###########################################################
       
-      output$MapSelectedData <- renderPlot(function(){
+      output$MapSelectedData <- renderPlot({
         if(is.null(DATA())){return(NULL)}
         layers <- input$maplayers
         SELECTED <- DATA()[["SELECTED"]]
