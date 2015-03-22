@@ -1285,7 +1285,7 @@ shinyServer(function(input, output, session) {
           dySeries(p[1],label="50th Percentile") %>%
           dySeries("TransFcst",label="Repeated Volume FCST",
                    axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%  
-          dySeries(p[c(2)],label="Predicted") %>% ###turned off error bars p[c(3,2,4)] if desired but might crash
+          #dySeries(p[c(3,2,4)],label="Predicted") %>% ###turned off error bars... if desired but might crash
           dyAxis("y",label=response,valueRange=c(0, max(max(data),max(preds)))) %>%
           dyAxis("y2", label = "Transacitonal Volume", 
                  independentTicks = TRUE, valueRange = c(0, max(volume))) %>%
