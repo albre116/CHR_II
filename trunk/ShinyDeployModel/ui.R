@@ -151,6 +151,8 @@ body <- dashboardBody(
                        title="Draw Desired Volume Profile",width=NULL,status="primary",solidHeader = TRUE,
                        fluidRow(
                          column(width=2,
+                                selectInput("volmethod","Modeling Method for Volume",choices = c("Fourier","GAM","GAM No Weekend"),
+                                            selected=c("GAM No Weekend")),
                                 uiOutput("fourierComp")
                          ),
                          column(width=10,
@@ -190,7 +192,7 @@ body <- dashboardBody(
                   fluidRow(
                     column(width=2,
                            checkboxGroupInput("maplayers","Map Layers to Display",
-                                       c("Selected Data","Selected Counties","State Borders","Unselected Data"),
+                                       c("Selected Data","Selected Counties","State Borders","Unselected Data","Selected Circles"),
                                        selected=c("Selected Data","State Borders"))
                            ),
                     column(width=10,

@@ -1077,7 +1077,8 @@ shinyServer(function(input, output, session) {
       ###########################################################
       
       output$fourierComp <- renderUI({
-        numericInput("fourierComp","Number of Fourier Comps",8,min=2,max=40,step=2)
+        if(input$volmethod!="Fourier"){return(NULL)}
+        numericInput("fourierComp","Number of Fourier Comps",10,min=2,max=40,step=2)
       })
       
       TransactionalVolume <- reactive({
@@ -1085,7 +1086,6 @@ shinyServer(function(input, output, session) {
         date_window <- input$DateRange
         predDays <- difftime(date_window[2],date_window[1],units="days")
         date_sequence <- date_window[1]+1:predDays
-        PredData <- data.frame(EntryDate=date_sequence)
 #         volume <- data %>% 
 #           group_by(EntryDate) %>%
 #           summarise(TransVolume= n())
@@ -1100,8 +1100,10 @@ shinyServer(function(input, output, session) {
         volume <- base::merge(JoinDat,volume,all.x=TRUE)
         volume$TransVolume[is.na(volume$TransVolume)] <- 0
         volume <- xts(volume[,"TransVolume",drop=F],volume$EntryDate)
-        yr <- as.numeric(format(min(dateseq),format="%Y"))
-        day <- as.numeric(format(min(dateseq),format="%j"))
+
+        
+        ###fourier path
+        if(input$volmethod=="Fourier"){
         n <- length(volume)
         m <- 365 ###cyclic period for the volume
         components <- input$fourierComp
@@ -1112,6 +1114,28 @@ shinyServer(function(input, output, session) {
         len <- as.numeric(predDays)
         pred_volume <- forecast(fit,h=len,xreg=fourier(n+1:len,components,len))
         pred_volume <- data.frame(TransFcst=pred_volume$mean)
+        }
+        
+        ###gam path
+        if(input$volmethod=="GAM"){
+          dat <- data.frame(coredata(volume),Day365=as.numeric(format(index(volume),format="%j")),NumericDate=as.numeric(index(volume)))
+          fit <- mgcv::gam(TransVolume~s(Day365,bs="cc")+NumericDate,data=dat)
+          PredData <- data.frame(EntryDate=date_sequence,Day365=as.numeric(format(date_sequence,format="%j")),NumericDate=as.numeric(date_sequence))
+          pred_volume <- predict(fit,newdata=PredData)
+          pred_volume <- data.frame(TransFcst=as.numeric(pred_volume))
+        }
+        
+        ###gam path
+        if(input$volmethod=="GAM No Weekend"){
+          dat <- data.frame(coredata(volume),Day365=as.numeric(format(index(volume),format="%j")),NumericDate=as.numeric(index(volume)))
+          dat <- dat[!(format(index(volume),format="%A") %in% c("Saturday","Sunday")),] ###remove weekends
+          fit <- mgcv::gam(TransVolume~s(Day365,bs="cc")+NumericDate,data=dat)
+          PredData <- data.frame(EntryDate=date_sequence,Day365=as.numeric(format(date_sequence,format="%j")),NumericDate=as.numeric(date_sequence))
+          pred_volume <- predict(fit,newdata=PredData)
+          pred_volume <- data.frame(TransFcst=as.numeric(pred_volume))
+        }
+        
+
         pred_volume <- xts(pred_volume,date_sequence)
         return(list(volume=volume,pred_volume=pred_volume))
       })
@@ -1334,9 +1358,30 @@ shinyServer(function(input, output, session) {
         
         if("Selected Counties" %in% layers){
           selectCounties <- input$SelectDestCounties
-          map("county",regions = selectCounties,plot=T,fill=T,col="grey95",add=T)
+          if(!is.null(selectCounties)){map("county",regions = selectCounties,plot=T,fill=T,col="yellow",add=T)}
           selectCounties <- input$SelectOrigCounties
-          map("county",regions = selectCounties,plot=T,fill=T,col="grey95",add=T)}
+          if(!is.null(selectCounties)){map("county",regions = selectCounties,plot=T,fill=T,col="yellow",add=T)}
+          }
+        
+        if("Selected Circles" %in% layers){
+          if(!is.null(input$SelectDestCircles)){
+            tmp <- input$SelectDestCircles
+            lapply(tmp,function(b){
+              b <- strsplit(b,":")
+              b <- unlist(b)
+              plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+            })
+          }
+          
+          if(!is.null(input$SelectOrigCircles)){
+            tmp <- input$SelectOrigCircles
+            lapply(tmp,function(b){
+              b <- strsplit(b,":")
+              b <- unlist(b)
+              plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+            })
+          }
+        }
         
         if("Unselected Data" %in% layers){
           points(x=NOTSELECTED$OrigLongitude,y=NOTSELECTED$OrigLatitude,cex=0.1,col="grey",pch=19)
