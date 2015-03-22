@@ -1286,7 +1286,7 @@ shinyServer(function(input, output, session) {
           dySeries("TransFcst",label="Repeated Volume FCST",
                    axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%  
           dySeries(p[c(2)],label="FCST50th") %>% ###turned off error bars... if desired but might crash
-          dyAxis("y",label=response,valueRange=c(0, max(max(data),max(preds)))) %>%
+          dyAxis("y",label=response) %>%
           dyAxis("y2", label = "Transacitonal Volume", 
                  independentTicks = TRUE, valueRange = c(0, max(volume))) %>%
           dyRoller(rollPeriod = 1) %>%
