@@ -1081,18 +1081,38 @@ shinyServer(function(input, output, session) {
         numericInput("fourierComp","Number of Fourier Comps",10,min=2,max=40,step=2)
       })
       
+      output$CustomerSelect <- renderUI({
+        if(!(input$volbasis=="Specific Customer")){return(NULL)}
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        customers <- unique(data$CustomerCCode)
+        selectizeInput("CustomerSelect","Customer CCodes to Base Volume On",choices=customers,
+                       multiple=TRUE)
+      })
+      
+      
+      
       TransactionalVolume <- reactive({
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         date_window <- input$DateRange
         predDays <- difftime(date_window[2],date_window[1],units="days")
         date_sequence <- date_window[1]+1:predDays
-#         volume <- data %>% 
-#           group_by(EntryDate) %>%
-#           summarise(TransVolume= n())
         
+
+        if(input$volbasis=="Transactions in Lane"){
         volume <- tapply(data$EntryDate,data$EntryDate,length)
         volume <- data.frame(EntryDate=as.Date(names(volume)),TransVolume=volume)
         rownames(volume)=NULL
+        }
+        
+        if(input$volbasis=="Specific Customer"){
+          dat <- data[data$CustomerCCode %in% input$CustomerSelect,]
+          volume <- tapply(dat$EntryDate,dat$EntryDate,length)
+          volume <- data.frame(EntryDate=as.Date(names(volume)),TransVolume=volume)
+          rownames(volume)=NULL
+        }
+        
+        
+        
         interval <- difftime(max(volume$EntryDate),min(volume$EntryDate),units = "days")
         dateseq <- min(volume$EntryDate)+1:interval
         JoinDat <- data.frame(EntryDate =dateseq)
@@ -1101,7 +1121,6 @@ shinyServer(function(input, output, session) {
         volume$TransVolume[is.na(volume$TransVolume)] <- 0
         volume <- xts(volume[,"TransVolume",drop=F],volume$EntryDate)
 
-        
         ###fourier path
         if(input$volmethod=="Fourier"){
         n <- length(volume)
@@ -1135,6 +1154,23 @@ shinyServer(function(input, output, session) {
           pred_volume <- data.frame(TransFcst=as.numeric(pred_volume))
         }
         
+        ###gam path
+        if(input$volmethod=="GAM Weekly Max"){
+          dat <- data.frame(coredata(volume),Day365=as.numeric(format(index(volume),format="%j")),
+                            NumericDate=as.numeric(index(volume)),idx=1:nrow(volume))
+          dat$week_groups <- paste(format(index(volume),format="%Y"),format(index(volume),format="%W"),sep="-")
+          out_idx <- lapply(unique(dat$week_groups),function(b){
+            tmp <- dat[dat$week_groups==b,]
+            return(tmp$idx[which.max(tmp$TransVolume)])
+          })
+          out_idx <- unlist(out_idx)
+          dat <- dat[out_idx,] ###select maximum
+          fit <- mgcv::gam(TransVolume~s(Day365,bs="cc")+NumericDate,data=dat)
+          PredData <- data.frame(EntryDate=date_sequence,Day365=as.numeric(format(date_sequence,format="%j")),NumericDate=as.numeric(date_sequence))
+          pred_volume <- predict(fit,newdata=PredData)
+          pred_volume <- data.frame(TransFcst=as.numeric(pred_volume))
+        }
+        
 
         pred_volume <- xts(pred_volume,date_sequence)
         return(list(volume=volume,pred_volume=pred_volume))
@@ -1142,6 +1178,7 @@ shinyServer(function(input, output, session) {
 
       
       output$VolumeDraw <- renderdyPencilgraph({
+        if(is.null(input$CustomerSelect) & input$volbasis=="Specific Customer"){return(NULL)}
         pred_volume <- TransactionalVolume()[["pred_volume"]]
         volume <- TransactionalVolume()[["volume"]]
         dyPencilgraph(pred_volume,"Draw Your Desired Volume Curve") %>%
@@ -1199,6 +1236,7 @@ shinyServer(function(input, output, session) {
       })
       
       output$VolumeIntegrated <- renderDygraph({
+        if(is.null(input$CustomerSelect) & input$volbasis=="Specific Customer"){return(NULL)}
         series <- VolumeDataPrep()[["series"]]
         response <- VolumeDataPrep()[["response"]]
         vol_int_rate <- VolumeDataPrep()[["vol_int_rate"]]

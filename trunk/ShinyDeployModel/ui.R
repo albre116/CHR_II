@@ -151,9 +151,15 @@ body <- dashboardBody(
                        title="Draw Desired Volume Profile",width=NULL,status="primary",solidHeader = TRUE,
                        fluidRow(
                          column(width=2,
-                                selectInput("volmethod","Modeling Method for Volume",choices = c("Fourier","GAM","GAM No Weekend"),
-                                            selected=c("GAM No Weekend")),
+                                uiOutput("CustomerSelect"),
+                                selectInput("volbasis","Volume Basis",
+                                            choices=c("Transactions in Lane","Specific Customer"),
+                                            selected=c("Transactions in Lane")),
+                                selectInput("volmethod","Volume Modeling Method",
+                                            choices = c("Fourier","GAM","GAM No Weekend","GAM Weekly Max"),
+                                            selected=c("GAM Weekly Max")),
                                 uiOutput("fourierComp")
+
                          ),
                          column(width=10,
                                 dyPencilgraphOutput("VolumeDraw")
