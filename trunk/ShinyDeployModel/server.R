@@ -552,7 +552,7 @@ shinyServer(function(input, output, session) {
       ###########################################################
       
       output$UpperLower <- renderUI({
-        if(input$FilterDate==FALSE){return(NULL)}
+        if(input$FilterDate==FALSE | input$EnableSelect==FALSE){return(NULL)}
         r <- input$response
         DATA <- DATA()[["SELECTED"]]
         low <- min(DATA[,r],na.rm = TRUE)
@@ -611,7 +611,7 @@ shinyServer(function(input, output, session) {
       })
       
       ClickRemovalPoints<- reactive({
-        if(input$FilterDate==FALSE){return(NULL)}
+        if(input$FilterDate==FALSE | input$EnableSelect==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         #if(is.null(SELECTED)){return(NULL)}
         if(is.null(RemoveGroups$x)){return(NULL)}
@@ -637,7 +637,7 @@ shinyServer(function(input, output, session) {
       })
       
       output$RemoveCustomerCarrier <- renderUI({
-        if(input$FilterDate==FALSE){return(NULL)}
+        if(input$FilterDate==FALSE | input$EnableSelect==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         #if(is.null(SELECTED)){return(NULL)}
         pick <- SELECTED$CustomerCarrier
@@ -653,7 +653,7 @@ shinyServer(function(input, output, session) {
       
       
       output$RemoveIndividual <- renderUI({
-        if(input$FilterDate==FALSE){return(NULL)}
+        if(input$FilterDate==FALSE | input$EnableSelect==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         #if(is.null(SELECTED)){return(NULL)}
         pick <- SELECTED$loadnum
@@ -671,7 +671,7 @@ shinyServer(function(input, output, session) {
       
       
       output$RemoveCustomerCarrierHover <- renderText({
-        if(input$FilterDate==FALSE){return(NULL)}
+        if(input$FilterDate==FALSE | input$EnableSelect==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         #if(is.null(SELECTED)){return(NULL)}
         if(is.null(RemoveGroupsHover$x)){return("Mouse Hover:")}

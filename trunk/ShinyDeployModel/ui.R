@@ -220,6 +220,7 @@ body <- dashboardBody(
                 fluidRow(
                   column(width=2,
                          h3(textOutput("RemoveCustomerCarrierHover")),
+                         checkboxInput("EnableSelect","Enable Customer Carrier Click Removal (warning only use with smaller data sets)",value=FALSE),
                          uiOutput("UpperLower"),
                          actionButton("applyUpperLower","Apply Rate Per Mile Filter",icon=icon("fa fa-refresh")),
                          checkboxGroupInput("QuantileFilter","Apply Quantile Filter",c("Lower Quantile","Upper Quantile"),c("Lower Quantile","Upper Quantile")),
@@ -237,60 +238,36 @@ body <- dashboardBody(
             )
     ),###end current tab
     tabItem(tabName = "modeling",
-            box(title="Model Selection and Options",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
-                h2("stuff")
-            ),
             tabBox(title="Model Fit Diagnostics",width=NULL,id="diagnostics",
                 tabPanel(title="Partial Effects",value="partial",
-                         fluidRow(
-                           column(width=2,
-                         h3("stuff here")
-                         ),
-                         column(width=10,
-                                #plotOutput("ModelPlot",height="600px")
-                                h2("turned off debugging")
-                                )
-                         )
+                                plotOutput("ModelPlot",height="600px")
+                                #h2("turned off debugging")
                          ),
                 tabPanel(title="Model Diagnostics",value="diagnostics",
-                         fluidRow(
-                           column(width=2,
-                                  h3("stuff here")
-                           ),
-                           column(width=10,
-                                  #plotOutput("ModelDiagnostics",height="600px")
-                                  h2("turned off debugging")
-                           )
-                         )
-                ),
+                                  plotOutput("ModelDiagnostics",height="600px")
+                                  #h2("turned off debugging")
+                         ),
                 tabPanel(title="Model Summary",value="summary",
-                         fluidRow(
-                           column(width=2,
-                                  h3("stuff here")
-                                  ),
-                           column(width=10,
-                                  #div(class="span7", verbatimTextOutput("ModelSummary"))
-                                  h2("turned off debugging")
-                                  )
-                           )
+                                  div(class="span7", verbatimTextOutput("ModelSummary"))
+                                  #h2("turned off debugging")
                          )
-                )
+            )
             ),###end current tab
     tabItem(tabName = "partial",
             box(title="Partial Effects",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                          fluidRow(
                            column(width=2,
-                                  #uiOutput("PartialEffect"),
-                                  #uiOutput("NusianceEffect"),
-                                  #uiOutput("NusianceLevels"),
-                                  #checkboxGroupInput("PartialSeries","Select Layers",
-                                  #                   c("Fitted","Observed"),
-                                  #                   selected=c("Fitted","Observed"))
-                                  h2("turned off debugging")
+                                  uiOutput("PartialEffect"),
+                                  uiOutput("NusianceEffect"),
+                                  uiOutput("NusianceLevels"),
+                                  checkboxGroupInput("PartialSeries","Select Layers",
+                                                     c("Fitted","Observed"),
+                                                     selected=c("Fitted","Observed"))
+                                  #h2("turned off debugging")
                            ),
                            column(width=10,
-                                  #plotOutput("PartialPlot")
-                                  h2("turned off debugging")
+                                  plotOutput("PartialPlot")
+                                  #h2("turned off debugging")
                            )
                            )
                 )
@@ -299,12 +276,12 @@ body <- dashboardBody(
             box(title="Marginal Model Effects",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                             fluidRow(
                               column(width=2,
-                                     #uiOutput("MarginalEffect")
-                                     h2("turned off debugging")
+                                     uiOutput("MarginalEffect")
+                                     #h2("turned off debugging")
                               ),
                               column(width=10,
-                                    #plotOutput("MarginalPlot")
-                                    h2("turned off debugging")
+                                    plotOutput("MarginalPlot")
+                                    #h2("turned off debugging")
                               )
                               )
                 )
@@ -313,14 +290,14 @@ body <- dashboardBody(
             box(title="Model Fit To Raw Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=2,
-                         #checkboxGroupInput("PredictionPartial","Select Layers",
-                          #                  c("Fitted","Observed","Predicted"),
-                          #                  selected=c("Fitted","Observed","Predicted"))
-                         h2("turned off debugging")
+                         checkboxGroupInput("PredictionPartial","Select Layers",
+                                            c("Fitted","Observed","Predicted"),
+                                            selected=c("Fitted","Observed","Predicted"))
+                         #h2("turned off debugging")
                   ),
                   column(width=10,
-                         #plotOutput("PredictionFullPlot")
-                         h2("turned off debugging")
+                         plotOutput("PredictionFullPlot")
+                         #h2("turned off debugging")
                   )
                 )
             )
