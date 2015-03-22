@@ -1192,8 +1192,8 @@ shinyServer(function(input, output, session) {
           dySeries("TransFcst",label="Forecast Volume",
                    stepPlot = TRUE, fillGraph = TRUE) %>%
           dyAxis("y", label = "Transacitonal Volume", 
-                 independentTicks = TRUE, valueRange = c(0, max(volume)*1.5)) %>%
-          dyRoller(rollPeriod = 5) %>%
+                 independentTicks = TRUE, valueRange = c(0, max(volume))) %>%
+          dyRoller(rollPeriod = 1) %>%
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
       })
       
@@ -1284,11 +1284,11 @@ shinyServer(function(input, output, session) {
         dygraph(series,name) %>%
           dySeries(p[1],label="50th Percentile") %>%
           dySeries("TransFcst",label="Repeated Volume FCST",
-                   axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%
-          dySeries(p[c(3,2,4)],label="Predicted") %>%
+                   axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%  
+          dySeries(p[c(2)],label="Predicted") %>% ###turned off error bars p[c(3,2,4)] if desired but might crash
           dyAxis("y",label=response,valueRange=c(0, max(max(data),max(preds)))) %>%
           dyAxis("y2", label = "Transacitonal Volume", 
-                 independentTicks = TRUE, valueRange = c(0, max(volume)*1.5)) %>%
+                 independentTicks = TRUE, valueRange = c(0, max(volume))) %>%
           dyRoller(rollPeriod = 1) %>%
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
       })
