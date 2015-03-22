@@ -1089,6 +1089,13 @@ shinyServer(function(input, output, session) {
                        multiple=TRUE)
       })
       
+      output$CarrierSelect <- renderUI({
+        if(!(input$volbasis=="Specific Carrier")){return(NULL)}
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        customers <- unique(data$CarrierTCode)
+        selectizeInput("CarrierSelect","Carrier TCodes to Base Volume On",choices=customers,
+                       multiple=TRUE)
+      })
       
       
       TransactionalVolume <- reactive({
@@ -1106,6 +1113,13 @@ shinyServer(function(input, output, session) {
         
         if(input$volbasis=="Specific Customer"){
           dat <- data[data$CustomerCCode %in% input$CustomerSelect,]
+          volume <- tapply(dat$EntryDate,dat$EntryDate,length)
+          volume <- data.frame(EntryDate=as.Date(names(volume)),TransVolume=volume)
+          rownames(volume)=NULL
+        }
+        
+        if(input$volbasis=="Specific Carrier"){
+          dat <- data[data$CarrierTCode %in% input$CarrierSelect,]
           volume <- tapply(dat$EntryDate,dat$EntryDate,length)
           volume <- data.frame(EntryDate=as.Date(names(volume)),TransVolume=volume)
           rownames(volume)=NULL
@@ -1179,6 +1193,7 @@ shinyServer(function(input, output, session) {
       
       output$VolumeDraw <- renderdyPencilgraph({
         if(is.null(input$CustomerSelect) & input$volbasis=="Specific Customer"){return(NULL)}
+        if(is.null(input$CarrierSelect) & input$volbasis=="Specific Carrier"){return(NULL)}
         pred_volume <- TransactionalVolume()[["pred_volume"]]
         volume <- TransactionalVolume()[["volume"]]
         dyPencilgraph(pred_volume,"Draw Your Desired Volume Curve") %>%
@@ -1237,6 +1252,7 @@ shinyServer(function(input, output, session) {
       
       output$VolumeIntegrated <- renderDygraph({
         if(is.null(input$CustomerSelect) & input$volbasis=="Specific Customer"){return(NULL)}
+        if(is.null(input$CarrierSelect) & input$volbasis=="Specific Carrier"){return(NULL)}
         series <- VolumeDataPrep()[["series"]]
         response <- VolumeDataPrep()[["response"]]
         vol_int_rate <- VolumeDataPrep()[["vol_int_rate"]]

@@ -152,8 +152,9 @@ body <- dashboardBody(
                        fluidRow(
                          column(width=2,
                                 uiOutput("CustomerSelect"),
+                                uiOutput("CarrierSelect"),
                                 selectInput("volbasis","Volume Basis",
-                                            choices=c("Transactions in Lane","Specific Customer"),
+                                            choices=c("Transactions in Lane","Specific Customer","Specific Carrier"),
                                             selected=c("Transactions in Lane")),
                                 selectInput("volmethod","Volume Modeling Method",
                                             choices = c("Fourier","GAM","GAM No Weekend","GAM Weekly Max"),
