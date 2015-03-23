@@ -57,7 +57,7 @@ body <- dashboardBody(
                        uiOutput("SelectOrigStates"),
                        checkboxGroupInput("maplayersOrigStates","Map Layers to Display",
                                           c("State Names","Data"),
-                                          selected=c("State Names"),inline=TRUE)
+                                          selected=c("State Names","Data"),inline=TRUE)
                      ),
                      box(
                        title="Origin Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
@@ -68,7 +68,7 @@ body <- dashboardBody(
                        uiOutput("SelectOrigCircles"),
                        fluidRow(column(width=6,checkboxGroupInput("maplayersOrigCounties","Map Layers to Display",
                                           c("Data"),
-                                          selected=NULL,inline=T)
+                                          selected=c("Data"),inline=T)
                                        ),
                                 column(width=6,
                                        selectInput("OrigCircle","Select Method:",
@@ -87,7 +87,7 @@ body <- dashboardBody(
                        uiOutput("SelectDestStates"),
                        checkboxGroupInput("maplayersDestStates","Map Layers to Display",
                                           c("State Names","Data"),
-                                          selected=c("State Names"),inline=TRUE)
+                                          selected=c("State Names","Data"),inline=TRUE)
                      ),
                      box(
                        title="Destination Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
@@ -98,7 +98,7 @@ body <- dashboardBody(
                        uiOutput("SelectDestCircles"),
                        fluidRow(column(width=6,checkboxGroupInput("maplayersDestCounties","Map Layers to Display",
                                                                   c("Data"),
-                                                                  selected=NULL,inline=T)
+                                                                  selected=c("Data"),inline=T)
                        ),
                        column(width=6,
                               selectInput("DestCircle","Select Method:",

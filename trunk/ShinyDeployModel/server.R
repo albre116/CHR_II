@@ -34,6 +34,14 @@ shinyServer(function(input, output, session) {
   
   
   
+  RAWPLOT <- reactive({
+    reduced_orig <- data.frame(x=RAW$OrigLongitude,y=RAW$OrigLatitude)
+    reduced_orig <- unique(reduced_orig)
+    reduced_dest <- data.frame(x=RAW$DestLongitude,y=RAW$DestLatitude)
+    reduced_dest <- unique(reduced_dest)
+    return(list(reduced_orig=reduced_orig,reduced_dest=reduced_dest))
+  })
+  
   ###########################################################
   #######All of the Selection functions for the Origin States
   ###########################################################
@@ -91,13 +99,14 @@ shinyServer(function(input, output, session) {
       
       output$OrigPlotState <- renderPlot({
         selectStates <- input$SelectOrigStates
+        reduced <- RAWPLOT()[["reduced_orig"]]
         if(length(selectStates)>0){
           mapOrig <- map("state",regions = selectStates,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
         map(states)
         if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
         if("State Names" %in% input$maplayersOrigStates){map.text(state_labs,add=T)}
         if("Data" %in% input$maplayersOrigStates){
-          points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="blue",pch=19)
+          points(x=reduced$x,y=reduced$y,cex=0.1,col="blue",pch=19)
           }
       })
       
@@ -158,13 +167,14 @@ shinyServer(function(input, output, session) {
       
       output$DestPlotState <- renderPlot({
         selectStates <- input$SelectDestStates
+        reduced <- RAWPLOT()[["reduced_dest"]]
         if(length(selectStates)>0){
           mapDest <- map("state",regions = selectStates,plot=F,fill=T,col="yellow")} else{mapDest <- NULL}
         map(states)
         if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="yellow")}
         if("State Names" %in% input$maplayersDestStates){map.text(state_labs,add=T)}
         if("Data" %in% input$maplayersDestStates){
-          points(x=RAW$DestLongitude,y=RAW$DestLatitude,cex=0.1,col="red",pch=19)
+          points(x=reduced$x,y=reduced$y,cex=0.1,col="red",pch=19)
         }
       })
       
@@ -262,6 +272,7 @@ shinyServer(function(input, output, session) {
       
       output$OrigPlotCounties <- renderPlot({
         counties <- CountiesOrigin()
+        reduced <- RAWPLOT()[["reduced_orig"]]
         if(is.null(counties)){return(NULL)}
         selectCounties <- input$SelectOrigCounties
         if(length(selectCounties)>0){
@@ -277,7 +288,7 @@ shinyServer(function(input, output, session) {
           })
         }
         if("Data" %in% input$maplayersOrigCounties){
-          points(x=RAW$OrigLongitude,y=RAW$OrigLatitude,cex=0.1,col="blue",pch=19)
+          points(x=reduced$x,y=reduced$y,cex=0.1,col="blue",pch=19)
         }
       })
       
@@ -374,6 +385,7 @@ shinyServer(function(input, output, session) {
       
       output$DestPlotCounties <- renderPlot({
         counties <- CountiesDestination()
+        reduced <- RAWPLOT()[["reduced_dest"]]
         if(is.null(counties)){return(NULL)}
         selectCounties <- input$SelectDestCounties
         if(length(selectCounties)>0){
@@ -389,7 +401,7 @@ shinyServer(function(input, output, session) {
           })
         }
         if("Data" %in% input$maplayersDestCounties){
-          points(x=RAW$DestLongitude,y=RAW$DestLatitude,cex=0.1,col="red",pch=19)
+          points(x=reduced$x,y=reduced$y,cex=0.1,col="red",pch=19)
         }
       })
       
@@ -1297,6 +1309,7 @@ shinyServer(function(input, output, session) {
       data <- as.data.frame(coredata(series))
       idx <- !is.na(data$TransFcst)###get the forecast portion
       fcst <- data$TransFcst[idx]
+      data$TransFcst[!idx] <- 0
       for(i in 1:length(date[!idx])){
         id <- day[idx]==day[i] & month[idx]==month[i]
         if(any(id)){data$TransFcst[i] <- fcst[id]}
@@ -1438,12 +1451,20 @@ shinyServer(function(input, output, session) {
         }
         
         if("Unselected Data" %in% layers){
-          points(x=NOTSELECTED$OrigLongitude,y=NOTSELECTED$OrigLatitude,cex=0.1,col="grey",pch=19)
-          points(x=NOTSELECTED$DestLongitude,y=NOTSELECTED$DestLatitude,cex=0.1,col="grey",pch=19)}
+          orig <- data.frame(x=NOTSELECTED$OrigLongitude,y=NOTSELECTED$OrigLatitude)
+          orig <- unique(orig)
+          dest <- data.frame(x=NOTSELECTED$DestLongitude,y=NOTSELECTED$DestLatitude)
+          dest <- unique(dest)
+          points(x=orig$x,y=orig$y,cex=0.1,col="grey",pch=19)
+          points(x=dest$x,y=dest$y,cex=0.1,col="grey",pch=19)}
         
         if("Selected Data" %in% layers){
-          points(x=SELECTED$OrigLongitude,y=SELECTED$OrigLatitude,cex=0.1,col="blue",pch=19)
-          points(x=SELECTED$DestLongitude,y=SELECTED$DestLatitude,cex=0.1,col="red",pch=19)}
+          orig <- data.frame(x=SELECTED$OrigLongitude,y=SELECTED$OrigLatitude)
+          orig <- unique(orig)
+          dest <- data.frame(x=SELECTED$DestLongitude,y=SELECTED$DestLatitude)
+          dest <- unique(dest)
+          points(x=orig$x,y=orig$y,cex=0.1,col="blue",pch=19)
+          points(x=dest$x,y=dest$y,cex=0.1,col="red",pch=19)}
         
         if(("Unselected Data" %in% layers) & ("Selected Data" %in% layers)){
           legend("bottomright",c("Orig Transaction","Dest Transaction","Unselected"),pch=19,col=c("blue","red","grey"))}
