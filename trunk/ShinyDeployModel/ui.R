@@ -137,7 +137,7 @@ body <- dashboardBody(
                                      dygraphOutput("PredictionPlotInteractive")
                                      ),
                             tabPanel(title="Table of Predictions",value="predictionTable",
-                                     dataTableOutput("PredicitonTable")
+                                     DT::dataTableOutput("PredicitonTable")
                                      )
                      )
               ),###end first column
@@ -187,7 +187,7 @@ body <- dashboardBody(
                          #h2("turned off debugging")
                   ),
                   column(width=6,
-                         dataTableOutput("HistVolIntegratedTable")
+                         DT::dataTableOutput("HistVolIntegratedTable")
                          #h2("turned off debugging")
                   )
                 )

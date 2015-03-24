@@ -1059,8 +1059,9 @@ shinyServer(function(input, output, session) {
       
       
       
-      output$PredicitonTable <- renderDataTable({
-        PREDICTIONDATA()[["prediction_data"]]
+      output$PredicitonTable <- DT::renderDataTable({
+        DT::datatable(PREDICTIONDATA()[["prediction_data"]],
+                      options=list(scrollX=TRUE))
       })
       
       output$PredictionFullPlot <- renderPlot({
@@ -1401,10 +1402,9 @@ shinyServer(function(input, output, session) {
       })
       
 
-      output$HistVolIntegratedTable<- renderDataTable(
-        #if(is.null(HistoricalData())){return(NULL)}
-        HistoricalData()[["quote"]],
-        options=list(scrollX=TRUE)
+      output$HistVolIntegratedTable<- DT::renderDataTable(
+        DT::datatable(HistoricalData()[["quote"]],
+                      options=list(scrollX=TRUE))
       )
       
       

@@ -80,6 +80,8 @@ if(!require("Matrix"))
   install.packages("Matrix")
 if(!require("shape"))
   install.packages("shape")
+if (!require("DT")) 
+  devtools::install_github("rstudio/DT")
 
 
 
