@@ -1057,10 +1057,16 @@ shinyServer(function(input, output, session) {
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
       })
       
-      
+      tdat1 <- reactive({
+        table <- PREDICTIONDATA()[["prediction_data"]]
+        idx <- sapply(table,class)
+        idx <- idx %in% c("numeric","array")
+        table[,idx] <- round(table[,idx],2)
+        return(table)
+      })
       
       output$PredicitonTable <- DT::renderDataTable({
-        DT::datatable(PREDICTIONDATA()[["prediction_data"]],filter='bottom',extensions = 'TableTools',
+        DT::datatable(tdat1(),filter='bottom',extensions = 'TableTools',
                       options=list(scrollX=TRUE,    dom = 'T<"clear">lfrtip',
                                    tableTools = list(sSwfPath = copySWF())))
       })
@@ -1402,9 +1408,16 @@ shinyServer(function(input, output, session) {
           dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
       })
       
+      tdat2 <- reactive({
+        table <- HistoricalData()[["quote"]]
+        idx <- sapply(table,class)
+        idx <- idx %in% c("numeric","array")
+        table[,idx] <- round(table[,idx],2)
+        return(table)
+      })
 
       output$HistVolIntegratedTable<- DT::renderDataTable(
-        DT::datatable(HistoricalData()[["quote"]],filter='bottom',extensions = 'TableTools',
+        DT::datatable(tdat2(),filter='bottom',extensions = 'TableTools',
                       options=list(scrollX=TRUE,    dom = 'T<"clear">lfrtip',
                                    tableTools = list(sSwfPath = copySWF())))
       )
