@@ -1,6 +1,5 @@
+options(shiny.maxRequestSize=500*1024^2)###500 megabyte file upload limit set
 
-
-flag <<-0
 shinyServer(function(input, output, session) {
 
 
@@ -905,6 +904,7 @@ shinyServer(function(input, output, session) {
         terms <- as.character(fit$pred.formula)[2]
         terms <- unlist(strsplit(terms," + ",fixed=T))
         terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms
+        if(length(terms)==0){return(NULL)}
         myUIs <- lapply(1:length(terms), function(i) {
           inputname <- paste("PredictorTerms_", terms[i], sep="")
           levs <- data[,terms[i]]
