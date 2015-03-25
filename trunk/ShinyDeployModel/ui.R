@@ -114,14 +114,13 @@ body <- dashboardBody(
             fluidRow(
               column(width=6,
                      box(
-                       title="Prediction Model Parameters",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                       title="Model Terms and Parameters",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                        fluidRow(
                          column(width=6,
                                 selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=c("Generalized Additive Model")),
                                 checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=T),
                                 uiOutput("DateRange"),
-                                sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.15,0.85)),
-                                uiOutput("PredictionLevels")
+                                sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.15,0.85))
                          ),
                          column(width=6,
                                 uiOutput("FactorTerms"),
@@ -131,22 +130,28 @@ body <- dashboardBody(
                          )
                        )
 
-                     ),
-                     tabBox(title="Model Fit & Predictions",width=NULL,id="predicitonPlot",
-                            tabPanel(title="Prediction Plot",value="predictionPlot",
-                                     dygraphOutput("PredictionPlotInteractive")
-                                     ),
-                            tabPanel(title="Table of Predictions",value="predictionTable",
-                                     DT::dataTableOutput("PredicitonTable")
-                                     )
-                     )
-              ),###end first column
+                     )              
+                     ),###end first column
               column(width=6,
                      box(
                        title="Customer Volume Pattern",width=NULL,status="primary",solidHeader = TRUE,
                        dygraphOutput("VolumeIntegrated")
-
-                     ),
+                       
+                     )
+              )###end second column
+            ),###end fluid row
+            fluidRow(
+              column(width=6,
+                     tabBox(title="Model Fit & Predictions",width=NULL,id="predicitonPlot",
+                            tabPanel(title="Prediction Plot",value="predictionPlot",
+                                     dygraphOutput("PredictionPlotInteractive")
+                            ),
+                            tabPanel(title="Table of Predictions",value="predictionTable",
+                                     DT::dataTableOutput("PredicitonTable")
+                            )
+                     )
+              ),###end first column
+              column(width=6,
                      box(
                        title="Draw Desired Volume Profile",width=NULL,status="primary",solidHeader = TRUE,
                        fluidRow(
@@ -168,7 +173,10 @@ body <- dashboardBody(
                        )
                      )
               )###end second column
-            )###end fluid row
+            ),###end fluid row
+            box(title="Predictors to Set Value for Forecast",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                uiOutput("PredictionLevels")
+            )###end box
     ),
     
     tabItem(tabName = "SummaryPredictions",
