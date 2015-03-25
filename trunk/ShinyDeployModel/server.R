@@ -870,7 +870,7 @@ shinyServer(function(input, output, session) {
       output$ModelPlot <- renderPlot({ 
         fit <- MODELFIT()
         #if(is.null(fit)){return(NULL)}
-        plot(fit,pages=1,all.terms=FALSE)
+        mgcv::plot.gam(fit,pages=1,all.terms=T)
       })
       
       output$ModelDiagnostics <- renderPlot({
