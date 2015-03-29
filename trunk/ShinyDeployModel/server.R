@@ -1,5 +1,6 @@
 options(shiny.maxRequestSize=500*1024^2)###500 megabyte file upload limit set
 
+
 shinyServer(function(input, output, session) {
 
 
@@ -581,7 +582,6 @@ shinyServer(function(input, output, session) {
         if(input$FilterDate==FALSE){return(list(SELECTED=SELECTED))}
         input$applyDygraph #this is the action button for the percentiles
         input$applyUpperLower #this is the action button for a RAW RPM filter
-        #if(is.null(SELECTED)){return(NULL)}
         isolate(if(is.null(input$dygraph_cut_date_window)){return(list(SELECTED=SELECTED))})
         isolate(min_dte <- input$dygraph_cut_date_window[1])
         isolate(max_dte <- input$dygraph_cut_date_window[2])
@@ -624,7 +624,6 @@ shinyServer(function(input, output, session) {
       ClickRemovalPoints<- reactive({
         if(input$FilterDate==FALSE | input$EnableSelect==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
-        #if(is.null(SELECTED)){return(NULL)}
         if(is.null(RemoveGroups$x)){return(NULL)}
         r <- input$response
         train <- data.frame(as.numeric(SELECTED$EntryDate),SELECTED[,r])
@@ -650,7 +649,6 @@ shinyServer(function(input, output, session) {
       output$RemoveCustomerCarrier <- renderUI({
         if(input$FilterDate==FALSE | input$EnableSelect==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
-        #if(is.null(SELECTED)){return(NULL)}
         pick <- SELECTED$CustomerCarrier
         remove <- ClickRemovalPoints()[["p"]]
         if(!("Customer Carrier" %in% isolate(input$TypeRemoval))){remove=NULL}
@@ -666,7 +664,6 @@ shinyServer(function(input, output, session) {
       output$RemoveIndividual <- renderUI({
         if(input$FilterDate==FALSE | input$EnableSelect==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
-        #if(is.null(SELECTED)){return(NULL)}
         pick <- SELECTED$loadnum
         remove <- ClickRemovalPoints()[["id"]]
         remove <- pick[remove]
@@ -684,7 +681,6 @@ shinyServer(function(input, output, session) {
       output$RemoveCustomerCarrierHover <- renderText({
         if(input$FilterDate==FALSE | input$EnableSelect==FALSE){return(NULL)}
         SELECTED <- DATAWINDOW()[["SELECTED"]]
-        #if(is.null(SELECTED)){return(NULL)}
         if(is.null(RemoveGroupsHover$x)){return("Mouse Hover:")}
         r <- input$response
         train <- data.frame(as.numeric(SELECTED$EntryDate),SELECTED[,r])
@@ -716,7 +712,6 @@ shinyServer(function(input, output, session) {
       DATAFILTERED <- reactive({
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         if(input$FilterDate==FALSE){return(list(KEEP=SELECTED,TOSS=NULL))}
-        #if(is.null(SELECTED)){return(NULL)}
         r <- input$response
         pull <- input$RemoveCustomerCarrier
         pull2 <- input$RemoveIndividual
@@ -747,7 +742,6 @@ shinyServer(function(input, output, session) {
       
       output$RemovalPlot <- renderPlot({
         if(input$FilterDate==FALSE){return(NULL)}
-        #if(is.null(DATAFILTERED())){return(NULL)}
         KEEP <- DATAFILTERED()[["KEEP"]]
         TOSS <- DATAFILTERED()[["TOSS"]]
         LIMITS <- rbind(KEEP,TOSS)
@@ -826,7 +820,6 @@ shinyServer(function(input, output, session) {
       
       MODELFIT <- reactive({
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
-        if(is.null(data)){return(NULL)}
         r <- input$response
         linear <- input$LinearTerms
         spline <- input$SplineTerms
@@ -869,7 +862,6 @@ shinyServer(function(input, output, session) {
       
       output$ModelPlot <- renderPlot({ 
         fit <- MODELFIT()
-        #if(is.null(fit)){return(NULL)}
         mgcv::plot.gam(fit,pages=1,all.terms=T)
       })
       
@@ -897,42 +889,161 @@ shinyServer(function(input, output, session) {
                        )
       })
       
-      
-      output$PredictionLevels = renderUI({
-        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+      output$PredicitonRanges <- renderUI({
         fit <- MODELFIT()
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         terms <- as.character(fit$pred.formula)[2]
         terms <- unlist(strsplit(terms," + ",fixed=T))
-        terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms
+        terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms they are dealt with elsewhere
         if(length(terms)==0){return(NULL)}
-        myUIs <- lapply(1:length(terms), function(i) {
-          inputname <- paste("PredictorTerms_", terms[i], sep="")
-          levs <- data[,terms[i]]
-          levs <- unique(levs[order(levs)])
-          
-          selectInput(inputname, 
-                      paste0("Set ",terms[i]," at:"),
-                      levs,levs[1])
+        
+        myUIs<- lapply(1:length(terms), function(i) {
+          inputname <- paste("PredictorTerms_range_", terms[i], sep="")
+          u <- max(data[,terms[i]])
+          l <- min(data[,terms[i]])
+          sliderInput(inputname,paste0("Y Range:",terms[i]),min=l,max=u,value=c(l,u))
         })
+        # Convert the list to a tagList - this is necessary for the list of items
+        # to display properly.
         do.call(tagList, myUIs)
+        
+      })
+      
+      # Insert the right number of plot output objects into the web page for the pencil graphs
+      output$PredictionLevels <- renderUI({
+        fit <- MODELFIT()
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        date_window <- input$DateRange
+        predDays <- difftime(date_window[2],date_window[1],units="days")
+        date_sequence <- date_window[1]+1:predDays
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms they are dealt with elsewhere
+        if(length(terms)==0){return(NULL)}
+        term_class <- sapply(data[,terms,drop=F],class)
+        
+        for (i in 1:length(terms)) {
+          # Need local so that each item gets its own number. Without it, the value
+          # of i in the renderPlot() will be the same across all instances, because
+          # of when the expression is evaluated.
+          local({
+          my_i <- i
+          inputname <- paste("PredictorTerms_", terms[my_i], sep="")
+          eval(parse(text=paste0("fit <- mgcv::gam(",terms[my_i],"~s(Day365,bs=\"cc\")+NumericDate,data=data)")))
+          PredData <- data.frame(EntryDate=date_sequence,Day365=as.numeric(format(date_sequence,format="%j")),NumericDate=as.numeric(date_sequence))
+          tmp <- predict(fit,newdata=PredData)
+          
+          ###for factors
+          if (terms[my_i] %in% input$FactorTerms){
+          train <- as.data.frame(unique(data[,terms[my_i]]))
+          test <- tmp
+          cl <- factor(unique(data[,terms[my_i]]))
+          tmp <- knn1(train, test, cl)
+          tmp <- as.character(tmp)}
+          class(tmp) <- class(data[,terms[my_i]])
+          predictor <- eval(parse(text=paste0("data.frame(",terms[my_i],"=tmp)")))
+          predictor <- xts(predictor,date_sequence)
+          
+
+            lims <- paste("PredictorTerms_range_", terms[my_i], sep="")
+            l <- input[[lims]][1]
+            u <- input[[lims]][2]
+            output[[inputname]] <- renderdyPencilgraph({
+              dyPencilgraph(predictor,paste0("Draw Values:",terms[my_i])) %>%
+                dySeries(terms[my_i],fillGraph=T) %>%
+                dyAxis("y",valueRange=c(l,u)) ###you must specify the y values range or it will fail
+            })
+          })
+        }
+        
+        plot_output_list <- lapply(1:length(terms), function(i) {
+          inputname <- paste("PredictorTerms_", terms[i], sep="")
+          dyPencilgraphOutput(inputname)
+        })
+        # Convert the list to a tagList - this is necessary for the list of items
+        # to display properly.
+        do.call(tagList, plot_output_list)
       })
       
       
       
-      PREDICTIONDATA <- reactive({
+      ###add in section here to plot historical values using medians etc...
+      
+      MedianPreds <- reactive({
+        fit <- MODELFIT()
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        date_window <- input$DateRange
+        predDays <- difftime(date_window[2],date_window[1],units="days")
+        date_sequence <- date_window[1]+1:predDays
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms they are dealt with elsewhere
+        if(length(terms)==0){return(NULL)}
+        term_class <- sapply(data[,terms,drop=F],class)
+        output <- list()###this is where we will store the model images
+        ###now we regress the quantiles of these partials for the historical data
+        for (i in 1:length(terms)) {
+        df <- input$dfspline
+        df_fixed <- input$LambdaFixed
+        y=data[,terms[i]]
+        x=as.numeric(data$EntryDate)
+        xy=data.frame(y=y,x=x)
+        xy <- xy[complete.cases(xy),]
+        y=xy$y
+        x=xy$x
+        #tau_lower <- input$ConfLimits[1]
+        tau_center <- 0.5
+        #tau_upper <- input$ConfLimits[2]
+        #params <- c(tau_lower,tau_center,tau_upper)
+        params <- c(tau_center)
+        for(tau in params){
+          if(isolate(input$doEstimation==T)){
+            g <- function(lam,y,x,tau) AIC(rqss(y ~ qss(x, lambda = lam),tau=tau),k = -1)
+            lamstar <- optimize(g, interval = c(df[1], df[2]), x = x, y = y, tau= tau)
+            fitq <- quantreg::rqss(y ~ qss(x, lambda = lamstar$min),tau=tau)
+          }else{
+            fitq <- quantreg::rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
+          }
+          x2=as.numeric(seq(min(data$EntryDate), max(data$EntryDate), "days"))
+          quantile.fit <- predict(fitq,newdata=data.frame(x=x2))
+          quant <- data.frame(fit=quantile.fit)
+          if(tau==params[1]){quantiles <- quant}else{quantiles <- data.frame(quantiles,quant)}
+        }
+        rm(fitq)
+        quantiles <- data.frame(EntryDate=as.Date(seq(min(data$EntryDate), max(data$EntryDate), "days")),quantiles)
+        colnames(quantiles) <- c("EntryDate",paste0("HIST",params*100,"th"))
+        
+        for(b in 2:ncol(quantiles)){
+          if (terms[i] %in% input$FactorTerms){
+          train <- as.data.frame(unique(data[,terms[i]]))
+          test <- as.data.frame(quantiles[,b])
+          cl <- factor(unique(data[,terms[i]]))
+          q <- knn1(train, test, cl)
+          q <- as.character(q)
+          class(q) <- class(data[,terms[i]])
+          quantiles[,b] <- q}
+        }
+        
+        output[[terms[i]]] <- quantiles
+        }
+        
+        return(output)
+      })
+      
+      
+      PredData <- reactive({
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         fit <- MODELFIT()
+        MedianPreds <- MedianPreds()
         terms <- as.character(fit$pred.formula)[2]
         terms <- unlist(strsplit(terms," + ",fixed=T))
         PredTerms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms
         DateTerms <- terms[(terms %in% c("NumericDate","Day365"))]###get rid of date terms
-        if(is.null(terms)){return(NULL)}
-        if(is.null(input$DateRange)){return(NULL)}
         date_window <- input$DateRange
         predDays <- difftime(date_window[2],date_window[1],units="days")
         date_sequence <- date_window[1]+1:predDays
         PredData <- data.frame(EntryDate=date_sequence)
-
+        
         ###construct prediction matrix terms
         for(i in DateTerms){
           if(i=="NumericDate"){
@@ -943,11 +1054,106 @@ shinyServer(function(input, output, session) {
           }
         }
         
-        for(i in PredTerms){
-          eval(parse(text=paste("value <- input$PredictorTerms_", i, sep="")))
-          class(value) <- class(data[,i])
-          eval(parse(text=paste0("PredData <- cbind(PredData,",i,"=value)")))
+
+        if(length(PredTerms)>0){
+          for(i in PredTerms){
+
+          plotname <- paste("PredictorTerms_", i, sep="")
+          grob <- paste0(plotname,"_data_extract")
+          q <- input[[grob]]
+          grob <- paste0(plotname,"_data_dimension_RowCol")
+          dimension <-input[[grob]]
+          q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
+          if (i %in% input$FactorTerms){
+          train <- as.data.frame(unique(data[,i]))
+          test <- as.data.frame(q[,2])
+          cl <- factor(unique(data[,i]))
+          q <- knn1(train, test, cl)
+          q <- as.character(q)}else{
+            q <- q[,2]
+          }
+          
+          class(q) <- class(data[,i])
+          eval(parse(text=paste0("PredData <- cbind(PredData,",i,"=q)")))
+          }
+          }
+        
+        
+        return(PredData)
+      })
+      
+      
+      ###plot the medians and forecasted data
+      output$PredictionHistorical <- renderUI({
+        fit <- MODELFIT()
+        MedianPreds <- MedianPreds()
+        PredData <- PredData()
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms they are dealt with elsewhere
+        if(length(terms)==0){return(NULL)}
+
+        for (i in 1:length(terms)) {
+          local({
+            my_i <- i
+          inputname <- paste("PredictorHistorical_", terms[my_i], sep="")
+          predictor <- MedianPreds[[terms[my_i]]]
+          colnames(predictor) <- c("EntryDate",paste0("Hist_",terms[my_i]))
+          predictor <- xts(predictor[,2,drop=F],predictor[,1])
+          future <- PredData[,c("EntryDate",terms[my_i])]
+          colnames(future) <- c("EntryDate",paste0("Fcst_",terms[my_i]))
+          event <- future$EntryDate[1]-0.5
+          future <- xts(future[,2,drop=F],future[,1])
+          predictor <- cbind(predictor,future)
+
+          
+          # Need local so that each item gets its own number. Without it, the value
+          # of i in the renderPlot() will be the same across all instances, because
+          # of when the expression is evaluated.
+          
+
+            lims <- paste("PredictorTerms_range_", terms[my_i], sep="")
+            l <- input[[lims]][1]
+            u <- input[[lims]][2]
+            output[[inputname]] <- renderDygraph({
+              dygraph(predictor,paste0("Historical Median & Forecast For:",terms[my_i])) %>%
+                dySeries(paste0("Hist_",terms[my_i]),fillGraph=T) %>%
+                dySeries(paste0("Fcst_",terms[my_i]),fillGraph=T) %>%
+                dyAxis("y",valueRange=c(l,u)) %>%
+                dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
+            })
+          })
         }
+        
+        plot_output_list <- lapply(1:length(terms), function(i) {
+          inputname <- paste("PredictorHistorical_", terms[i], sep="")
+          dygraphOutput(inputname)
+        })
+        # Convert the list to a tagList - this is necessary for the list of items
+        # to display properly.
+        do.call(tagList, plot_output_list)
+      })
+      
+
+      
+      
+      #####Move to Seperate Page of Model Results
+      #####This is needed to deal with reactive value issues
+      #####Important to do this otherwise we get a strange cycle going on
+      
+      PREDICTIONDATA <- reactive({
+        data <- DATAFILTERED2()[["KEEP"]]
+        fit <- MODELFIT()
+        MedianPreds <- MedianPreds()
+        PredData <- PredData()
+        date_window <- input$DateRange
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        PredTerms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms
+        DateTerms <- terms[(terms %in% c("NumericDate","Day365"))]###get rid of date terms
+        predDays <- difftime(date_window[2],date_window[1],units="days")
+        date_sequence <- date_window[1]+1:predDays
+
         preds <- predict(fit,newdata=PredData,se.fit=T)
         y_hat <- preds$fit
         y_se <- sqrt(preds$se.fit^2+fit$sig2)
@@ -963,17 +1169,22 @@ shinyServer(function(input, output, session) {
         ids <- length(PredTerms)
         data2 <- data
         
+
         ####Run the partial predictions
         y_hat <- predict(fit,newdata=data)
         y <- data[,as.character(formula(fit))[2]]
         residual <- y-y_hat
         
         ####fix the data at the constant integration value
+        ####for this purpose we should set at the median to make the market reasonable
+        ####this is done above in the median stuff
         if(ids>0){for(i in 1:ids){
           var <- PredTerms[i]
-          eval(parse(text=paste0("value <- input$PredictorTerms_",var)))
-          class(value) <- class(data2[,var])
-          data2[,var] <- value
+          value <- base::merge(data2[,"EntryDate",drop=F],MedianPreds[[var]],by="EntryDate",all.x=TRUE)
+          colnames(value) <- c("EntryDate",var)
+          #eval(parse(text=paste0("value <- input$PredictorTerms_",var)))
+          #class(value) <- class(data2[,var])
+          data2[,var] <- value[,var]
         }}
         
         y_delta <- -(y_hat-predict(fit,newdata=data2))
@@ -1038,7 +1249,6 @@ shinyServer(function(input, output, session) {
         data <- PREDICTIONDATA()[["observed_summary"]]
         event <- PREDICTIONDATA()[["event"]]
         fit <- MODELFIT()
-        #if(is.null(preds)){return(NULL)}
         p <- colnames(preds)
         d <- colnames(data)
         response <- as.character(formula(fit))[2]
@@ -1074,8 +1284,6 @@ shinyServer(function(input, output, session) {
       output$PredictionFullPlot <- renderPlot({
         dat <- PREDICTIONDATA()[["observed_data"]]
         preds <- PREDICTIONDATA()[["prediction_data"]]
-        #if(is.null(dat)){return(NULL)}
-        if(is.null(input$PredictionPartial)){return(NULL)}
         selected <- input$PredictionPartial
         var <- "EntryDate"
         fit <- MODELFIT()
@@ -1246,7 +1454,6 @@ shinyServer(function(input, output, session) {
         volume <- TransactionalVolume()[["volume"]]
         pred_volume <- PASSVOLUME()[["pred_volume"]]
         fit <- MODELFIT()
-        #if(is.null(preds)){return(NULL)}
         response <- as.character(formula(fit))[2]
         idx_date_data <- colnames(data) %in% c("EntryDate")
         idx_date_preds <- colnames(preds) %in% c("EntryDate")
@@ -1301,7 +1508,6 @@ shinyServer(function(input, output, session) {
       #######Historical Volume Integrated Quote
       ###########################################################
       HistoricalData <- reactive({
-      #if(is.null(VolumeDataPrep())){return(NULL)}
       series <- VolumeDataPrep()[["series"]]
       response <- VolumeDataPrep()[["response"]]
       vol_int_rate_fcst <- VolumeDataPrep()[["vol_int_rate_fcst"]]
@@ -1369,7 +1575,6 @@ shinyServer(function(input, output, session) {
       
       
       output$Historical <- renderDygraph({
-        #if(is.null(HistoricalData())){return(NULL)}
         series <- HistoricalData()[["series"]]
         series <- series[,c(2,4:7)]
         p <- colnames(series)
@@ -1395,7 +1600,6 @@ shinyServer(function(input, output, session) {
       
       
       output$HistVolIntegrated<- renderDygraph({
-        #if(is.null(HistoricalData())){return(NULL)}
         quote <- HistoricalData()[["quote"]]
         event <- HistoricalData()[["event"]]
         response <- HistoricalData()[["response"]]
@@ -1513,7 +1717,6 @@ shinyServer(function(input, output, session) {
         fit <- MODELFIT()
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         idx <- input$MarginalEffect
-        #if(is.null(idx)){return(NULL)}
         xs <- data[,idx,drop=F]
         isolate(factors <- input$FactorTerms)
         class_xs <- idx %in% factors
@@ -1545,7 +1748,6 @@ shinyServer(function(input, output, session) {
       
       output$MarginalPlot <- renderPlot({
         MarginalData <- MarginalData()
-        #if(is.null(MarginalData)){return(NULL)}
         name <- colnames(MarginalData)
         eval(parse(text=paste0("plot <- ggplot(MarginalData,aes(x=",name[2],",y=",name[1],"))")))
         plot <- plot+geom_point()+geom_line()
@@ -1626,7 +1828,6 @@ shinyServer(function(input, output, session) {
       
       output$PartialPlot <- renderPlot({
         dat <- PARTIALDATA()
-        #if(is.null(dat)){return(NULL)}
         if(is.null(input$PartialEffect)){return(NULL)}
         selected <- input$PartialSeries
         var <- input$PartialEffect

@@ -8,10 +8,12 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe"),
              badgeLabel = "Step 1",badgeColor = "red"),
-    menuItem("Model & Volume", tabName = "VolumeEntry", icon = icon("fa fa-car"),
+    menuItem("Select Predictors", tabName = "predictors", icon = icon("fa fa-bar-chart"),
              badgeLabel = "Step 2",badgeColor = "red"),
-    menuItem("Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog"),
+    menuItem("Model & Volume", tabName = "VolumeEntry", icon = icon("fa fa-car"),
              badgeLabel = "Step 3",badgeColor = "red"),
+    menuItem("Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog"),
+             badgeLabel = "Step 4",badgeColor = "red"),
     menuItem("Advanced Options",icon = icon("fa fa-line-chart"),
              menuSubItem("Map of Selected Data","MapSelected"),
              menuSubItem("Date Range & Outliers","DateRange"),
@@ -110,7 +112,8 @@ body <- dashboardBody(
               )###end second column
             )###end fluid row
     ),
-    tabItem(tabName = "VolumeEntry",
+    
+    tabItem(tabName = "predictors",
             fluidRow(
               column(width=6,
                      box(
@@ -129,12 +132,36 @@ body <- dashboardBody(
                                 uiOutput("SplineTermsCyclic")
                          )
                        )
-
+                       
                      )              
-                     ),###end first column
+              ),###end first column
               column(width=6,
                      box(
-                       title="Customer Volume Pattern",width=NULL,status="primary",solidHeader = TRUE,
+                       title="Predictor Ranges For Input",width=NULL,status="primary",solidHeader = TRUE,
+                       uiOutput("PredicitonRanges")
+                     )
+              )###end second column
+            ),###end fluid row
+            box(title="Predictors to Set Value for Forecast",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                fluidRow(
+                  column(width=6,
+                         uiOutput("PredictionHistorical")
+                  ),###end column
+                  column(width=6,
+                         uiOutput("PredictionLevels")
+                  )###end column
+                )###end fluid row
+            )###end box
+    ),
+    tabItem(tabName = "VolumeEntry",
+            fluidRow(
+              column(width=6,
+                     box(title="Model Fit & Predictions",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                       dygraphOutput("PredictionPlotInteractive")
+                     )
+                     ),###end first column
+              column(width=6,
+                     box(title="Customer Volume Pattern",width=NULL,status="primary",solidHeader = TRUE,
                        dygraphOutput("VolumeIntegrated")
                        
                      )
@@ -142,13 +169,8 @@ body <- dashboardBody(
             ),###end fluid row
             fluidRow(
               column(width=6,
-                     tabBox(title="Model Fit & Predictions",width=NULL,id="predicitonPlot",
-                            tabPanel(title="Prediction Plot",value="predictionPlot",
-                                     dygraphOutput("PredictionPlotInteractive")
-                            ),
-                            tabPanel(title="Table of Predictions",value="predictionTable",
+                     box(title="Table of Predictions",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                                      DT::dataTableOutput("PredicitonTable")
-                            )
                      )
               ),###end first column
               column(width=6,
@@ -173,10 +195,7 @@ body <- dashboardBody(
                        )
                      )
               )###end second column
-            ),###end fluid row
-            box(title="Predictors to Set Value for Forecast",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
-                uiOutput("PredictionLevels")
-            )###end box
+            )###end fluid row
     ),
     
     tabItem(tabName = "SummaryPredictions",
