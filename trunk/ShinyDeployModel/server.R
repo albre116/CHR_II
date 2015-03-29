@@ -9,7 +9,7 @@ shinyServer(function(input, output, session) {
   ###########################################################
   output$response<- renderUI({
     idx <- colnames(RAW)
-    selectInput("response","Response",choices=idx,selected=c("RPM_NormalizedCustomer"))
+    selectInput("response","Response",choices=idx,selected=c("CPM_AllInCarrier"))
   })
   
   output$OrigZip3<- renderUI({
