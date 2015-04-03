@@ -83,6 +83,10 @@ shinyServer(function(input, output, session) {
         isolate(selected <- input$SelectOrigStates)
         selected <- c(selected,ClickStateAddOrig())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
+        selected <- c(selected,
+                      (as.character(state.fips$polyname[
+                          state.fips$abb %in% unlist(lapply(input$OrigCity,function(x){strsplit(x,",")[[1]][2]}))])))
+        selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectOrigStates","Selected Origin States",choices=unlist(lapply(states$names,function(x){strsplit(x,":")[[1]][1]})),selected=selected,multiple=T)
@@ -150,6 +154,10 @@ shinyServer(function(input, output, session) {
       output$SelectDestStates <- renderUI({
         isolate(selected <- input$SelectDestStates)
         selected <- c(selected,ClickStateAddDest())
+        selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
+        selected <- c(selected,
+                      (as.character(state.fips$polyname[
+                        state.fips$abb %in% unlist(lapply(input$DestCity,function(x){strsplit(x,",")[[1]][2]}))])))
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
@@ -251,6 +259,10 @@ shinyServer(function(input, output, session) {
         pts <- OrigCircles()
         isolate(pick <- input$SelectOrigCircles)
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
+        pickadd <- city_lookup[city_lookup$city %in% input$OrigCity,,drop=F]
+        pickadd <- pickadd[1,,drop=F]
+        if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,input$OrigRadius,sep=":")}else{pickadd <- NULL}
+        pick <- c(pick,pickadd)
         pick <- pick[!is.na(pick)]
         selected <- pick
         selected <- unique(selected)
@@ -365,6 +377,10 @@ shinyServer(function(input, output, session) {
         pts <- DestCircles()
         isolate(pick <- input$SelectDestCircles)
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
+        pickadd <- city_lookup[city_lookup$city %in% input$DestCity,,drop=F]
+        pickadd <- pickadd[1,,drop=F]
+        if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,input$DestRadius,sep=":")}else{pickadd <- NULL}
+        pick <- c(pick,pickadd)
         pick <- pick[!is.na(pick)]
         selected <- pick
         selected <- unique(selected)
@@ -889,7 +905,7 @@ shinyServer(function(input, output, session) {
                        )
       })
       
-      output$PredicitonRanges <- renderUI({
+      output$PredicitonRangesLower <- renderUI({
         fit <- MODELFIT()
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         terms <- as.character(fit$pred.formula)[2]
@@ -898,10 +914,48 @@ shinyServer(function(input, output, session) {
         if(length(terms)==0){return(NULL)}
         
         myUIs<- lapply(1:length(terms), function(i) {
-          inputname <- paste("PredictorTerms_range_", terms[i], sep="")
+          inputname <- paste("PredictorTerms_range_lower_", terms[i], sep="")
           u <- max(data[,terms[i]])
           l <- min(data[,terms[i]])
-          sliderInput(inputname,paste0("Y Range:",terms[i]),min=l,max=u,value=c(l,u))
+          numericInput(inputname,paste0("Lower Y Range:",terms[i]),value=l)
+        })
+        # Convert the list to a tagList - this is necessary for the list of items
+        # to display properly.
+        do.call(tagList, myUIs)
+        
+      })
+      
+      output$PredicitonRangesUpper <- renderUI({
+        fit <- MODELFIT()
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms they are dealt with elsewhere
+        if(length(terms)==0){return(NULL)}
+        
+        myUIs<- lapply(1:length(terms), function(i) {
+          inputname <- paste("PredictorTerms_range_upper_", terms[i], sep="")
+          u <- max(data[,terms[i]])
+          l <- min(data[,terms[i]])
+          numericInput(inputname,paste0("Upper Y Range:",terms[i]),value=u)
+        })
+        # Convert the list to a tagList - this is necessary for the list of items
+        # to display properly.
+        do.call(tagList, myUIs)
+        
+      })
+      
+      output$PredicitonPercentiles <- renderUI({
+        fit <- MODELFIT()
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms they are dealt with elsewhere
+        if(length(terms)==0){return(NULL)}
+        
+        myUIs<- lapply(1:length(terms), function(i) {
+          inputname <- paste("PredictorTerms_percentile_", terms[i], sep="")
+          sliderInput(inputname,paste0("Percentile to Show for:",terms[i]),value=0.5,min=0,max=1)
         })
         # Convert the list to a tagList - this is necessary for the list of items
         # to display properly.
@@ -931,8 +985,12 @@ shinyServer(function(input, output, session) {
           inputname <- paste("PredictorTerms_", terms[my_i], sep="")
           eval(parse(text=paste0("fit <- mgcv::gam(",terms[my_i],"~s(Day365,bs=\"cc\")+NumericDate,data=data)")))
           PredData <- data.frame(EntryDate=date_sequence,Day365=as.numeric(format(date_sequence,format="%j")),NumericDate=as.numeric(date_sequence))
-          tmp <- predict(fit,newdata=PredData)
-          
+          tmp <- predict(fit,newdata=PredData,se.fit=T)
+          y_hat <- tmp$fit
+          y_se <- sqrt(tmp$se.fit^2+fit$sig2)
+          grob <- paste0("PredictorTerms_percentile_",terms[my_i])
+          tau_center <- input[[grob]]
+          tmp <- y_hat+qnorm(tau_center)*y_se
           ###for factors
           if (terms[my_i] %in% input$FactorTerms){
           train <- as.data.frame(unique(data[,terms[my_i]]))
@@ -945,9 +1003,10 @@ shinyServer(function(input, output, session) {
           predictor <- xts(predictor,date_sequence)
           
 
-            lims <- paste("PredictorTerms_range_", terms[my_i], sep="")
-            l <- input[[lims]][1]
-            u <- input[[lims]][2]
+            lims <- paste("PredictorTerms_range_lower_", terms[my_i], sep="")
+            l <- input[[lims]]
+            lims <- paste("PredictorTerms_range_upper_", terms[my_i], sep="")
+            u <- input[[lims]]
             output[[inputname]] <- renderdyPencilgraph({
               dyPencilgraph(predictor,paste0("Draw Values:",terms[my_i])) %>%
                 dySeries(terms[my_i],fillGraph=T) %>%
@@ -992,7 +1051,8 @@ shinyServer(function(input, output, session) {
         y=xy$y
         x=xy$x
         #tau_lower <- input$ConfLimits[1]
-        tau_center <- 0.5
+        grob <- paste0("PredictorTerms_percentile_",terms[i])
+        tau_center <- input[[grob]]
         #tau_upper <- input$ConfLimits[2]
         #params <- c(tau_lower,tau_center,tau_upper)
         params <- c(tau_center)
@@ -1112,11 +1172,14 @@ shinyServer(function(input, output, session) {
           # of when the expression is evaluated.
           
 
-            lims <- paste("PredictorTerms_range_", terms[my_i], sep="")
-            l <- input[[lims]][1]
-            u <- input[[lims]][2]
+          lims <- paste("PredictorTerms_range_lower_", terms[my_i], sep="")
+          l <- input[[lims]]
+          lims <- paste("PredictorTerms_range_upper_", terms[my_i], sep="")
+          u <- input[[lims]]
+          grob <- paste0("PredictorTerms_percentile_",terms[my_i])
+          pctile <- input[[grob]]
             output[[inputname]] <- renderDygraph({
-              dygraph(predictor,paste0("Historical Median & Forecast For:",terms[my_i])) %>%
+              dygraph(predictor,paste0(terms[my_i]," Historical & Forecast for: ",round(pctile,2)*100,"%th percentile")) %>%
                 dySeries(paste0("Hist_",terms[my_i]),fillGraph=T) %>%
                 dySeries(paste0("Fcst_",terms[my_i]),fillGraph=T) %>%
                 dyAxis("y",valueRange=c(l,u)) %>%

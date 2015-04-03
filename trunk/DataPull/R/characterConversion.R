@@ -18,7 +18,10 @@ characterConversion <- function(RAW){
   classes <- sapply(RAW,class)
   idx <- classes=="character"
   for(i in 1:length(classes)){
-    if(idx[i]){RAW[,i]<- iconv(RAW[,i],from="ISO8859-1",to="ASCII")}
+    if(idx[i]){
+      RAW[,i]<- iconv(RAW[,i],from="ISO8859-1",to="ASCII")
+      RAW[,i]<- toupper(RAW[,i])
+      }
   }
   return(RAW)
 }

@@ -37,7 +37,8 @@ body <- dashboardBody(
                        title="Origin Zips & Cities: Select to Include",width=NULL,status="primary",
                        solidHeader = TRUE,collapsible = T,
                        uiOutput("OrigZip3"),
-                       uiOutput("OrigCity")
+                       uiOutput("OrigCity"),
+                       numericInput("OrigRadius","Miles Around Origin City to Include",50,min=0,step=1)
                      )#end box
               ),#end column
               column(width=6,
@@ -45,7 +46,8 @@ body <- dashboardBody(
                        title="Destination Zips & Cities: Select to Include",width=NULL,status="primary",
                        solidHeader = TRUE,collapsible = T,
                        uiOutput("DestZip3"),
-                       uiOutput("DestCity")
+                       uiOutput("DestCity"),
+                       numericInput("DestRadius","Miles Around Destination City to Include",50,min=0,step=1)
                      )#end box
               )#end column
             ),#end fluid row
@@ -137,8 +139,19 @@ body <- dashboardBody(
               ),###end first column
               column(width=6,
                      box(
-                       title="Predictor Ranges For Input",width=NULL,status="primary",solidHeader = TRUE,
-                       uiOutput("PredicitonRanges")
+                       title="Predictor Ranges For Graph Display Below & Percentiles",width=NULL,status="primary",solidHeader = TRUE,
+                       fluidRow(
+                         column(width=3,
+                                uiOutput("PredicitonRangesLower")
+                                ),
+                         column(width=3,
+                                uiOutput("PredicitonRangesUpper")
+                                ),
+                         column(width=6,
+                                uiOutput("PredicitonPercentiles")
+                         )
+                         
+                       )###end row
                      )
               )###end second column
             ),###end fluid row

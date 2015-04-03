@@ -100,5 +100,8 @@ geocodeData<-function(RAW){
 
   RAW <- RAW %>% mutate(OrigCity=unlist(lapply(Origin,GetCity)),
                         DestCity=unlist(lapply(Destination,GetCity)))
+  
+  RAW$OrigCity <- paste(RAW$OrigCity,RAW$OriginState,sep=",")
+  RAW$DestCity <- paste(RAW$DestCity,RAW$DestinationState,sep=",")
   return(RAW)
 }
