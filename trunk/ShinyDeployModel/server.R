@@ -426,8 +426,46 @@ shinyServer(function(input, output, session) {
       #######Tab Panel 2:  Data Conditioning
       ###########################################################
       
+      output$LinearTerms <- renderUI({
+        terms <- colnames(RAW)
+        selectizeInput("LinearTerms","Linear Terms in Model",
+                       choices=terms,selected=c("NumericDate"),multiple=T)
+      })
+      
+      output$FactorTerms <- renderUI({
+        terms <- colnames(RAW)
+        selectizeInput("FactorTerms","Factors in Model",
+                       choices=terms,selected=c("SumOfStops"),multiple=T)
+      })
+      
+      output$SplineTerms <- renderUI({
+        terms <- colnames(RAW)
+        selectizeInput("SplineTerms","Spline Terms in Model (non cyclic)",
+                       choices=terms,selected=NULL,multiple=T)
+      })
+      
+      output$SplineTermsCyclic <- renderUI({
+        terms <- colnames(RAW)
+        selectizeInput("SplineTermsCyclic","Cyclical Spline Terms in Model",
+                       choices=terms,selected=c("Day365"),multiple=T)
+      })
+      
+      RAWReduced <- reactive({
+        r <- input$response
+        linear <- input$LinearTerms
+        spline <- input$SplineTerms
+        splineCC <- input$SplineTermsCyclic
+        factors <- input$FactorTerms
+        additional <- c("CustomerCarrier","EntryDate","CustomerCCode",
+                        "CarrierTCode","OrigLongitude","OrigLatitude",
+                        "DestLongitude","DestLatitude","loadnum")
+        data <- RAW[,c(r,linear,spline,splineCC,factors,additional)]
+        return(data)
+      })
+      
       
       DATA <- reactive({
+        data <- RAWReduced()
         if(!is.null(input$SelectDestCounties)){
           countiesDestination <- input$SelectDestCounties
           selectDestination <- map("county",regions = countiesDestination,fill=T,plot=F)
@@ -487,21 +525,32 @@ shinyServer(function(input, output, session) {
           indexOrigCircle <- apply(idx,1,any)
           indexOrigCircle[is.na(indexOrigCircle)] <- FALSE
         }else{indexOrigCircle <- rep(FALSE,nrow(RAW))}
-          
+        
+        
+
         a <- RAW$Orig3DigZip %in% input$OrigZip3
         b <- RAW$Dest3DigZip %in% input$DestZip3
         e <- RAW$OrigCity %in% input$OrigCity
         f <- RAW$DestCity %in% input$DestCity
         orig <- ((a |  e) | indexOrigCircle)
         dest <- ((b |  f) | indexDestCircle)
-        #SELECTED <- RAW %>% filter((!is.na(indexOrigCounty) | orig),(!is.na(indexDestCounty) | dest))
         r <- input$response
         idxx <- (!is.na(indexOrigCounty) | orig) & (!is.na(indexDestCounty) | dest) & (!is.infinite(RAW[,r]) & !is.na(RAW[,r]))
-        SELECTED <- RAW[idxx,]
-        #NOTSELECTED <- RAW %>% filter((is.na(indexOrigCounty) | !orig),(is.na(indexDestCounty) | !dest))
-        NOTSELECTED <- RAW[!idxx,]
-        return(list(SELECTED=SELECTED,NOTSELECTED=NOTSELECTED))
+        
+        ####non dplyr version (consider for stability)
+        #SELECTED <- RAW[idxx,]
+
+        
+        ####dplyr version consider for speed
+        SELECTED <- data %>% filter(idxx)
+        SELECTED <- as.data.frame(SELECTED)
+        
+        NOTSELECTED_IDX <- !idxx
+        
+        return(list(SELECTED=SELECTED,NOTSELECTED_IDX=NOTSELECTED_IDX))
       })
+      
+
       
 
       ###########################################################
@@ -788,51 +837,12 @@ shinyServer(function(input, output, session) {
       #######Tab Panel 3:  Model Fitting
       ###########################################################
       
-      ###########################################################
-      #######Modeling Kernel
-      ###########################################################
-      
-      
-      output$LinearTerms <- renderUI({
-        data <- DATAFILTERED()[["KEEP"]]
-        terms <- colnames(data)
-        selectizeInput("LinearTerms","Linear Terms in Model",
-                       choices=terms,selected=c("NumericDate"),multiple=T)
-      })
-      
-      output$FactorTerms <- renderUI({
-        data <- DATAFILTERED()[["KEEP"]]
-        terms <- colnames(data)
-        selectizeInput("FactorTerms","Factors in Model",
-                       choices=terms,selected=c("SumOfStops"),multiple=T)
-      })
-      
-      output$SplineTerms <- renderUI({
-        data <- DATAFILTERED()[["KEEP"]]
-        terms <- colnames(data)
-        selectizeInput("SplineTerms","Spline Terms in Model (non cyclic)",
-                       choices=terms,selected=NULL,multiple=T)
-      })
-      
-      output$SplineTermsCyclic <- renderUI({
-        data <- DATAFILTERED()[["KEEP"]]
-        terms <- colnames(data)
-        selectizeInput("SplineTermsCyclic","Cyclical Spline Terms in Model",
-                       choices=terms,selected=c("Day365"),multiple=T)
-      })
-      
       DATAFILTERED2 <- reactive({
-        r <- input$response
-        linear <- input$LinearTerms
-        spline <- input$SplineTerms
-        splineCC <- input$SplineTermsCyclic
-        factors <- input$FactorTerms
         data <- DATAFILTERED()[["KEEP"]]
-        idx <- complete.cases(data[,c(r,linear,spline,splineCC,factors)])
+        idx <- complete.cases(data)
         data <- data[idx,]
         return(list(KEEP=data))
       })
-      
       
       MODELFIT <- reactive({
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
@@ -1616,7 +1626,6 @@ shinyServer(function(input, output, session) {
                             ))
       }
 
-      
 
       ###add on the predicted quote
       quote <- rbind(data.frame(
@@ -1630,6 +1639,12 @@ shinyServer(function(input, output, session) {
       
       colnames(quote)[c(4,5,6)] <- gsub("HIST","Percentile.",colnames(series)[c(1:3)])
       
+      ####fix up series to add a section of 0's if needed to pad the plot  in the next step
+      full_date_run <- data.frame(EntryDate=as.Date(seq(min(index(series)),max(index(series)),"days")),padit=NA)
+      padit <- xts(full_date_run[,2,drop=F],full_date_run[,1])
+      series <- cbind(series,padit)
+      series$TransFcst[is.na(series$TransFcst)] <- 0
+      series <- series[,-c(8)]
       return(list(series=series,vol_int_rate_fcst=vol_int_rate_fcst,event=event,
                   response=response,data=data,preds=preds,volume=volume,
                   name=name,quote=quote))
@@ -1639,7 +1654,7 @@ shinyServer(function(input, output, session) {
       
       output$Historical <- renderDygraph({
         series <- HistoricalData()[["series"]]
-        series <- series[,c(2,4:7)]
+        #series <- series[,c(2,4:7)]
         p <- colnames(series)
         response <- HistoricalData()[["response"]]
         vol_int_rate_fcst <- HistoricalData()[["vol_int_rate_fcst"]]
@@ -1649,10 +1664,10 @@ shinyServer(function(input, output, session) {
         event <- HistoricalData()[["event"]]
         name <- HistoricalData()[["name"]]
         dygraph(series,name) %>%
-          dySeries(p[1],label="50th Percentile") %>%
-          dySeries("TransFcst",label="Repeated Volume FCST",
+          dySeries(p[c(1,2,3)],label="Historical") %>%
+          dySeries("TransFcst",label="Repeated Volume",
                    axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%  
-          dySeries(p[c(2)],label="FCST50th") %>% ###turned off error bars... if desired but might crash
+          dySeries(p[c(5,4,6)],label="FCST") %>% ###turned off error bars... if desired but might crash
           dyAxis("y",label=response) %>%
           dyAxis("y2", label = "Transacitonal Volume", 
                  independentTicks = TRUE, valueRange = c(0, max(volume))) %>%
@@ -1700,7 +1715,7 @@ shinyServer(function(input, output, session) {
         if(is.null(DATA())){return(NULL)}
         layers <- input$maplayers
         SELECTED <- DATA()[["SELECTED"]]
-        NOTSELECTED <- DATA()[["NOTSELECTED"]]
+        NOTSELECTED_IDX <- DATA()[["NOTSELECTED_IDX"]]
         
         map("state",interior=F)
         if("State Borders" %in% layers){map("state")}
@@ -1733,6 +1748,8 @@ shinyServer(function(input, output, session) {
         }
         
         if("Unselected Data" %in% layers){
+          data <- RAWReduced()
+          NOTSELECTED <- RAWReduced()[NOTSELECTED_IDX,]
           orig <- data.frame(x=NOTSELECTED$OrigLongitude,y=NOTSELECTED$OrigLatitude)
           orig <- unique(orig)
           dest <- data.frame(x=NOTSELECTED$DestLongitude,y=NOTSELECTED$DestLatitude)
