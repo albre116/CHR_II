@@ -24,8 +24,10 @@ sidebar <- dashboardSidebar(
              menuSubItem("Session Info 1","sessionInfo"),
              menuSubItem("Session Info 2","sessionInfo2")
              )),
+  box(title="Major Modeling Options",width=NULL,
   uiOutput("response"),
-  checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=F)
+  checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=F),
+  uiOutput("DateRange"))
 )###end side bar
 
 body <- dashboardBody(
@@ -124,7 +126,6 @@ body <- dashboardBody(
                        fluidRow(
                          column(width=6,
                                 selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=c("Generalized Additive Model")),
-                                uiOutput("DateRange"),
                                 sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.15,0.85))
                          ),
                          column(width=6,

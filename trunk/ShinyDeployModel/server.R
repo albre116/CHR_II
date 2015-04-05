@@ -2,6 +2,8 @@ options(shiny.maxRequestSize=500*1024^2)###500 megabyte file upload limit set
 
 
 shinyServer(function(input, output, session) {
+  
+  
 
 
   ###########################################################
@@ -900,7 +902,7 @@ shinyServer(function(input, output, session) {
       #######Model Predictions
       ###########################################################
       output$DateRange <- renderUI({
-        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        data <- RAW###data brought in after filtering is complete
         start_date <-max(data$EntryDate)
         yr <- format(start_date,format="%Y")
         mo <- format(start_date,format="%m")
