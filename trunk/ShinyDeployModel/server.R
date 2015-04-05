@@ -913,7 +913,8 @@ shinyServer(function(input, output, session) {
         dateRangeInput("DateRange","Select Prediction Date Range ",
                        start=start_date,
                        min=start_date,
-                       end=end_date
+                       end=end_date,
+                       max=end_date
                        )
       })
       

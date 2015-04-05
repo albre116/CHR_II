@@ -24,9 +24,9 @@ sidebar <- dashboardSidebar(
              menuSubItem("Session Info 1","sessionInfo"),
              menuSubItem("Session Info 2","sessionInfo2")
              )),
-  box(title="Major Modeling Options",width=NULL,
+  box(title="Major Modeling Options",width=NULL,status = "warning",solidHeader = TRUE,
   uiOutput("response"),
-  checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=F),
+  checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=T),
   uiOutput("DateRange"))
 )###end side bar
 
