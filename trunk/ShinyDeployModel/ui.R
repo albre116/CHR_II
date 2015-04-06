@@ -7,13 +7,13 @@ header <- dashboardHeader(
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe"),
-             badgeLabel = "Step 1",badgeColor = "red"),
-    menuItem("Select Predictors", tabName = "predictors", icon = icon("fa fa-bar-chart"),
-             badgeLabel = "Step 2",badgeColor = "red"),
-    menuItem("Model & Volume", tabName = "VolumeEntry", icon = icon("fa fa-car"),
-             badgeLabel = "Step 3",badgeColor = "red"),
-    menuItem("Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog"),
-             badgeLabel = "Step 4",badgeColor = "red"),
+             badgeLabel = "Start Here",badgeColor = "red"),
+    menuItem("Basic Quote", tabName = "basicquote", icon = icon("fa fa-camera"),
+             badgeLabel = "Market Average",badgeColor = "red"),
+    menuItem("Customer Specific Quote",icon = icon("fa fa-bullseye"),
+             menuSubItem("1: Select Predictors", tabName = "predictors", icon = icon("fa fa-bar-chart")),
+             menuSubItem("2: Model & Volume", tabName = "VolumeEntry", icon = icon("fa fa-car")),
+             menuSubItem("3: Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog"))),
     menuItem("Advanced Options",icon = icon("fa fa-line-chart"),
              menuSubItem("Map of Selected Data","MapSelected"),
              menuSubItem("Date Range & Outliers","DateRange"),
@@ -117,6 +117,25 @@ body <- dashboardBody(
               )###end second column
             )###end fluid row
     ),
+    tabItem(tabName = "basicquote",
+            box(title="Historical Integrated: Market Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                fluidRow(
+                  column(width=12,
+                         dygraphOutput("Historical_QUICK")
+                  )
+                )
+            ),
+            box(title="Volume Integrated Yearly Average: Market Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                fluidRow(
+                  column(width=6,
+                         dygraphOutput("HistVolIntegrated_QUICK")
+                  ),
+                  column(width=6,
+                         DT::dataTableOutput("HistVolIntegratedTable_QUICK")
+                  )
+                )
+            )
+    ),###end current tab
     
     tabItem(tabName = "predictors",
             fluidRow(
@@ -218,14 +237,14 @@ body <- dashboardBody(
     ),
     
     tabItem(tabName = "SummaryPredictions",
-            box(title="HIstorical Integrated",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Historical Integrated: Customer Specific",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=12,
                          dygraphOutput("Historical")
                   )
                 )
             ),
-            box(title="Yearly Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Volume Integrated Yearly Average: Customer Specific",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=6,
                          dygraphOutput("HistVolIntegrated")

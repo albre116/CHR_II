@@ -34,6 +34,23 @@ shinyServer(function(input, output, session) {
     selectizeInput("DestCity","Destination City",choices=idx,selected=NULL,multiple = TRUE)
   })
   
+  output$DateRange <- renderUI({
+    data <- RAW###data brought in after filtering is complete
+    start_date <-max(data$EntryDate)
+    yr <- format(start_date,format="%Y")
+    mo <- format(start_date,format="%m")
+    day <- format(start_date,format="%d")
+    yr <- as.numeric(yr)+1
+    end_date <- as.Date(format(paste(yr,mo,day,sep="-"),
+                               format="%y-%m-%d"))
+    dateRangeInput("DateRange","Select Prediction Date Range ",
+                   start=start_date,
+                   min=start_date,
+                   end=end_date,
+                   max=end_date
+    )
+  })
+  
   
   
   RAWPLOT <- reactive({
@@ -460,8 +477,9 @@ shinyServer(function(input, output, session) {
         factors <- input$FactorTerms
         additional <- c("CustomerCarrier","EntryDate","CustomerCCode",
                         "CarrierTCode","OrigLongitude","OrigLatitude",
-                        "DestLongitude","DestLatitude","loadnum")
-        data <- RAW[,c(r,linear,spline,splineCC,factors,additional)]
+                        "DestLongitude","DestLatitude","loadnum","NumericDate","Day365")
+        kept <- as.character(unique(c(r,linear,spline,splineCC,factors,additional)))
+        data <- RAW[,kept]
         return(data)
       })
       
@@ -834,11 +852,6 @@ shinyServer(function(input, output, session) {
         legend("topright",c("Removed","Kept"),pch=19,col=c("grey75","black"))
       })
       
-      
-      ###########################################################
-      #######Tab Panel 3:  Model Fitting
-      ###########################################################
-      
       DATAFILTERED2 <- reactive({
         data <- DATAFILTERED()[["KEEP"]]
         idx <- complete.cases(data)
@@ -846,6 +859,319 @@ shinyServer(function(input, output, session) {
         return(list(KEEP=data))
       })
       
+      
+      ###########################################################
+      #######Tab Panel 2:  Quick quote
+      ###########################################################
+      MODELFIT_QUICK <- reactive({
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        r <- input$response
+        f <- as.formula(paste(r,"1",sep="~"))  ###place holder
+        f_add <- paste0(".~.+",c("NumericDate"))
+        f <- do.call("update",list(f,f_add))
+        eval(parse(text=paste0("f_add=.~.+s(","Day365",",bs=\"cc\")")))
+        f <- do.call("update",list(f,f_add))
+        fit <- modelCPDS(f=f,data=data,kernel=input$ModelFamily,gamma=1.4)
+        return(fit)
+      })
+      
+      PREDICTIONDATA_QUICK <- reactive({
+        data <- DATAFILTERED2()[["KEEP"]]
+        fit <- MODELFIT_QUICK()
+        date_window <- input$DateRange
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        PredTerms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms
+        DateTerms <- terms[(terms %in% c("NumericDate","Day365"))]###get rid of date terms
+        predDays <- difftime(date_window[2],date_window[1],units="days")
+        date_sequence <- date_window[1]+1:predDays
+        PredData <- data.frame(EntryDate=date_sequence)
+        
+        ###construct prediction matrix terms
+        for(i in DateTerms){
+          if(i=="NumericDate"){
+            PredData <- cbind(PredData,NumericDate=as.numeric(date_sequence))
+          }
+          if(i=="Day365"){
+            PredData <- cbind(PredData,Day365=as.numeric(format(date_sequence,format="%j")))
+          }
+        }
+        
+        preds <- predict(fit,newdata=PredData,se.fit=T)
+        y_hat <- preds$fit
+        y_se <- sqrt(preds$se.fit^2+fit$sig2)
+        LCL <- y_hat+qnorm(input$ConfLimits[1])*y_se
+        UCL <- y_hat+qnorm(input$ConfLimits[2])*y_se
+        response <- as.character(formula(fit))[2]
+        eval(parse(text=paste0("prediction_data <- data.frame(",response,"=y_hat,LCL=LCL,UCL=UCL,PredData)")))
+        colnames(prediction_data)[c(2,3)] <- c(paste0("FCST",input$ConfLimits*100,"th"))
+        
+        
+        ###now we have to generate adjusted response data for this to work
+        ###since there are nusiance factors that need to be integrated out
+        ids <- length(PredTerms)
+        data2 <- data
+        
+        ####Run the partial predictions
+        y_hat <- predict(fit,newdata=data)
+        y <- data[,as.character(formula(fit))[2]]
+        residual <- y-y_hat
+        y_partial <- y_hat
+        y_residual <- y_partial+residual
+        observed_data <- data.frame("y_partial"=as.numeric(y_partial),
+                                    "y_residual"=as.numeric(y_residual),
+                                    "y_hat"=as.numeric(y_hat),
+                                    "residual"=as.numeric(residual),
+                                    data)
+        
+        ###now we regress the quantiles of these partials for the historical data
+        df <- input$dfspline
+        df_fixed <- input$LambdaFixed
+        y=observed_data$y_residual
+        x=as.numeric(data$EntryDate)
+        xy=data.frame(y=y,x=x)
+        xy <- xy[complete.cases(xy),]
+        y=xy$y
+        x=xy$x
+        tau_lower <- 0.15
+        tau_center <- 0.5
+        tau_upper <- 0.85
+        params <- c(tau_lower,tau_center,tau_upper)
+        for(tau in params){
+          if(isolate(input$doEstimation==T)){
+            g <- function(lam,y,x,tau) AIC(rqss(y ~ qss(x, lambda = lam),tau=tau),k = -1)
+            lamstar <- optimize(g, interval = c(df[1], df[2]), x = x, y = y, tau= tau)
+            fitq <- quantreg::rqss(y ~ qss(x, lambda = lamstar$min),tau=tau)
+          }else{
+            fitq <- quantreg::rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
+          }
+          x2=as.numeric(seq(min(data$EntryDate), max(data$EntryDate), "days"))
+          
+          
+          quantile.fit <- predict(fitq,newdata=data.frame(x=x2))
+          quant <- data.frame(fit=quantile.fit)
+          if(tau==params[1]){quantiles <- quant}else{quantiles <- data.frame(quantiles,quant)}
+        }
+        rm(fitq)
+        quantiles <- data.frame(EntryDate=as.Date(seq(min(data$EntryDate), max(data$EntryDate), "days")),quantiles)
+        colnames(quantiles) <- c("EntryDate",paste0("HIST",params*100,"th"))
+        
+        ####done with quantiles
+        #         observed_summary <- observed_data %>% 
+        #         group_by(EntryDate) %>%
+        #         summarise(Prediction = mean(y_partial,na.rm=T))
+        observed_summary <- tapply(observed_data$y_partial,observed_data$EntryDate,mean,na.rm=T)
+        observed_summary <- data.frame(EntryDate=as.Date(names(observed_summary)),Prediction=observed_summary)
+        rownames(observed_summary)=NULL
+        #observed_summary <- left_join(observed_summary,quantiles)
+        observed_summary <- base::merge(observed_summary,quantiles,all.x=TRUE)
+        event <- prediction_data$EntryDate[1]-0.5
+        out <- list(prediction_data=prediction_data,
+                    observed_data=observed_data,
+                    event=event,
+                    observed_summary=observed_summary)
+        return(out)
+      })
+      
+      
+      TransactionalVolume_QUICK <- reactive({
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        date_window <- input$DateRange
+        predDays <- difftime(date_window[2],date_window[1],units="days")
+        date_sequence <- date_window[1]+1:predDays
+        volume <- tapply(data$EntryDate,data$EntryDate,length)
+        volume <- data.frame(EntryDate=as.Date(names(volume)),TransVolume=volume)
+        rownames(volume)=NULL
+        
+        interval <- difftime(max(volume$EntryDate),min(volume$EntryDate),units = "days")
+        dateseq <- min(volume$EntryDate)+1:interval
+        JoinDat <- data.frame(EntryDate =dateseq)
+        #volume <- JoinDat %>% left_join(volume)
+        volume <- base::merge(JoinDat,volume,all.x=TRUE)
+        volume$TransVolume[is.na(volume$TransVolume)] <- 0
+        volume <- xts(volume[,"TransVolume",drop=F],volume$EntryDate)
+        
+        ###gam path
+          dat <- data.frame(coredata(volume),Day365=as.numeric(format(index(volume),format="%j")),
+                            NumericDate=as.numeric(index(volume)),idx=1:nrow(volume))
+          dat$week_groups <- paste(format(index(volume),format="%Y"),format(index(volume),format="%W"),sep="-")
+          out_idx <- lapply(unique(dat$week_groups),function(b){
+            tmp <- dat[dat$week_groups==b,]
+            return(tmp$idx[which.max(tmp$TransVolume)])
+          })
+          out_idx <- unlist(out_idx)
+          dat <- dat[out_idx,] ###select maximum
+          fit <- mgcv::gam(TransVolume~s(Day365,bs="cc")+NumericDate,data=dat)
+          PredData <- data.frame(EntryDate=date_sequence,Day365=as.numeric(format(date_sequence,format="%j")),NumericDate=as.numeric(date_sequence))
+          pred_volume <- predict(fit,newdata=PredData)
+          pred_volume <- data.frame(TransFcst=as.numeric(pred_volume))
+
+        pred_volume <- xts(pred_volume,date_sequence)
+        return(list(volume=volume,pred_volume=pred_volume))
+      })
+      
+      VolumeDataPrep_QUICK <- reactive({
+        preds <- PREDICTIONDATA_QUICK()[["prediction_data"]]
+        data <- PREDICTIONDATA_QUICK()[["observed_summary"]]
+        event <- PREDICTIONDATA_QUICK()[["event"]]
+        volume <- TransactionalVolume_QUICK()[["volume"]]
+        pred_volume <- TransactionalVolume_QUICK()[["pred_volume"]]
+        fit <- MODELFIT_QUICK()
+        response <- as.character(formula(fit))[2]
+        idx_date_data <- colnames(data) %in% c("EntryDate")
+        idx_date_preds <- colnames(preds) %in% c("EntryDate")
+        preds <- xts(preds[,c(1,2,3),drop=F],preds[,idx_date_preds])
+        data <- xts(data[,c(3,4,5),drop=F],data[,idx_date_data])
+        vol_int_rate_fcst <- numeric(length=ncol(coredata(preds)))
+        names(vol_int_rate_fcst) <- colnames(coredata(preds))
+        for (i in 1:length(vol_int_rate_fcst)){
+          vol_int_rate_fcst[i] <- weighted.mean(coredata(preds)[,i],coredata(pred_volume))
+        }
+        vol_int_rate_fcst <- round(vol_int_rate_fcst,2)
+        series <- cbind(data,preds,volume,pred_volume)
+        idx <- colnames(coredata(data))
+        for(i in idx){
+          series[index(series)<index(preds)[1],i] <- na.approx(series[index(series)<index(preds)[1],i])
+        }
+        
+        name <- paste0("Volume Integrated Quote: $",vol_int_rate_fcst[1]," ($",vol_int_rate_fcst[2],", $",vol_int_rate_fcst[3],") Per Mile")
+        return(list(series=series,vol_int_rate_fcst=vol_int_rate_fcst,event=event,
+                    response=response,data=data,preds=preds,volume=volume,
+                    name=name))
+      })
+      
+
+      HistoricalData_QUICK <- reactive({
+        series <- VolumeDataPrep_QUICK()[["series"]]
+        response <- VolumeDataPrep_QUICK()[["response"]]
+        vol_int_rate_fcst <- VolumeDataPrep_QUICK()[["vol_int_rate_fcst"]]
+        data <- VolumeDataPrep_QUICK()[["data"]]
+        preds <- VolumeDataPrep_QUICK()[["preds"]]
+        volume <- VolumeDataPrep_QUICK()[["volume"]]
+        event <- VolumeDataPrep_QUICK()[["event"]]
+        name <- VolumeDataPrep_QUICK()[["name"]]
+        date <- index(series)
+        year <- format(date,format="%Y")
+        month <- format(date,format="%m")
+        day <- format(date,format="%d")
+        data <- as.data.frame(coredata(series))
+        idx <- !is.na(data$TransFcst)###get the forecast portion
+        fcst <- data$TransFcst[idx]
+        data$TransFcst[!idx] <- 0
+        for(i in 1:length(date[!idx])){
+          id <- day[idx]==day[i] & month[idx]==month[i]
+          if(any(id)){data$TransFcst[i] <- fcst[id]}
+        }
+        data$TransFcst[!idx] <- na.approx(data$TransFcst[!idx])
+        rm <- colnames(data) %in% "TransVolume"
+        data <- data[,!rm]
+        series <- xts(data,date)
+        ###now get the date window to do a historical volume pass
+        ###loop over all of the past values
+        dte_window <- c(min(date[idx]),max(date[idx]))
+        loop <- as.numeric(format(dte_window[1],format="%Y"))-as.numeric(format(min(index(series)),format="%Y"))
+        quote <- data.frame()
+        for(i in 1:loop){
+          lower <- paste(as.numeric(format(dte_window[1],format="%Y"))-i,format(dte_window[1],format="%m-%d"),sep="-")
+          upper <- paste(as.numeric(format(dte_window[2],format="%Y"))-i,format(dte_window[2],format="%m-%d"),sep="-")
+          wdow <- paste(lower,upper,sep="::")
+          tmp <- series[wdow]
+          if(i==loop & (min(index(tmp))>as.Date(lower))){break}###dont add value if not complete cycle
+          quote <- rbind(quote,data.frame(
+            "StartDate"=as.Date(lower),
+            "EndDate"=as.Date(upper),
+            "MidPoint"=as.Date(lower)+difftime(as.Date(upper),as.Date(lower))/2,
+            "WeightedY_LCL"=weighted.mean(tmp[,1],tmp$TransFcst,na.rm = T),
+            "WeightedY"=weighted.mean(tmp[,2],tmp$TransFcst,na.rm = T),
+            "WeightedY_UCL"=weighted.mean(tmp[,3],tmp$TransFcst,na.rm = T)
+          ))
+        }
+        
+        
+        ###add on the predicted quote
+        quote <- rbind(data.frame(
+          "StartDate"=dte_window[1],
+          "EndDate"=dte_window[2],
+          "MidPoint"=dte_window[1]+difftime(dte_window[2],dte_window[1])/2,
+          "WeightedY_LCL"=as.numeric(vol_int_rate_fcst[2]),
+          "WeightedY"=as.numeric(vol_int_rate_fcst[1]),
+          "WeightedY_UCL"=as.numeric(vol_int_rate_fcst[3])),
+          quote)
+        
+        colnames(quote)[c(4,5,6)] <- gsub("HIST","Percentile.",colnames(series)[c(1:3)])
+        
+        ####fix up series to add a section of 0's if needed to pad the plot  in the next step
+        full_date_run <- data.frame(EntryDate=as.Date(seq(min(index(series)),max(index(series)),"days")),padit=NA)
+        padit <- xts(full_date_run[,2,drop=F],full_date_run[,1])
+        series <- cbind(series,padit)
+        series$TransFcst[is.na(series$TransFcst)] <- 0
+        series <- series[,-c(8)]
+        return(list(series=series,vol_int_rate_fcst=vol_int_rate_fcst,event=event,
+                    response=response,data=data,preds=preds,volume=volume,
+                    name=name,quote=quote))
+      })
+      
+      
+      
+      output$Historical_QUICK <- renderDygraph({
+        series <- HistoricalData_QUICK()[["series"]]
+        #series <- series[,c(2,4:7)]
+        p <- colnames(series)
+        response <- HistoricalData_QUICK()[["response"]]
+        vol_int_rate_fcst <- HistoricalData_QUICK()[["vol_int_rate_fcst"]]
+        data <- HistoricalData_QUICK()[["data"]]
+        preds <- HistoricalData_QUICK()[["preds"]]
+        volume <- HistoricalData_QUICK()[["volume"]]
+        event <- HistoricalData_QUICK()[["event"]]
+        name <- HistoricalData_QUICK()[["name"]]
+        dygraph(series,name) %>%
+          dySeries(p[c(1,2,3)],label="Historical") %>%
+          dySeries("TransFcst",label="Repeated Volume",
+                   axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%  
+          dySeries(p[c(5,4,6)],label="FCST") %>% ###turned off error bars... if desired but might crash
+          dyAxis("y",label=response) %>%
+          dyAxis("y2", label = "Transacitonal Volume", 
+                 independentTicks = TRUE, valueRange = c(0, max(volume))) %>%
+          dyRoller(rollPeriod = 1) %>%
+          dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
+      })
+      
+      
+      
+      output$HistVolIntegrated_QUICK<- renderDygraph({
+        quote <- HistoricalData_QUICK()[["quote"]]
+        event <- HistoricalData_QUICK()[["event"]]
+        response <- HistoricalData_QUICK()[["response"]]
+        quote <- xts(quote[,c(4:6),drop=F],quote$MidPoint)
+        p <- colnames(quote)
+        dygraph(quote,paste(p)) %>%
+          dySeries(p,label=response) %>%
+          dyAxis("y",label=response) %>%
+          dyOptions(drawPoints = TRUE, pointSize = 5) %>%
+          dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
+      })
+      
+      tdat2_QUICK <- reactive({
+        table <- HistoricalData_QUICK()[["quote"]]
+        idx <- sapply(table,class)
+        idx <- idx %in% c("numeric","array")
+        table[,idx] <- round(table[,idx],2)
+        return(table)
+      })
+      
+      output$HistVolIntegratedTable_QUICK<- DT::renderDataTable(
+        DT::datatable(tdat2_QUICK(),filter='bottom',extensions = 'TableTools',
+                      options=list(scrollX=TRUE,    dom = 'T<"clear">lfrtip',
+                                   tableTools = list(sSwfPath = copySWF())))
+      )
+      
+
+      
+      ###########################################################
+      #######Tab Panel 3:  Advanced Modeling
+      ###########################################################
+      
+
       MODELFIT <- reactive({
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         r <- input$response
@@ -901,23 +1227,7 @@ shinyServer(function(input, output, session) {
       ###########################################################
       #######Model Predictions
       ###########################################################
-      output$DateRange <- renderUI({
-        data <- RAW###data brought in after filtering is complete
-        start_date <-max(data$EntryDate)
-        yr <- format(start_date,format="%Y")
-        mo <- format(start_date,format="%m")
-        day <- format(start_date,format="%d")
-        yr <- as.numeric(yr)+1
-        end_date <- as.Date(format(paste(yr,mo,day,sep="-"),
-                                   format="%y-%m-%d"))
-        dateRangeInput("DateRange","Select Prediction Date Range ",
-                       start=start_date,
-                       min=start_date,
-                       end=end_date,
-                       max=end_date
-                       )
-      })
-      
+
       output$PredicitonRangesLower <- renderUI({
         fit <- MODELFIT()
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
