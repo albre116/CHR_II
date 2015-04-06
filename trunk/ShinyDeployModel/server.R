@@ -1690,7 +1690,7 @@ shinyServer(function(input, output, session) {
           series[index(series)<index(preds)[1],i] <- na.approx(series[index(series)<index(preds)[1],i])
         }
 
-        name <- paste0("Volume Integrated Quote: $",vol_int_rate_fcst[2]," ($",vol_int_rate_fcst[1],", $",vol_int_rate_fcst[3],") Per Mile")
+        name <- paste0("Volume Integrated Quote: $",vol_int_rate_fcst[1]," ($",vol_int_rate_fcst[2],", $",vol_int_rate_fcst[3],") Per Mile")
         return(list(series=series,vol_int_rate_fcst=vol_int_rate_fcst,event=event,
                     response=response,data=data,preds=preds,volume=volume,
                     name=name))
