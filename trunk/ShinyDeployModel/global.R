@@ -106,7 +106,7 @@ if(!file.exists("RAW_100.RData")){
   RAW <- DataPull::tallyDailyVolume(RAW)
   RAW <- DataPull::characterConversion(RAW)
   save(RAW,file="RAW_100.RData")###save it so we don't always have to run this
-}else{load("RAW_100.RData")}###identify the data path from the datapull package
+}else{load("RAW_10.RData")}###identify the data path from the datapull package
 
 
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota", 

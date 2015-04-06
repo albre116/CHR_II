@@ -120,7 +120,7 @@ body <- dashboardBody(
     
     tabItem(tabName = "predictors",
             fluidRow(
-              column(width=6,
+              column(width=4,
                      box(
                        title="Model Terms and Parameters",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                        fluidRow(
@@ -138,20 +138,25 @@ body <- dashboardBody(
                        
                      )              
               ),###end first column
-              column(width=6,
+              column(width=8,
                      box(
                        title="Predictor Ranges For Graph Display Below & Percentiles",width=NULL,status="primary",solidHeader = TRUE,
                        fluidRow(
-                         column(width=3,
+                         column(width=2,
+                                uiOutput("DataType")
+                         ),
+                         column(width=2,
                                 uiOutput("PredicitonRangesLower")
                                 ),
-                         column(width=3,
+                         column(width=2,
                                 uiOutput("PredicitonRangesUpper")
                                 ),
-                         column(width=6,
+                         column(width=3,
                                 uiOutput("PredicitonPercentiles")
+                         ),
+                         column(width=3,
+                                uiOutput("PredictorEntryFixed")
                          )
-                         
                        )###end row
                      )
               )###end second column

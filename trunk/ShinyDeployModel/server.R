@@ -968,13 +968,57 @@ shinyServer(function(input, output, session) {
         
         myUIs<- lapply(1:length(terms), function(i) {
           inputname <- paste("PredictorTerms_percentile_", terms[i], sep="")
-          sliderInput(inputname,paste0("Percentile to Show for:",terms[i]),value=0.5,min=0,max=1)
+          sliderInput(inputname,paste0("Percentile:",terms[i]),value=0.5,min=0,max=1)
         })
         # Convert the list to a tagList - this is necessary for the list of items
         # to display properly.
         do.call(tagList, myUIs)
         
       })
+      
+
+      output$PredictorEntryFixed <- renderUI({
+        fit <- MODELFIT()
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms they are dealt with elsewhere
+        if(length(terms)==0){return(NULL)}
+        
+        myUIs<- lapply(1:length(terms), function(i) {
+          inputname <- paste("PredictorTerms_entryFixed_", terms[i], sep="")
+          pick <- unique(data[,terms[i]])
+          pick <- as.numeric(pick)
+          pick <- pick[order(pick)]
+          pick <- as.character(c("Automatic",pick))
+          selectInput(inputname,paste0("Input Value:",terms[i]),choices=pick,selected=c("Automatic"))
+        })
+        # Convert the list to a tagList - this is necessary for the list of items
+        # to display properly.
+        do.call(tagList, myUIs)
+        
+      })
+      
+      
+      output$DataType<- renderUI({
+        fit <- MODELFIT()
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms they are dealt with elsewhere
+        if(length(terms)==0){return(NULL)}
+        
+        myUIs<- lapply(1:length(terms), function(i) {
+          inputname <- paste("PredictorTerms_dataType_", terms[i], sep="")
+          pick <- as.character(c(unique(data$CustomerCCode),unique(data$CarrierTCode)))
+          selectizeInput(inputname,paste0("Include in Plot (no selection includes all):",terms[i]),choices=pick,selected=NULL,multiple=TRUE)
+        })
+        # Convert the list to a tagList - this is necessary for the list of items
+        # to display properly.
+        do.call(tagList, myUIs)
+        
+      })
+      
       
       # Insert the right number of plot output objects into the web page for the pencil graphs
       output$PredictionLevels <- renderUI({
@@ -996,7 +1040,23 @@ shinyServer(function(input, output, session) {
           local({
           my_i <- i
           inputname <- paste("PredictorTerms_", terms[my_i], sep="")
-          eval(parse(text=paste0("fit <- mgcv::gam(",terms[my_i],"~s(Day365,bs=\"cc\")+NumericDate,data=data)")))
+          inputname_type <- paste("PredictorTerms_entryFixed_", terms[my_i], sep="")
+          
+          inputname_dataType <- paste("PredictorTerms_dataType_", terms[my_i], sep="")
+          objs <- input[[inputname_dataType]]
+          if(!is.null(objs)){
+            idx_local <- (data$CustomerCCode %in% objs) | (data$CarrierTCode %in% objs) 
+          }else{idx_local <- rep(TRUE,nrow(data))}
+          data_local <- data[idx_local,]
+          
+          if(input[[inputname_type]]!="Automatic"){
+            tmp <- input[[inputname_type]]
+            class(tmp) <- class(data_local[,terms[my_i]])
+            predictor <- eval(parse(text=paste0("data.frame(",terms[my_i],"=tmp,date_sequence=date_sequence)")))
+            predictor <- predictor[,1,drop=F]
+            predictor <- xts(predictor,date_sequence)
+          }else{
+          eval(parse(text=paste0("fit <- mgcv::gam(",terms[my_i],"~s(Day365,bs=\"cc\")+NumericDate,data=data_local)")))
           PredData <- data.frame(EntryDate=date_sequence,Day365=as.numeric(format(date_sequence,format="%j")),NumericDate=as.numeric(date_sequence))
           tmp <- predict(fit,newdata=PredData,se.fit=T)
           y_hat <- tmp$fit
@@ -1006,16 +1066,16 @@ shinyServer(function(input, output, session) {
           tmp <- y_hat+qnorm(tau_center)*y_se
           ###for factors
           if (terms[my_i] %in% input$FactorTerms){
-          train <- as.data.frame(unique(data[,terms[my_i]]))
+          train <- as.data.frame(unique(data_local[,terms[my_i]]))
           test <- tmp
-          cl <- factor(unique(data[,terms[my_i]]))
+          cl <- factor(unique(data_local[,terms[my_i]]))
           tmp <- knn1(train, test, cl)
           tmp <- as.character(tmp)}
-          class(tmp) <- class(data[,terms[my_i]])
+          class(tmp) <- class(data_local[,terms[my_i]])
           predictor <- eval(parse(text=paste0("data.frame(",terms[my_i],"=tmp)")))
           predictor <- xts(predictor,date_sequence)
+          }
           
-
             lims <- paste("PredictorTerms_range_lower_", terms[my_i], sep="")
             l <- input[[lims]]
             lims <- paste("PredictorTerms_range_upper_", terms[my_i], sep="")
@@ -1055,10 +1115,17 @@ shinyServer(function(input, output, session) {
         output <- list()###this is where we will store the model images
         ###now we regress the quantiles of these partials for the historical data
         for (i in 1:length(terms)) {
+          inputname_dataType <- paste("PredictorTerms_dataType_", terms[i], sep="")
+          objs <- input[[inputname_dataType]]
+          if(!is.null(objs)){
+            idx_local <- (data$CustomerCCode %in% objs) | (data$CarrierTCode %in% objs) 
+          }else{idx_local <- rep(TRUE,nrow(data))}
+          data_local <- data[idx_local,]
+          
         df <- input$dfspline
         df_fixed <- input$LambdaFixed
-        y=data[,terms[i]]
-        x=as.numeric(data$EntryDate)
+        y=data_local[,terms[i]]
+        x=as.numeric(data_local$EntryDate)
         xy=data.frame(y=y,x=x)
         xy <- xy[complete.cases(xy),]
         y=xy$y
@@ -1077,23 +1144,23 @@ shinyServer(function(input, output, session) {
           }else{
             fitq <- quantreg::rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
           }
-          x2=as.numeric(seq(min(data$EntryDate), max(data$EntryDate), "days"))
+          x2=as.numeric(seq(min(data_local$EntryDate), max(data_local$EntryDate), "days"))
           quantile.fit <- predict(fitq,newdata=data.frame(x=x2))
           quant <- data.frame(fit=quantile.fit)
           if(tau==params[1]){quantiles <- quant}else{quantiles <- data.frame(quantiles,quant)}
         }
         rm(fitq)
-        quantiles <- data.frame(EntryDate=as.Date(seq(min(data$EntryDate), max(data$EntryDate), "days")),quantiles)
+        quantiles <- data.frame(EntryDate=as.Date(seq(min(data_local$EntryDate), max(data_local$EntryDate), "days")),quantiles)
         colnames(quantiles) <- c("EntryDate",paste0("HIST",params*100,"th"))
         
         for(b in 2:ncol(quantiles)){
           if (terms[i] %in% input$FactorTerms){
-          train <- as.data.frame(unique(data[,terms[i]]))
+          train <- as.data.frame(unique(data_local[,terms[i]]))
           test <- as.data.frame(quantiles[,b])
-          cl <- factor(unique(data[,terms[i]]))
+          cl <- factor(unique(data_local[,terms[i]]))
           q <- knn1(train, test, cl)
           q <- as.character(q)
-          class(q) <- class(data[,terms[i]])
+          class(q) <- class(data_local[,terms[i]])
           quantiles[,b] <- q}
         }
         
@@ -1130,6 +1197,13 @@ shinyServer(function(input, output, session) {
 
         if(length(PredTerms)>0){
           for(i in PredTerms){
+            inputname_dataType <- paste("PredictorTerms_dataType_", terms[i], sep="")
+            objs <- input[[inputname_dataType]]
+            if(!is.null(objs)){
+              idx_local <- (data$CustomerCCode %in% objs) | (data$CarrierTCode %in% objs) 
+            }else{idx_local <- rep(TRUE,nrow(data))}
+            data_local <- data[idx_local,]
+            
 
           plotname <- paste("PredictorTerms_", i, sep="")
           grob <- paste0(plotname,"_data_extract")
@@ -1138,15 +1212,15 @@ shinyServer(function(input, output, session) {
           dimension <-input[[grob]]
           q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
           if (i %in% input$FactorTerms){
-          train <- as.data.frame(unique(data[,i]))
+          train <- as.data.frame(unique(data_local[,i]))
           test <- as.data.frame(q[,2])
-          cl <- factor(unique(data[,i]))
+          cl <- factor(unique(data_local[,i]))
           q <- knn1(train, test, cl)
           q <- as.character(q)}else{
             q <- q[,2]
           }
           
-          class(q) <- class(data[,i])
+          class(q) <- class(data_local[,i])
           eval(parse(text=paste0("PredData <- cbind(PredData,",i,"=q)")))
           }
           }
@@ -1217,10 +1291,73 @@ shinyServer(function(input, output, session) {
       #####This is needed to deal with reactive value issues
       #####Important to do this otherwise we get a strange cycle going on
       
+      MedianDATA <- reactive({
+        fit <- MODELFIT()
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        date_window <- input$DateRange
+        predDays <- difftime(date_window[2],date_window[1],units="days")
+        date_sequence <- date_window[1]+1:predDays
+        terms <- as.character(fit$pred.formula)[2]
+        terms <- unlist(strsplit(terms," + ",fixed=T))
+        terms <- terms[!(terms %in% c("NumericDate","Day365"))]###get rid of date terms they are dealt with elsewhere
+        if(length(terms)==0){return(NULL)}
+        term_class <- sapply(data[,terms,drop=F],class)
+        output <- list()###this is where we will store the model images
+        ###now we regress the quantiles of these partials for the historical data
+        for (i in 1:length(terms)) {
+          df <- input$dfspline
+          df_fixed <- input$LambdaFixed
+          y=data[,terms[i]]
+          x=as.numeric(data$EntryDate)
+          xy=data.frame(y=y,x=x)
+          xy <- xy[complete.cases(xy),]
+          y=xy$y
+          x=xy$x
+          #tau_lower <- input$ConfLimits[1]
+          tau_center <- 0.5
+          #tau_upper <- input$ConfLimits[2]
+          #params <- c(tau_lower,tau_center,tau_upper)
+          params <- c(tau_center)
+          for(tau in params){
+            if(isolate(input$doEstimation==T)){
+              g <- function(lam,y,x,tau) AIC(rqss(y ~ qss(x, lambda = lam),tau=tau),k = -1)
+              lamstar <- optimize(g, interval = c(df[1], df[2]), x = x, y = y, tau= tau)
+              fitq <- quantreg::rqss(y ~ qss(x, lambda = lamstar$min),tau=tau)
+            }else{
+              fitq <- quantreg::rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
+            }
+            x2=as.numeric(seq(min(data$EntryDate), max(data$EntryDate), "days"))
+            quantile.fit <- predict(fitq,newdata=data.frame(x=x2))
+            quant <- data.frame(fit=quantile.fit)
+            if(tau==params[1]){quantiles <- quant}else{quantiles <- data.frame(quantiles,quant)}
+          }
+          rm(fitq)
+          quantiles <- data.frame(EntryDate=as.Date(seq(min(data$EntryDate), max(data$EntryDate), "days")),quantiles)
+          colnames(quantiles) <- c("EntryDate",paste0("HIST",params*100,"th"))
+          
+          for(b in 2:ncol(quantiles)){
+            if (terms[i] %in% input$FactorTerms){
+              train <- as.data.frame(unique(data[,terms[i]]))
+              test <- as.data.frame(quantiles[,b])
+              cl <- factor(unique(data[,terms[i]]))
+              q <- knn1(train, test, cl)
+              q <- as.character(q)
+              class(q) <- class(data[,terms[i]])
+              quantiles[,b] <- q}
+          }
+          
+          output[[terms[i]]] <- quantiles
+        }
+        
+        return(output)
+      })
+      
+      
+      
       PREDICTIONDATA <- reactive({
         data <- DATAFILTERED2()[["KEEP"]]
         fit <- MODELFIT()
-        MedianPreds <- MedianPreds()
+        MedianPreds <- MedianDATA()
         PredData <- PredData()
         date_window <- input$DateRange
         terms <- as.character(fit$pred.formula)[2]
@@ -1254,6 +1391,7 @@ shinyServer(function(input, output, session) {
         ####fix the data at the constant integration value
         ####for this purpose we should set at the median to make the market reasonable
         ####this is done above in the median stuff
+        
         if(ids>0){for(i in 1:ids){
           var <- PredTerms[i]
           value <- base::merge(data2[,"EntryDate",drop=F],MedianPreds[[var]],by="EntryDate",all.x=TRUE)
@@ -1294,6 +1432,11 @@ shinyServer(function(input, output, session) {
             fitq <- quantreg::rqss(y ~ qss(x, lambda = df_fixed),tau=tau)
           }
           x2=as.numeric(seq(min(data$EntryDate), max(data$EntryDate), "days"))
+          
+          ###here we have to prevent extrapolation at the tails because 
+          ###quantile regression won't tolerate it
+          ###We use the carry forward and backward method
+
           quantile.fit <- predict(fitq,newdata=data.frame(x=x2))
           quant <- data.frame(fit=quantile.fit)
           if(tau==params[1]){quantiles <- quant}else{quantiles <- data.frame(quantiles,quant)}
