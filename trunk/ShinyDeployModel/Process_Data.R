@@ -13,4 +13,4 @@ RAW <- DataPull::loadData(path,sample_pct)  ### see help file for documentation
 RAW <- DataPull::geocodeData(RAW)   ###Geocoding the Data
 RAW <- DataPull::tallyDailyVolume(RAW) ###only perform if volume compute desired... this step is slow
 RAW <- DataPull::characterConversion(RAW)
-save(RAW,file="RAW_100_New.RData")###save it so we don't always have to run this
+save(RAW,file="/srv/shiny_data/RAW_100_New.RData")###save it so we don't always have to run this
