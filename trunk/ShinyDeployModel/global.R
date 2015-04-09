@@ -80,15 +80,8 @@ if(!require("Matrix"))
   install.packages("Matrix")
 if(!require("shape"))
   install.packages("shape")
-if (!require("DT")) 
+if (!require("DT"))
   devtools::install_github("rstudio/DT")
-
-
-
-###custom and local packages
-if(!require('DataPull')) {
-  devtools::install_github(c("albre116/CHR_II/trunk/DataPull"),auth_token="ffcaf9fb4036981ec6022f13d2a1d05df97a5ff3")
-}
 
 ###custom and local packages
 if(!require('dyPencilgraphs')) {
@@ -96,33 +89,24 @@ if(!require('dyPencilgraphs')) {
 }
 
 
-####Generate the data if it doesn't exist
-
-if(!file.exists("RAW_100.RData")){
-  path <- c('2015_03_30.txt')  ###set this to file path location for raw data
-  sample_pct <- 1 ###set between [0,1]
-  RAW <- DataPull::loadData(path,sample_pct)  ### see help file for documentation
-  RAW <- DataPull::geocodeData(RAW)   ###Geocoding the Data
-  RAW <- DataPull::tallyDailyVolume(RAW)
-  RAW <- DataPull::characterConversion(RAW)
-  save(RAW,file="RAW_100.RData")###save it so we don't always have to run this
-}else{load("RAW_100.RData")}###identify the data path from the datapull package
+####Load Data File
+load("RAW_100.RData")
 
 
-states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota", 
-                  "Wyoming", "Wisconsin", "Idaho", "Vermont", "Minnesota", "Oregon", 
-                  "New Hampshire", "Iowa", "Massachusetts", "Nebraska", "New York", 
-                  "Pennsylvania", "Connecticut", "Rhode Island", "New Jersey", 
-                  "Indiana", "Nevada", "Utah", "California", "Ohio", "Illinois", 
-                  "District of Columbia", "Delaware", "West Virginia", "Maryland", 
-                  "Colorado", "Kentucky", "Kansas", "Virginia", "Missouri", "Arizona", 
-                  "Oklahoma", "North Carolina", "Tennessee", "Texas", "New Mexico", 
-                  "Alabama", "Mississippi", "Georgia", "South Carolina", "Arkansas", 
+states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota",
+                  "Wyoming", "Wisconsin", "Idaho", "Vermont", "Minnesota", "Oregon",
+                  "New Hampshire", "Iowa", "Massachusetts", "Nebraska", "New York",
+                  "Pennsylvania", "Connecticut", "Rhode Island", "New Jersey",
+                  "Indiana", "Nevada", "Utah", "California", "Ohio", "Illinois",
+                  "District of Columbia", "Delaware", "West Virginia", "Maryland",
+                  "Colorado", "Kentucky", "Kansas", "Virginia", "Missouri", "Arizona",
+                  "Oklahoma", "North Carolina", "Tennessee", "Texas", "New Mexico",
+                  "Alabama", "Mississippi", "Georgia", "South Carolina", "Arkansas",
                   "Louisiana", "Florida", "Michigan")
 
 states <- map("state",regions = states.model,plot=F,fill=TRUE)
 data(state.fips)
-states_labels <- data.frame(labels=states$names) %>% 
+states_labels <- data.frame(labels=states$names) %>%
   left_join(state.fips,by=c("labels"="polyname")) %>%
   select(abb)
 state_labs <- states
@@ -155,7 +139,7 @@ modelCPDS <- function(f,       #pass in the model formula
   fit <- switch(kernel,
                 "Generalized Additive Model"=mgcv::gam(f,data=data,gamma=gamma)
   )
-  
+
   ###return the model image
   return(fit)
 }
