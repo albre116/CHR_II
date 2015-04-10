@@ -102,10 +102,6 @@ shinyServer(function(input, output, session) {
         isolate(selected <- input$SelectOrigStates)
         selected <- c(selected,ClickStateAddOrig())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
-        selected <- c(selected,
-                      (as.character(state.fips$polyname[
-                          state.fips$abb %in% unlist(lapply(input$OrigCity,function(x){strsplit(x,",")[[1]][2]}))])))
-        selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectOrigStates","Selected Origin States",choices=unlist(lapply(states$names,function(x){strsplit(x,":")[[1]][1]})),selected=selected,multiple=T)
@@ -123,10 +119,18 @@ shinyServer(function(input, output, session) {
       output$OrigPlotState <- renderPlot({
         selectStates <- input$SelectOrigStates
         reduced <- RAWPLOT()[["reduced_orig"]]
-        if(length(selectStates)>0){
-          mapOrig <- map("state",regions = selectStates,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
         map(states)
+        
+        if(!is.null(input$OrigCity) | !is.null(selectStates)){
+          selected <- c(selectStates,
+                        (as.character(state.fips$polyname[
+                          state.fips$abb %in% unlist(lapply(input$OrigCity,function(x){strsplit(x,",")[[1]][2]}))])))
+          selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
+          selected <- unique(selected)
+          selected <- selected[!is.null(selected)]
+          mapOrig <- map("state",regions = selected,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
         if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
+        
         if("State Names" %in% input$maplayersOrigStates){map.text(state_labs,add=T)}
         if("Data" %in% input$maplayersOrigStates){
           points(x=reduced$x,y=reduced$y,cex=0.1,col="blue",pch=19)
@@ -174,10 +178,6 @@ shinyServer(function(input, output, session) {
         isolate(selected <- input$SelectDestStates)
         selected <- c(selected,ClickStateAddDest())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
-        selected <- c(selected,
-                      (as.character(state.fips$polyname[
-                        state.fips$abb %in% unlist(lapply(input$DestCity,function(x){strsplit(x,",")[[1]][2]}))])))
-        selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectDestStates","Selected Destination States",choices=unlist(lapply(states$names,function(x){strsplit(x,":")[[1]][1]})),selected=selected,multiple=T)
@@ -195,10 +195,18 @@ shinyServer(function(input, output, session) {
       output$DestPlotState <- renderPlot({
         selectStates <- input$SelectDestStates
         reduced <- RAWPLOT()[["reduced_dest"]]
-        if(length(selectStates)>0){
-          mapDest <- map("state",regions = selectStates,plot=F,fill=T,col="yellow")} else{mapDest <- NULL}
         map(states)
+
+        if(!is.null(input$DestCity) | !is.null(selectStates)){
+          selected <- c(selectStates,
+                        (as.character(state.fips$polyname[
+                          state.fips$abb %in% unlist(lapply(input$DestCity,function(x){strsplit(x,",")[[1]][2]}))])))
+          selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
+          selected <- unique(selected)
+          selected <- selected[!is.null(selected)]
+          mapDest <- map("state",regions = selected,plot=F,fill=T,col="yellow")} else{mapDest <- NULL}
         if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="yellow")}
+        
         if("State Names" %in% input$maplayersDestStates){map.text(state_labs,add=T)}
         if("Data" %in% input$maplayersDestStates){
           points(x=reduced$x,y=reduced$y,cex=0.1,col="red",pch=19)
@@ -210,9 +218,17 @@ shinyServer(function(input, output, session) {
       ###########################################################
       CountiesOrigin <- reactive({
         pick <- input$SelectOrigStates
-        if(is.null(pick)){return(NULL)}
-        pick <- unlist(lapply(pick,function(x){strsplit(x,":")[[1]][1]}))
-        counties <- map("county",regions = pick,plot=F,fill=TRUE)
+        if(!is.null(pick)){pick <- unlist(lapply(pick,function(x){strsplit(x,":")[[1]][1]}))}
+        
+        if(!is.null(input$OrigCity) | !is.null(pick)){
+          selected <- c(pick,
+                        (as.character(state.fips$polyname[
+                          state.fips$abb %in% unlist(lapply(input$OrigCity,function(x){strsplit(x,",")[[1]][2]}))])))
+          selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
+          selected <- unique(selected)
+          selected <- selected[!is.null(selected)]}else{return(NULL)}
+        
+        counties <- map("county",regions = selected,plot=F,fill=TRUE)
         return(counties)
       })
       
@@ -278,10 +294,6 @@ shinyServer(function(input, output, session) {
         pts <- OrigCircles()
         isolate(pick <- input$SelectOrigCircles)
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
-        pickadd <- city_lookup[city_lookup$city %in% input$OrigCity,,drop=F]
-        pickadd <- pickadd[1,,drop=F]
-        if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,input$OrigRadius,sep=":")}else{pickadd <- NULL}
-        pick <- c(pick,pickadd)
         pick <- pick[!is.na(pick)]
         selected <- pick
         selected <- unique(selected)
@@ -310,6 +322,18 @@ shinyServer(function(input, output, session) {
           mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
         map(counties)
         if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
+        
+        if(!is.null(input$OrigCity)){
+          pickadd <- city_lookup[city_lookup$city %in% input$OrigCity,,drop=F]
+          pickadd <- pickadd[1,,drop=F]
+          if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,input$OrigRadius,sep=":")}else{pickadd <- NULL}
+          lapply(pickadd,function(b){
+            b <- strsplit(b,":")
+            b <- unlist(b)
+            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+          })
+        }
+        
         if(!is.null(input$SelectOrigCircles)){
           tmp <- input$SelectOrigCircles
           lapply(tmp,function(b){
@@ -328,9 +352,17 @@ shinyServer(function(input, output, session) {
       ###########################################################
       CountiesDestination <- reactive({
         pick <- input$SelectDestStates
-        if(is.null(pick)){return(NULL)}
-        pick <- unlist(lapply(pick,function(x){strsplit(x,":")[[1]][1]}))
-        counties <- map("county",regions = pick,plot=F,fill=TRUE)
+        if(!is.null(pick)){pick <- unlist(lapply(pick,function(x){strsplit(x,":")[[1]][1]}))}
+        
+        if(!is.null(input$DestCity) | !is.null(pick)){
+          selected <- c(pick,
+                        (as.character(state.fips$polyname[
+                          state.fips$abb %in% unlist(lapply(input$DestCity,function(x){strsplit(x,",")[[1]][2]}))])))
+          selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
+          selected <- unique(selected)
+          selected <- selected[!is.null(selected)]}else{return(NULL)}
+        
+        counties <- map("county",regions = selected,plot=F,fill=TRUE)
         return(counties)
       })
       
@@ -396,10 +428,6 @@ shinyServer(function(input, output, session) {
         pts <- DestCircles()
         isolate(pick <- input$SelectDestCircles)
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
-        pickadd <- city_lookup[city_lookup$city %in% input$DestCity,,drop=F]
-        pickadd <- pickadd[1,,drop=F]
-        if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,input$DestRadius,sep=":")}else{pickadd <- NULL}
-        pick <- c(pick,pickadd)
         pick <- pick[!is.na(pick)]
         selected <- pick
         selected <- unique(selected)
@@ -427,6 +455,18 @@ shinyServer(function(input, output, session) {
           mapDest <- map("county",regions = selectCounties,plot=F,fill=T,col="yellow")} else{mapDest <- NULL}
         map(counties)
         if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="yellow")}
+        
+        if(!is.null(input$DestCity)){
+        pickadd <- city_lookup[city_lookup$city %in% input$DestCity,,drop=F]
+        pickadd <- pickadd[1,,drop=F]
+        if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,input$DestRadius,sep=":")}else{pickadd <- NULL}
+        lapply(pickadd,function(b){
+          b <- strsplit(b,":")
+          b <- unlist(b)
+          plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+        })
+        }
+        
         if(!is.null(input$SelectDestCircles)){
           tmp <- input$SelectDestCircles
           lapply(tmp,function(b){
