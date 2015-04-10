@@ -524,7 +524,16 @@ shinyServer(function(input, output, session) {
       })
       
       
+      
+      
       DATA <- reactive({
+        
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Subsetting the Data',
+                     detail = 'Hold Tight...')
+        on.exit(progress$close())
+
+
         data <- RAWReduced()
         if(!is.null(input$SelectDestCounties)){
           countiesDestination <- input$SelectDestCounties
@@ -606,7 +615,6 @@ shinyServer(function(input, output, session) {
         SELECTED <- as.data.frame(SELECTED)
         
         NOTSELECTED_IDX <- !idxx
-        
         return(list(SELECTED=SELECTED,NOTSELECTED_IDX=NOTSELECTED_IDX))
       })
       
@@ -620,6 +628,12 @@ shinyServer(function(input, output, session) {
       
       PERCENTILES <- reactive({
         if(input$FilterDate==FALSE){return(NULL)}
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Removing Outliers',
+                     detail = 'Computing Percentiles')
+        on.exit(progress$close())
+
+        
         SELECTED <- DATA()[["SELECTED"]]
         input$applyDygraph
         isolate(df <- input$dfspline)
@@ -837,6 +851,11 @@ shinyServer(function(input, output, session) {
       DATAFILTERED <- reactive({
         SELECTED <- DATAWINDOW()[["SELECTED"]]
         if(input$FilterDate==FALSE){return(list(KEEP=SELECTED,TOSS=NULL))}
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Removing Outliers',
+                     detail = 'Picking Off Bad Observations')
+        on.exit(progress$close())
+
         r <- input$response
         pull <- input$RemoveCustomerCarrier
         pull2 <- input$RemoveIndividual
@@ -904,6 +923,11 @@ shinyServer(function(input, output, session) {
       #######Tab Panel 2:  Quick quote
       ###########################################################
       MODELFIT_QUICK <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling',
+                     detail = 'Fitting Model')
+        on.exit(progress$close())
+        
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         r <- input$response
         f <- as.formula(paste(r,"1",sep="~"))  ###place holder
@@ -916,6 +940,11 @@ shinyServer(function(input, output, session) {
       })
       
       PREDICTIONDATA_QUICK <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling',
+                     detail = 'Computing Predictions')
+        on.exit(progress$close())
+        
         data <- DATAFILTERED2()[["KEEP"]]
         fit <- MODELFIT_QUICK()
         date_window <- input$DateRange
@@ -1015,6 +1044,11 @@ shinyServer(function(input, output, session) {
       
       
       TransactionalVolume_QUICK <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling',
+                     detail = 'Predicting Transactional Volume')
+        on.exit(progress$close())
+        
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         date_window <- input$DateRange
         predDays <- difftime(date_window[2],date_window[1],units="days")
@@ -1051,6 +1085,11 @@ shinyServer(function(input, output, session) {
       })
       
       VolumeDataPrep_QUICK <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling',
+                     detail = 'Merging Data')
+        on.exit(progress$close())
+        
         preds <- PREDICTIONDATA_QUICK()[["prediction_data"]]
         data <- PREDICTIONDATA_QUICK()[["observed_summary"]]
         event <- PREDICTIONDATA_QUICK()[["event"]]
@@ -1082,6 +1121,11 @@ shinyServer(function(input, output, session) {
       
 
       HistoricalData_QUICK <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling',
+                     detail = 'Merging Data')
+        on.exit(progress$close())
+        
         series <- VolumeDataPrep_QUICK()[["series"]]
         response <- VolumeDataPrep_QUICK()[["response"]]
         vol_int_rate_fcst <- VolumeDataPrep_QUICK()[["vol_int_rate_fcst"]]
@@ -1154,6 +1198,11 @@ shinyServer(function(input, output, session) {
       
       
       output$Historical_QUICK <- renderDygraph({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling',
+                     detail = 'Plotting')
+        on.exit(progress$close())
+        
         series <- HistoricalData_QUICK()[["series"]]
         #series <- series[,c(2,4:7)]
         p <- colnames(series)
@@ -1179,6 +1228,11 @@ shinyServer(function(input, output, session) {
       
       
       output$HistVolIntegrated_QUICK<- renderDygraph({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling',
+                     detail = 'Plotting')
+        on.exit(progress$close())
+        
         quote <- HistoricalData_QUICK()[["quote"]]
         event <- HistoricalData_QUICK()[["event"]]
         response <- HistoricalData_QUICK()[["response"]]
@@ -1192,6 +1246,11 @@ shinyServer(function(input, output, session) {
       })
       
       tdat2_QUICK <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling',
+                     detail = 'Plotting')
+        on.exit(progress$close())
+        
         table <- HistoricalData_QUICK()[["quote"]]
         idx <- sapply(table,class)
         idx <- idx %in% c("numeric","array")
@@ -1213,6 +1272,11 @@ shinyServer(function(input, output, session) {
       
 
       MODELFIT <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling',
+                     detail = 'Fitting')
+        on.exit(progress$close())
+        
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         r <- input$response
         linear <- input$LinearTerms
@@ -1372,6 +1436,11 @@ shinyServer(function(input, output, session) {
       
       # Insert the right number of plot output objects into the web page for the pencil graphs
       output$PredictionLevels <- renderUI({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Generating Inputs',
+                     detail = 'Pencil Graphs')
+        on.exit(progress$close())
+        
         fit <- MODELFIT()
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         date_window <- input$DateRange
@@ -1452,6 +1521,11 @@ shinyServer(function(input, output, session) {
       ###add in section here to plot historical values using medians etc...
       
       MedianPreds <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Determining Medians',
+                     detail = 'Computing Predictor Curves')
+        on.exit(progress$close())
+        
         fit <- MODELFIT()
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         date_window <- input$DateRange
@@ -1522,6 +1596,11 @@ shinyServer(function(input, output, session) {
       
       
       PredData <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Determining Medians',
+                     detail = 'Computing Predictor Curves')
+        on.exit(progress$close())
+        
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         fit <- MODELFIT()
         MedianPreds <- MedianPreds()
@@ -1582,6 +1661,11 @@ shinyServer(function(input, output, session) {
       
       ###plot the medians and forecasted data
       output$PredictionHistorical <- renderUI({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Generating Graphs',
+                     detail = 'Plotting Predictor Curves')
+        on.exit(progress$close())
+        
         fit <- MODELFIT()
         MedianPreds <- MedianPreds()
         PredData <- PredData()
@@ -1642,6 +1726,11 @@ shinyServer(function(input, output, session) {
       #####Important to do this otherwise we get a strange cycle going on
       
       MedianDATA <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling Response',
+                     detail = 'Computing Medians')
+        on.exit(progress$close())
+        
         fit <- MODELFIT()
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         date_window <- input$DateRange
@@ -1705,6 +1794,11 @@ shinyServer(function(input, output, session) {
       
       
       PREDICTIONDATA <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling Response',
+                     detail = 'Computing Medians')
+        on.exit(progress$close())
+        
         data <- DATAFILTERED2()[["KEEP"]]
         fit <- MODELFIT()
         MedianPreds <- MedianDATA()
@@ -1814,6 +1908,11 @@ shinyServer(function(input, output, session) {
       
       
       output$PredictionPlotInteractive <- renderDygraph({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Generating Plot',
+                     detail = 'Historical Predictions')
+        on.exit(progress$close())
+        
         preds <- PREDICTIONDATA()[["prediction_data"]]
         data <- PREDICTIONDATA()[["observed_summary"]]
         event <- PREDICTIONDATA()[["event"]]
@@ -1896,6 +1995,10 @@ shinyServer(function(input, output, session) {
       
       
       TransactionalVolume <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Modeling Volume',
+                     detail = 'Predicting Volume')
+        on.exit(progress$close())
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         date_window <- input$DateRange
         predDays <- difftime(date_window[2],date_window[1],units="days")
@@ -1989,6 +2092,11 @@ shinyServer(function(input, output, session) {
 
       
       output$VolumeDraw <- renderdyPencilgraph({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Rendering',
+                     detail = 'Pencil Graph')
+        on.exit(progress$close())
+        
         if(is.null(input$CustomerSelect) & input$volbasis=="Specific Customer"){return(NULL)}
         if(is.null(input$CarrierSelect) & input$volbasis=="Specific Carrier"){return(NULL)}
         pred_volume <- TransactionalVolume()[["pred_volume"]]
@@ -2017,6 +2125,11 @@ shinyServer(function(input, output, session) {
       
       
       VolumeDataPrep <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Aggregaring Volume',
+                     detail = 'Summarizing')
+        on.exit(progress$close())
+        
         preds <- PREDICTIONDATA()[["prediction_data"]]
         data <- PREDICTIONDATA()[["observed_summary"]]
         event <- PREDICTIONDATA()[["event"]]
@@ -2047,6 +2160,11 @@ shinyServer(function(input, output, session) {
       })
       
       output$VolumeIntegrated <- renderDygraph({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Rendering',
+                     detail = 'Volume Historical & Predicted Graph')
+        on.exit(progress$close())
+        
         if(is.null(input$CustomerSelect) & input$volbasis=="Specific Customer"){return(NULL)}
         if(is.null(input$CarrierSelect) & input$volbasis=="Specific Carrier"){return(NULL)}
         series <- VolumeDataPrep()[["series"]]
@@ -2077,6 +2195,11 @@ shinyServer(function(input, output, session) {
       #######Historical Volume Integrated Quote
       ###########################################################
       HistoricalData <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Computing',
+                     detail = 'Patterned Historical Volume')
+        on.exit(progress$close())
+        
       series <- VolumeDataPrep()[["series"]]
       response <- VolumeDataPrep()[["response"]]
       vol_int_rate_fcst <- VolumeDataPrep()[["vol_int_rate_fcst"]]
@@ -2149,6 +2272,11 @@ shinyServer(function(input, output, session) {
       
       
       output$Historical <- renderDygraph({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Rendering',
+                     detail = 'Past Data & Predictions')
+        on.exit(progress$close())
+        
         series <- HistoricalData()[["series"]]
         #series <- series[,c(2,4:7)]
         p <- colnames(series)
@@ -2174,6 +2302,11 @@ shinyServer(function(input, output, session) {
       
       
       output$HistVolIntegrated<- renderDygraph({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Rendering',
+                     detail = 'Integrated Quote')
+        on.exit(progress$close())
+        
         quote <- HistoricalData()[["quote"]]
         event <- HistoricalData()[["event"]]
         response <- HistoricalData()[["response"]]
@@ -2187,6 +2320,11 @@ shinyServer(function(input, output, session) {
       })
       
       tdat2 <- reactive({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Rendering',
+                     detail = 'Table Values')
+        on.exit(progress$close())
+        
         table <- HistoricalData()[["quote"]]
         idx <- sapply(table,class)
         idx <- idx %in% c("numeric","array")
