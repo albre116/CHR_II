@@ -516,7 +516,7 @@ shinyServer(function(input, output, session) {
         splineCC <- input$SplineTermsCyclic
         factors <- input$FactorTerms
         additional <- c("CustomerCarrier","EntryDate","CustomerCCode",
-                        "CarrierTCode","OrigLongitude","OrigLatitude",
+                        "CarrierTCode","OrigLongitude","OrigLatitude","LoadMiles",
                         "DestLongitude","DestLatitude","loadnum","NumericDate","Day365")
         kept <- as.character(unique(c(r,linear,spline,splineCC,factors,additional)))
         data <- RAW[,kept]
@@ -918,10 +918,44 @@ shinyServer(function(input, output, session) {
         return(list(KEEP=data))
       })
       
+      mileECDF <- reactive({
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        Fn <- ecdf(data$LoadMiles)
+        return(Fn)
+      })
+      
       
       ###########################################################
       #######Tab Panel 2:  Quick quote
       ###########################################################
+      output$mile15_QUICK<- renderValueBox({
+        Fn <- mileECDF()
+        pct <- 0.15
+        valueBox(
+          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          color = "purple"
+        )
+      })
+      
+      output$mile50_QUICK<- renderValueBox({
+        Fn <- mileECDF()
+        pct <- 0.5
+        valueBox(
+          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          color = "purple"
+        )
+      })
+      
+      output$mile85_QUICK<- renderValueBox({
+        Fn <- mileECDF()
+        pct <- 0.85
+        valueBox(
+          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          color = "purple"
+        )
+      })
+      
+      
       MODELFIT_QUICK <- reactive({
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Modeling',
@@ -2194,6 +2228,35 @@ shinyServer(function(input, output, session) {
       ###########################################################
       #######Historical Volume Integrated Quote
       ###########################################################
+      
+      output$mile15<- renderValueBox({
+        Fn <- mileECDF()
+        pct <- 0.15
+        valueBox(
+          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          color = "purple"
+        )
+      })
+      
+      output$mile50<- renderValueBox({
+        Fn <- mileECDF()
+        pct <- 0.5
+        valueBox(
+          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          color = "purple"
+        )
+      })
+      
+      output$mile85<- renderValueBox({
+        Fn <- mileECDF()
+        pct <- 0.85
+        valueBox(
+          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          color = "purple"
+        )
+      })
+      
+      
       HistoricalData <- reactive({
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Computing',

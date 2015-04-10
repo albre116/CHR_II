@@ -118,6 +118,7 @@ body <- dashboardBody(
             )###end fluid row
     ),
     tabItem(tabName = "basicquote",
+            fluidRow(valueBoxOutput("mile15_QUICK"),valueBoxOutput("mile50_QUICK"),valueBoxOutput("mile85_QUICK")),
             box(title="Historical Integrated: Market Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=12,
@@ -237,6 +238,7 @@ body <- dashboardBody(
     ),
     
     tabItem(tabName = "SummaryPredictions",
+            fluidRow(valueBoxOutput("mile15"),valueBoxOutput("mile50"),valueBoxOutput("mile85")),
             box(title="Historical Integrated: Customer Specific",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                 fluidRow(
                   column(width=12,
