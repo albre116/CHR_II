@@ -122,12 +122,13 @@ city_lookup <- unique(city_lookup)
 
 ###########################################################################
 ###########################################################################
-########## Modeling Kernel Functions
+########## Functions
 ########## Will be moved to its own package
 ########## With Documentation
 ###########################################################################
 ###########################################################################
 
+####fit the main model
 
 modelCPDS <- function(f,       #pass in the model formula
                       data,          #data to be fit
@@ -144,6 +145,59 @@ modelCPDS <- function(f,       #pass in the model formula
   return(fit)
 }
 
+
+####function for plotting states
+plot_states <- function(selectStates,reduced,cities,mapLayer,color){
+  map(states)
+  if(!is.null(cities) | !is.null(selectStates)){
+    selected <- c(selectStates,
+                  (as.character(state.fips$polyname[
+                    state.fips$abb %in% unlist(lapply(cities,function(x){strsplit(x,",")[[1]][2]}))])))
+    selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
+    selected <- unique(selected)
+    selected <- selected[!is.null(selected)]
+    mapOrig <- map("state",regions = selected,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
+  if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
+  if("State Names" %in% mapLayer){map.text(state_labs,add=T)}
+  if("Data" %in% mapLayer){
+    points(x=reduced$x,y=reduced$y,cex=0.1,col=color,pch=19)
+  }
+}
+
+
+####function for plotting counties
+plot_counties <- function(counties,reduced,selectCounties,City,radius,Circles,layers,color){
+  
+  if(is.null(counties)){return(NULL)}
+  if(length(selectCounties)>0){
+    mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
+  map(counties)
+  if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
+  
+  if(!is.null(City)){
+    pickadd <- city_lookup[city_lookup$city %in% City,,drop=F]
+    pickadd <- pickadd[1,,drop=F]
+    if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,radius,sep=":")}else{pickadd <- NULL}
+    lapply(pickadd,function(b){
+      b <- strsplit(b,":")
+      b <- unlist(b)
+      plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+    })
+  }
+  
+  if(!is.null(Circles)){
+    tmp <- Circles
+    lapply(tmp,function(b){
+      b <- strsplit(b,":")
+      b <- unlist(b)
+      plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+    })
+  }
+  if("Data" %in% layers){
+    points(x=reduced$x,y=reduced$y,cex=0.1,col=color,pch=19)
+  }
+
+}
 
 
 ####simple fourier transformation for seasonal decomposition

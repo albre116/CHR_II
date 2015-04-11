@@ -117,24 +117,11 @@ shinyServer(function(input, output, session) {
       
       
       output$OrigPlotState <- renderPlot({
-        selectStates <- input$SelectOrigStates
-        reduced <- RAWPLOT()[["reduced_orig"]]
-        map(states)
-        
-        if(!is.null(input$OrigCity) | !is.null(selectStates)){
-          selected <- c(selectStates,
-                        (as.character(state.fips$polyname[
-                          state.fips$abb %in% unlist(lapply(input$OrigCity,function(x){strsplit(x,",")[[1]][2]}))])))
-          selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
-          selected <- unique(selected)
-          selected <- selected[!is.null(selected)]
-          mapOrig <- map("state",regions = selected,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
-        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
-        
-        if("State Names" %in% input$maplayersOrigStates){map.text(state_labs,add=T)}
-        if("Data" %in% input$maplayersOrigStates){
-          points(x=reduced$x,y=reduced$y,cex=0.1,col="blue",pch=19)
-          }
+        plot_states(selectStates=input$SelectOrigStates,
+                    reduced=RAWPLOT()[["reduced_orig"]],
+                    cities=input$OrigCity,
+                    mapLayer=input$maplayersOrigStates,
+                    color="blue")
       })
       
       ################################################################
@@ -193,24 +180,11 @@ shinyServer(function(input, output, session) {
       
       
       output$DestPlotState <- renderPlot({
-        selectStates <- input$SelectDestStates
-        reduced <- RAWPLOT()[["reduced_dest"]]
-        map(states)
-
-        if(!is.null(input$DestCity) | !is.null(selectStates)){
-          selected <- c(selectStates,
-                        (as.character(state.fips$polyname[
-                          state.fips$abb %in% unlist(lapply(input$DestCity,function(x){strsplit(x,",")[[1]][2]}))])))
-          selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
-          selected <- unique(selected)
-          selected <- selected[!is.null(selected)]
-          mapDest <- map("state",regions = selected,plot=F,fill=T,col="yellow")} else{mapDest <- NULL}
-        if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="yellow")}
-        
-        if("State Names" %in% input$maplayersDestStates){map.text(state_labs,add=T)}
-        if("Data" %in% input$maplayersDestStates){
-          points(x=reduced$x,y=reduced$y,cex=0.1,col="red",pch=19)
-        }
+        plot_states(selectStates=input$SelectDestStates,
+                    reduced=RAWPLOT()[["reduced_dest"]],
+                    cities=input$DestCity,
+                    mapLayer=input$maplayersDestStates,
+                    color="red")
       })
       
       ###########################################################
@@ -314,37 +288,14 @@ shinyServer(function(input, output, session) {
       
       
       output$OrigPlotCounties <- renderPlot({
-        counties <- CountiesOrigin()
-        reduced <- RAWPLOT()[["reduced_orig"]]
-        if(is.null(counties)){return(NULL)}
-        selectCounties <- input$SelectOrigCounties
-        if(length(selectCounties)>0){
-          mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
-        map(counties)
-        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
-        
-        if(!is.null(input$OrigCity)){
-          pickadd <- city_lookup[city_lookup$city %in% input$OrigCity,,drop=F]
-          pickadd <- pickadd[1,,drop=F]
-          if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,input$OrigRadius,sep=":")}else{pickadd <- NULL}
-          lapply(pickadd,function(b){
-            b <- strsplit(b,":")
-            b <- unlist(b)
-            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
-          })
-        }
-        
-        if(!is.null(input$SelectOrigCircles)){
-          tmp <- input$SelectOrigCircles
-          lapply(tmp,function(b){
-            b <- strsplit(b,":")
-            b <- unlist(b)
-            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
-          })
-        }
-        if("Data" %in% input$maplayersOrigCounties){
-          points(x=reduced$x,y=reduced$y,cex=0.1,col="blue",pch=19)
-        }
+        plot_counties(counties=CountiesOrigin(),
+                      reduced=RAWPLOT()[["reduced_orig"]],
+                      selectCounties=input$SelectOrigCounties,
+                      City=input$OrigCity,
+                      radius=input$OrigRadius,
+                      Circles=input$SelectOrigCircles,
+                      layers=input$maplayersOrigCounties,
+                      color="blue")
       })
       
       ###########################################################
@@ -447,37 +398,14 @@ shinyServer(function(input, output, session) {
       
       
       output$DestPlotCounties <- renderPlot({
-        counties <- CountiesDestination()
-        reduced <- RAWPLOT()[["reduced_dest"]]
-        if(is.null(counties)){return(NULL)}
-        selectCounties <- input$SelectDestCounties
-        if(length(selectCounties)>0){
-          mapDest <- map("county",regions = selectCounties,plot=F,fill=T,col="yellow")} else{mapDest <- NULL}
-        map(counties)
-        if(!is.null(mapDest)){map(mapDest,fill=T,add=T,col="yellow")}
-        
-        if(!is.null(input$DestCity)){
-        pickadd <- city_lookup[city_lookup$city %in% input$DestCity,,drop=F]
-        pickadd <- pickadd[1,,drop=F]
-        if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,input$DestRadius,sep=":")}else{pickadd <- NULL}
-        lapply(pickadd,function(b){
-          b <- strsplit(b,":")
-          b <- unlist(b)
-          plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
-        })
-        }
-        
-        if(!is.null(input$SelectDestCircles)){
-          tmp <- input$SelectDestCircles
-          lapply(tmp,function(b){
-            b <- strsplit(b,":")
-            b <- unlist(b)
-            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
-          })
-        }
-        if("Data" %in% input$maplayersDestCounties){
-          points(x=reduced$x,y=reduced$y,cex=0.1,col="red",pch=19)
-        }
+        plot_counties(counties=CountiesDestination(),
+                      reduced=RAWPLOT()[["reduced_dest"]],
+                      selectCounties=input$SelectDestCounties,
+                      City=input$DestCity,
+                      radius=input$DestRadius,
+                      Circles=input$SelectDestCircles,
+                      layers=input$maplayersDestCounties,
+                      color="red")
       })
       
       
@@ -527,12 +455,10 @@ shinyServer(function(input, output, session) {
       
       
       DATA <- reactive({
-        
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Subsetting the Data',
                      detail = 'Hold Tight...')
         on.exit(progress$close())
-
 
         data <- RAWReduced()
         if(!is.null(input$SelectDestCounties)){
@@ -596,7 +522,6 @@ shinyServer(function(input, output, session) {
         }else{indexOrigCircle <- rep(FALSE,nrow(RAW))}
         
         
-
         a <- RAW$Orig3DigZip %in% input$OrigZip3
         b <- RAW$Dest3DigZip %in% input$DestZip3
         e <- RAW$OrigCity %in% input$OrigCity
@@ -609,7 +534,6 @@ shinyServer(function(input, output, session) {
         ####non dplyr version (consider for stability)
         #SELECTED <- RAW[idxx,]
 
-        
         ####dplyr version consider for speed
         SELECTED <- data %>% filter(idxx)
         SELECTED <- as.data.frame(SELECTED)
@@ -633,7 +557,6 @@ shinyServer(function(input, output, session) {
                      detail = 'Computing Percentiles')
         on.exit(progress$close())
 
-        
         SELECTED <- DATA()[["SELECTED"]]
         input$applyDygraph
         isolate(df <- input$dfspline)
@@ -664,12 +587,6 @@ shinyServer(function(input, output, session) {
           
           quantile.fit <- predict(fit,newdata=data.frame(y=y,x=x))
           quant <- data.frame(EntryDate=CLEAN$EntryDate,fit=quantile.fit)
-#           quant <- quant %>%
-#             group_by(EntryDate) %>%
-#             summarise(fit=unique(fit),
-#                       quantile=unique(tau)) %>%
-#             arrange(EntryDate)
-          
           quant <- tapply(quant$fit,quant$EntryDate,unique)
           quant <- data.frame(EntryDate=as.Date(names(quant)),fit=quant,quantile=tau)
           rownames(quant)=NULL
@@ -932,7 +849,7 @@ shinyServer(function(input, output, session) {
         Fn <- mileECDF()
         pct <- 0.15
         valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          paste0(quantile(Fn,pct), " mi"), paste0(pct*100,"th Mileage Percentile"), icon = icon("list"),
           color = "purple"
         )
       })
@@ -941,7 +858,7 @@ shinyServer(function(input, output, session) {
         Fn <- mileECDF()
         pct <- 0.5
         valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          paste0(quantile(Fn,pct), " mi"), paste0(pct*100,"th Mileage Percentile"), icon = icon("list"),
           color = "purple"
         )
       })
@@ -950,7 +867,7 @@ shinyServer(function(input, output, session) {
         Fn <- mileECDF()
         pct <- 0.85
         valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          paste0(quantile(Fn,pct), " mi"), paste0(pct*100,"th Mileage Percentile"), icon = icon("list"),
           color = "purple"
         )
       })
@@ -969,7 +886,7 @@ shinyServer(function(input, output, session) {
         f <- do.call("update",list(f,f_add))
         eval(parse(text=paste0("f_add=.~.+s(","Day365",",bs=\"cc\")")))
         f <- do.call("update",list(f,f_add))
-        fit <- modelCPDS(f=f,data=data,kernel=input$ModelFamily,gamma=1.4)
+        fit <- modelCPDS(f=f,data=data,kernel="Generalized Additive Model",gamma=1.4)
         return(fit)
       })
       
@@ -1284,11 +1201,15 @@ shinyServer(function(input, output, session) {
         progress$set(message = 'Modeling',
                      detail = 'Plotting')
         on.exit(progress$close())
-        
         table <- HistoricalData_QUICK()[["quote"]]
         idx <- sapply(table,class)
         idx <- idx %in% c("numeric","array")
         table[,idx] <- round(table[,idx],2)
+        pull <- colnames(table) %in% "MidPoint"
+        Fn <- mileECDF()
+        pct <- 0.5
+        table[,pull] <- quantile(Fn,pct)
+        colnames(table)[pull] <- paste0(pct*100,"th Percentile Mileage")
         return(table)
       })
       
@@ -2392,6 +2313,11 @@ shinyServer(function(input, output, session) {
         idx <- sapply(table,class)
         idx <- idx %in% c("numeric","array")
         table[,idx] <- round(table[,idx],2)
+        pull <- colnames(table) %in% "MidPoint"
+        Fn <- mileECDF()
+        pct <- 0.5
+        table[,pull] <- quantile(Fn,pct)
+        colnames(table)[pull] <- paste0(pct*100,"th Percentile Mileage")
         return(table)
       })
 
