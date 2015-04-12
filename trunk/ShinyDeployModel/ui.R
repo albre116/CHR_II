@@ -1,7 +1,6 @@
 
 header <- dashboardHeader(
   title="CPDS Time Series"
-  
   )###end header
 
 sidebar <- dashboardSidebar(
@@ -27,7 +26,9 @@ sidebar <- dashboardSidebar(
   box(title="Major Modeling Options",width=NULL,status = "warning",solidHeader = TRUE,
   uiOutput("response"),
   checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=T),
-  uiOutput("DateRange"))
+  uiOutput("DateRange"),
+  fileInput('settings_file', 'Load Model Image?',
+            accept=c('RData')))
 )###end side bar
 
 body <- dashboardBody(
@@ -255,6 +256,10 @@ body <- dashboardBody(
                          DT::dataTableOutput("HistVolIntegratedTable")
                   )
                 )
+            ),
+            box(title="Save model image?",width=NULL,status = "warning",solidHeader = TRUE,
+                textInput("settings_name","Save Settings to File Name:",value="settings_name"),
+                downloadButton('downloadData','Save Model Settings?')
             )
     ),###end current tab
     

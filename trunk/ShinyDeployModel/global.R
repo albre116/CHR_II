@@ -90,7 +90,7 @@ if(!require('dyPencilgraphs')) {
 
 
 ####Load Data File
-load("RAW_100_New.RData")
+load("RAW_10.RData")
 
 
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota",
@@ -221,6 +221,9 @@ radius_xyunits<-function(miles=50,earth_radius = 3960.0, radians_to_degrees = 18
   degrees<-(miles/earth_radius)*radians_to_degrees
   return(degrees)
 }
+
+
+
 
 
 

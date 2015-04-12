@@ -3,6 +3,71 @@ options(shiny.maxRequestSize=500*1024^2)###500 megabyte file upload limit set
 
 shinyServer(function(input, output, session) {
   
+  ###########################################################
+  #######Model Saving/Loading Features
+  ###########################################################
+  #####This saves a model image of all of the chosen settings
+  output$downloadData<-downloadHandler(
+    filename = function(){paste(input$settings_name,".RData",sep = "")},
+    content = function(file){
+      saved_settings <- reactiveValuesToList(input)
+      save(saved_settings, file = file)
+    })
+  
+  ####this will load a model image and set the values of the different selectors
+  Read_Settings <- reactive({
+    inFile <- input$settings_file
+    if (is.null(inFile)) return(NULL)
+    load(inFile$datapath)
+    return(saved_settings)
+  })
+  
+  ModelImageUpdate <- reactiveValues()
+  
+  ####scan across inputs and set values for static inputs
+  Change_static_settings <- observe({
+    if (is.null(Read_Settings())){return(NULL)}
+    R <- Read_Settings()
+    #####change the data selection settings on page 1
+    
+    #updateDateInput(session,"DateRange",min=R[["DateRange"]][1],max=R[["DateRange"]][2]) ###deal with this in the date input section
+    updateCheckboxInput(session,"FilterDate",value=R[["FilterDate"]])
+    updateSelectInput(session,"response",selected = R[["response"]])
+    
+    updateSelectizeInput(session,"OrigZip3",selected=R[["OrigZip3"]])
+    updateSelectizeInput(session,"OrigCity",selected=R[["OrigCity"]])
+    updateNumericInput(session,"OrigRadius",value=R[["OrigRadius"]])
+    
+    updateSelectizeInput(session,"DestZip3",selected=R[["DestZip3"]])
+    updateSelectizeInput(session,"DestCity",selected=R[["DestCity"]])
+    updateNumericInput(session,"DestRadius",value=R[["DestRadius"]])
+    
+    updateSelectizeInput(session,"SelectOrigStates",selected=R[["SelectOrigStates"]])
+    updateCheckboxGroupInput(session,"maplayersOrigStates",selected = R[["maplayersOrigStates"]])
+    
+    updateSelectizeInput(session,"SelectDestStates",selected=R[["SelectDestStates"]])
+    updateCheckboxGroupInput(session,"maplayersDestStates",selected = R[["maplayersDestStates"]])
+
+    
+    updateSelectizeInput(session,"SelectOrigCounties",selected = R[["SelectOrigCounties"]])
+    ModelImageUpdate[["SelectOrigCounties"]] <-  R[["SelectOrigCounties"]]
+    updateSelectizeInput(session,"SelectOrigCircles",selected = R[["SelectOrigCircles"]])
+    ModelImageUpdate[["SelectOrigCircles"]] <-  R[["SelectOrigCircles"]]
+    updateCheckboxGroupInput(session,"maplayersOrigCounties",selected = R[["maplayersOrigCounties"]])
+    updateSelectInput(session,"OrigCircle",selected=R[["OrigCircle"]])
+    updateNumericInput(session,"CircleRadiusOrig",value=R[["CircleRadiusOrig"]])
+    
+    updateSelectizeInput(session,"SelectDestCounties",selected = R[["SelectDestCounties"]])
+    ModelImageUpdate[["SelectDestCounties"]] <-  R[["SelectDestCounties"]]
+    updateSelectizeInput(session,"SelectDestCircles",selected = R[["SelectDestCircles"]])
+    ModelImageUpdate[["SelectDestCircles"]] <-  R[["SelectDestCircles"]]
+    updateCheckboxGroupInput(session,"maplayersDestCounties",selected = R[["maplayersDestCounties"]])
+    updateSelectInput(session,"DestCircle",selected=R[["DestCircle"]])
+    updateNumericInput(session,"CircleRadiusDest",value=R[["CircleRadiusDest"]])
+    
+
+    
+  })
   
 
 
@@ -232,7 +297,6 @@ shinyServer(function(input, output, session) {
       })
       
       
-      
       ClickCountiesAddOrig<- reactive({
         counties <- CountiesOrigin()
         if(is.null(counties)){return(NULL)}
@@ -248,6 +312,12 @@ shinyServer(function(input, output, session) {
       output$SelectOrigCounties <- renderUI({
         counties <- CountiesOrigin()
         isolate(selected <- input$SelectOrigCounties)
+        isolate({
+        if(!is.null(ModelImageUpdate[["SelectOrigCounties"]])){
+          selected <- ModelImageUpdate[["SelectOrigCounties"]]
+          ModelImageUpdate[["SelectOrigCounties"]] <- NULL
+        }
+          })
         pick <- unlist(lapply(input$SelectOrigStates,function(x){strsplit(x,":")[[1]][1]}))
         pick <- c(pick,counties$names)
         pick <- pick[!is.null(pick)]
@@ -264,9 +334,18 @@ shinyServer(function(input, output, session) {
         }else{return(data.frame())}
       })
       
+
+
       output$SelectOrigCircles<- renderUI({
+        counties <- CountiesOrigin()
         pts <- OrigCircles()
         isolate(pick <- input$SelectOrigCircles)
+        isolate({
+          if(!is.null(ModelImageUpdate[["SelectOrigCircles"]])){
+            pick <- ModelImageUpdate[["SelectOrigCircles"]]
+            ModelImageUpdate[["SelectOrigCircles"]] <- NULL
+          }
+        })
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
         pick <- pick[!is.na(pick)]
         selected <- pick
@@ -359,6 +438,12 @@ shinyServer(function(input, output, session) {
       output$SelectDestCounties <- renderUI({
         counties <- CountiesDestination()
         isolate(selected <- input$SelectDestCounties)
+        isolate({
+          if(!is.null(ModelImageUpdate[["SelectDestCounties"]])){
+            selected <- ModelImageUpdate[["SelectDestCounties"]]
+            ModelImageUpdate[["SelectDestCounties"]] <- NULL
+          }
+        })
         pick <- unlist(lapply(input$SelectDestStates,function(x){strsplit(x,":")[[1]][1]}))
         pick <- c(pick,counties$names)
         pick <- pick[!is.null(pick)]
@@ -376,8 +461,15 @@ shinyServer(function(input, output, session) {
       })
       
       output$SelectDestCircles<- renderUI({
+        counties <- CountiesDestination()
         pts <- DestCircles()
         isolate(pick <- input$SelectDestCircles)
+        isolate({
+          if(!is.null(ModelImageUpdate[["SelectOrigCircles"]])){
+            pick <- ModelImageUpdate[["SelectOrigCircles"]]
+            ModelImageUpdate[["SelectOrigCircles"]] <- NULL
+          }
+        })
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
         pick <- pick[!is.na(pick)]
         selected <- pick
