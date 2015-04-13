@@ -146,8 +146,8 @@ body <- dashboardBody(
                        title="Model Terms and Parameters",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
                        fluidRow(
                          column(width=6,
-                                selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=c("Generalized Additive Model")),
-                                sliderInput("ConfLimits","Model Confidince Intervals",0,1,c(0.15,0.85))
+                                uiOutput("ModelFamily"),
+                                uiOutput("ConfLimits")
                          ),
                          column(width=6,
                                 uiOutput("FactorTerms"),
@@ -220,14 +220,8 @@ body <- dashboardBody(
                          column(width=2,
                                 uiOutput("CustomerSelect"),
                                 uiOutput("CarrierSelect"),
-                                selectInput("volbasis","Volume Basis",
-                                            choices=c("Transactions in Lane","Specific Customer","Specific Carrier"),
-                                            selected=c("Transactions in Lane")),
-                                selectInput("volmethod","Volume Modeling Method",
-                                            choices = c("Fourier","GAM","GAM No Weekend","GAM Weekly Max"),
-                                            selected=c("GAM Weekly Max")),
-                                uiOutput("fourierComp")
-
+                                uiOutput("volbasis"),
+                                uiOutput("volmethod")
                          ),
                          column(width=10,
                                 dyPencilgraphOutput("VolumeDraw")

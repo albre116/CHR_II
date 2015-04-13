@@ -90,7 +90,7 @@ if(!require('dyPencilgraphs')) {
 
 
 ####Load Data File
-load("RAW_10.RData")
+load("RAW_100_New.RData")
 
 
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota",
@@ -199,20 +199,6 @@ plot_counties <- function(counties,reduced,selectCounties,City,radius,Circles,la
 
 }
 
-
-####simple fourier transformation for seasonal decomposition
-fourier <- function(t,terms,period)
-{
-  n <- length(t)
-  X <- matrix(,nrow=n,ncol=2*terms)
-  for(i in 1:terms)
-  {
-    X[,2*i-1] <- sin(2*pi*i*t/period)
-    X[,2*i] <- cos(2*pi*i*t/period)
-  }
-  colnames(X) <- paste(c("S","C"),rep(1:terms,rep(2,terms)),sep="")
-  return(X)
-}
 
 
 ######circle plotting function

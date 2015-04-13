@@ -30,7 +30,6 @@ shinyServer(function(input, output, session) {
     R <- Read_Settings()
     #####change the data selection settings on page 1
     
-    #updateDateInput(session,"DateRange",min=R[["DateRange"]][1],max=R[["DateRange"]][2]) ###deal with this in the date input section
     updateCheckboxInput(session,"FilterDate",value=R[["FilterDate"]])
     updateSelectInput(session,"response",selected = R[["response"]])
     
@@ -50,22 +49,28 @@ shinyServer(function(input, output, session) {
 
     
     updateSelectizeInput(session,"SelectOrigCounties",selected = R[["SelectOrigCounties"]])
-    ModelImageUpdate[["SelectOrigCounties"]] <-  R[["SelectOrigCounties"]]
     updateSelectizeInput(session,"SelectOrigCircles",selected = R[["SelectOrigCircles"]])
-    ModelImageUpdate[["SelectOrigCircles"]] <-  R[["SelectOrigCircles"]]
     updateCheckboxGroupInput(session,"maplayersOrigCounties",selected = R[["maplayersOrigCounties"]])
     updateSelectInput(session,"OrigCircle",selected=R[["OrigCircle"]])
     updateNumericInput(session,"CircleRadiusOrig",value=R[["CircleRadiusOrig"]])
     
     updateSelectizeInput(session,"SelectDestCounties",selected = R[["SelectDestCounties"]])
-    ModelImageUpdate[["SelectDestCounties"]] <-  R[["SelectDestCounties"]]
     updateSelectizeInput(session,"SelectDestCircles",selected = R[["SelectDestCircles"]])
-    ModelImageUpdate[["SelectDestCircles"]] <-  R[["SelectDestCircles"]]
     updateCheckboxGroupInput(session,"maplayersDestCounties",selected = R[["maplayersDestCounties"]])
     updateSelectInput(session,"DestCircle",selected=R[["DestCircle"]])
     updateNumericInput(session,"CircleRadiusDest",value=R[["CircleRadiusDest"]])
     
+    
+    #####Customer Specific Section of inputs
+    updateSelectInput(session,"ModelFamily",selected = R[["ModelFamily"]])
+    updateSliderInput(session,"ConfLimits",value = R[["ConfLimits"]])
 
+
+    
+    ####assign the values to slots in an object that can be re-written
+    for(i in names(R)){
+      ModelImageUpdate[[i]] <- R[[i]]
+    }
     
   })
   
@@ -108,6 +113,13 @@ shinyServer(function(input, output, session) {
     yr <- as.numeric(yr)+1
     end_date <- as.Date(format(paste(yr,mo,day,sep="-"),
                                format="%y-%m-%d"))
+    
+    if(!is.null(Read_Settings()[["DateRange"]])){
+      start_date <- Read_Settings()[["DateRange"]][1]
+      end_date <- Read_Settings()[["DateRange"]][2]
+    }
+    
+    
     dateRangeInput("DateRange","Select Prediction Date Range ",
                    start=start_date,
                    min=start_date,
@@ -465,9 +477,9 @@ shinyServer(function(input, output, session) {
         pts <- DestCircles()
         isolate(pick <- input$SelectDestCircles)
         isolate({
-          if(!is.null(ModelImageUpdate[["SelectOrigCircles"]])){
-            pick <- ModelImageUpdate[["SelectOrigCircles"]]
-            ModelImageUpdate[["SelectOrigCircles"]] <- NULL
+          if(!is.null(ModelImageUpdate[["SelectDestCircles"]])){
+            pick <- ModelImageUpdate[["SelectDestCircles"]]
+            ModelImageUpdate[["SelectDestCircles"]] <- NULL
           }
         })
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
@@ -507,26 +519,38 @@ shinyServer(function(input, output, session) {
       
       output$LinearTerms <- renderUI({
         terms <- colnames(RAW)
+        if(!is.null(Read_Settings())){
+          selected <- Read_Settings()[["LinearTerms"]]
+          }else{selected <- c("NumericDate")}
         selectizeInput("LinearTerms","Linear Terms in Model",
-                       choices=terms,selected=c("NumericDate"),multiple=T)
+                       choices=terms,selected=selected,multiple=T)
       })
       
       output$FactorTerms <- renderUI({
         terms <- colnames(RAW)
+        if(!is.null(Read_Settings())){
+          selected <- Read_Settings()[["FactorTerms"]]
+        }else{selected <- c("SumOfStops")}
         selectizeInput("FactorTerms","Factors in Model",
-                       choices=terms,selected=c("SumOfStops"),multiple=T)
+                       choices=terms,selected=selected,multiple=T)
       })
       
       output$SplineTerms <- renderUI({
         terms <- colnames(RAW)
+        if(!is.null(Read_Settings())){
+          selected <- Read_Settings()[["SplineTerms"]]
+        }else{selected <- NULL}
         selectizeInput("SplineTerms","Spline Terms in Model (non cyclic)",
-                       choices=terms,selected=NULL,multiple=T)
+                       choices=terms,selected=selected,multiple=T)
       })
       
       output$SplineTermsCyclic <- renderUI({
         terms <- colnames(RAW)
+        if(!is.null(Read_Settings())){
+          selected <- Read_Settings()[["SplineTermsCyclic"]]
+        }else{selected <- c("Day365")}
         selectizeInput("SplineTermsCyclic","Cyclical Spline Terms in Model",
-                       choices=terms,selected=c("Day365"),multiple=T)
+                       choices=terms,selected=selected,multiple=T)
       })
       
       RAWReduced <- reactive({
@@ -1012,11 +1036,11 @@ shinyServer(function(input, output, session) {
         preds <- predict(fit,newdata=PredData,se.fit=T)
         y_hat <- preds$fit
         y_se <- sqrt(preds$se.fit^2+fit$sig2)
-        LCL <- y_hat+qnorm(input$ConfLimits[1])*y_se
-        UCL <- y_hat+qnorm(input$ConfLimits[2])*y_se
+        LCL <- y_hat+qnorm(0.15)*y_se
+        UCL <- y_hat+qnorm(0.85)*y_se
         response <- as.character(formula(fit))[2]
         eval(parse(text=paste0("prediction_data <- data.frame(",response,"=y_hat,LCL=LCL,UCL=UCL,PredData)")))
-        colnames(prediction_data)[c(2,3)] <- c(paste0("FCST",input$ConfLimits*100,"th"))
+        colnames(prediction_data)[c(2,3)] <- c(paste0("FCST",c(0.15,0.85)*100,"th"))
         
         
         ###now we have to generate adjusted response data for this to work
@@ -1316,7 +1340,25 @@ shinyServer(function(input, output, session) {
       ###########################################################
       #######Tab Panel 3:  Advanced Modeling
       ###########################################################
+      output$ModelFamily <- renderUI({
+        selected <- c("Generalized Additive Model")
+        if(!is.null(Read_Settings()[["ModelFamily"]])){
+          selected <- Read_Settings()[["ModelFamily"]]
+        }
+        
+        selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=selected)
+      })
       
+      output$ConfLimits <- renderUI({
+        value <- c(0.15,0.85)
+        if(!is.null(Read_Settings()[["ConfLimits"]])){
+          value <- Read_Settings()[["ConfLimits"]]
+        }
+        sliderInput("ConfLimits","Model Confidince Intervals",0,1,value=value)
+      })
+      
+
+
 
       MODELFIT <- reactive({
         progress <- shiny::Progress$new(session, min=0, max=2)
@@ -1391,6 +1433,14 @@ shinyServer(function(input, output, session) {
           inputname <- paste("PredictorTerms_range_lower_", terms[i], sep="")
           u <- max(data[,terms[i]])
           l <- min(data[,terms[i]])
+          
+          ####do the update here on the first pass through
+          isolate({
+            if(!is.null(ModelImageUpdate[[inputname]])){
+              l <- ModelImageUpdate[[inputname]]
+            }
+          })
+          
           numericInput(inputname,paste0("Lower Y Range:",terms[i]),value=l)
         })
         # Convert the list to a tagList - this is necessary for the list of items
@@ -1411,6 +1461,15 @@ shinyServer(function(input, output, session) {
           inputname <- paste("PredictorTerms_range_upper_", terms[i], sep="")
           u <- max(data[,terms[i]])
           l <- min(data[,terms[i]])
+          
+          
+          ####do the update here on the first pass through
+          isolate({
+            if(!is.null(ModelImageUpdate[[inputname]])){
+              u <- ModelImageUpdate[[inputname]]
+            }
+          })
+          
           numericInput(inputname,paste0("Upper Y Range:",terms[i]),value=u)
         })
         # Convert the list to a tagList - this is necessary for the list of items
@@ -1429,7 +1488,15 @@ shinyServer(function(input, output, session) {
         
         myUIs<- lapply(1:length(terms), function(i) {
           inputname <- paste("PredictorTerms_percentile_", terms[i], sep="")
-          sliderInput(inputname,paste0("Percentile:",terms[i]),value=0.5,min=0,max=1)
+          ####do the update here on the first pass through
+          value=0.5
+          isolate({
+            if(!is.null(ModelImageUpdate[[inputname]])){
+              value <- ModelImageUpdate[[inputname]]
+            }
+          })
+
+          sliderInput(inputname,paste0("Percentile:",terms[i]),value=value,min=0,max=1)
         })
         # Convert the list to a tagList - this is necessary for the list of items
         # to display properly.
@@ -1452,7 +1519,15 @@ shinyServer(function(input, output, session) {
           pick <- as.numeric(pick)
           pick <- pick[order(pick)]
           pick <- as.character(c("Automatic",pick))
-          selectInput(inputname,paste0("Input Value:",terms[i]),choices=pick,selected=c("Automatic"))
+          ####do the update here on the first pass through
+          selected=c("Automatic")
+          isolate({
+            if(!is.null(ModelImageUpdate[[inputname]])){
+              selected <- ModelImageUpdate[[inputname]]
+            }
+          })
+          
+          selectInput(inputname,paste0("Input Value:",terms[i]),choices=pick,selected=selected)
         })
         # Convert the list to a tagList - this is necessary for the list of items
         # to display properly.
@@ -1472,7 +1547,14 @@ shinyServer(function(input, output, session) {
         myUIs<- lapply(1:length(terms), function(i) {
           inputname <- paste("PredictorTerms_dataType_", terms[i], sep="")
           pick <- as.character(c(unique(data$CustomerCCode),unique(data$CarrierTCode)))
-          selectizeInput(inputname,paste0("Include in Plot (no selection includes all):",terms[i]),choices=pick,selected=NULL,multiple=TRUE)
+          selected=NULL
+          isolate({
+            if(!is.null(ModelImageUpdate[[inputname]])){
+              selected <- ModelImageUpdate[[inputname]]
+            }
+          })
+
+          selectizeInput(inputname,paste0("Include in Plot (no selection includes all):",terms[i]),choices=pick,selected=selected,multiple=TRUE)
         })
         # Convert the list to a tagList - this is necessary for the list of items
         # to display properly.
@@ -1541,6 +1623,23 @@ shinyServer(function(input, output, session) {
           predictor <- eval(parse(text=paste0("data.frame(",terms[my_i],"=tmp)")))
           predictor <- xts(predictor,date_sequence)
           }
+          
+          
+          ####drop in saved values here from model image
+          isolate({
+            plotname <- paste("PredictorTerms_", terms[my_i], sep="")
+            grob <- paste0(plotname,"_data_extract")
+            if(!is.null(ModelImageUpdate[[grob]])){
+              q <- ModelImageUpdate[[grob]]
+              grob <- paste0(plotname,"_data_dimension_RowCol")
+              dimension <-ModelImageUpdate[[grob]]
+              q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
+              predictor <- eval(parse(text=paste0("data.frame(",terms[my_i],"=q[,2])")))
+              predictor <- xts(predictor,date_sequence)###FIX
+            }
+          })
+          
+          
           
             lims <- paste("PredictorTerms_range_lower_", terms[my_i], sep="")
             l <- input[[lims]]
@@ -2019,16 +2118,16 @@ shinyServer(function(input, output, session) {
       #######Volume Integrated Quote
       ###########################################################
       
-      output$fourierComp <- renderUI({
-        if(input$volmethod!="Fourier"){return(NULL)}
-        numericInput("fourierComp","Number of Fourier Comps",10,min=2,max=40,step=2)
-      })
       
       output$CustomerSelect <- renderUI({
         if(!(input$volbasis=="Specific Customer")){return(NULL)}
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         customers <- unique(data$CustomerCCode)
-        selectizeInput("CustomerSelect","Customer CCodes to Base Volume On",choices=customers,
+        selected <- NULL
+        if(!is.null(Read_Settings()[["CarrierSelect"]])){
+          selected <- Read_Settings()[["CustomerSelect"]]
+        }
+        selectizeInput("CustomerSelect","Customer CCodes to Base Volume On",choices=customers,selected = selected,
                        multiple=TRUE)
       })
       
@@ -2036,9 +2135,38 @@ shinyServer(function(input, output, session) {
         if(!(input$volbasis=="Specific Carrier")){return(NULL)}
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         customers <- unique(data$CarrierTCode)
-        selectizeInput("CarrierSelect","Carrier TCodes to Base Volume On",choices=customers,
+        selected <- NULL
+        if(!is.null(Read_Settings()[["CarrierSelect"]])){
+          selected <- Read_Settings()[["CarrierSelect"]]
+        }
+        selectizeInput("CarrierSelect","Carrier TCodes to Base Volume On",choices=customers,selected=selected,
                        multiple=TRUE)
       })
+      
+      
+      output$volbasis <- renderUI({
+        selected <- c("Transactions in Lane")
+        if(!is.null(Read_Settings()[["volbasis"]])){
+          selected <- Read_Settings()[["volbasis"]]
+        }
+        
+        selectInput("volbasis","Volume Basis",
+                  choices=c("Transactions in Lane","Specific Customer","Specific Carrier"),
+                  selected=selected)
+      })
+      
+      output$volmethod <- renderUI({
+        selected <- c("GAM Weekly Max")
+        if(!is.null(Read_Settings()[["volmethod"]])){
+          selected <- Read_Settings()[["volmethod"]]
+        }
+        
+        selectInput("volmethod","Volume Modeling Method",
+                    choices = c("GAM","GAM No Weekend","GAM Weekly Max"),
+                    selected=selected)
+      })
+      
+
       
       
       TransactionalVolume <- reactive({
@@ -2082,19 +2210,6 @@ shinyServer(function(input, output, session) {
         volume$TransVolume[is.na(volume$TransVolume)] <- 0
         volume <- xts(volume[,"TransVolume",drop=F],volume$EntryDate)
 
-        ###fourier path
-        if(input$volmethod=="Fourier"){
-        n <- length(volume)
-        m <- 365 ###cyclic period for the volume
-        components <- input$fourierComp
-        volume_ts  <- ts(coredata(volume), f=m)
-        fit <- Arima(volume_ts, order=c(0,0,0), xreg=fourier(1:n,components,m))###turn off AR error for now
-        #fit <- auto.arima(volume_ts, seasonal=FALSE, xreg=fourier(1:n,components,m))
-        #plot(forecast(fit, h=2*m, xreg=fourier(n+1:(2*m),4,m)))
-        len <- as.numeric(predDays)
-        pred_volume <- forecast(fit,h=len,xreg=fourier(n+1:len,components,len))
-        pred_volume <- data.frame(TransFcst=pred_volume$mean)
-        }
         
         ###gam path
         if(input$volmethod=="GAM"){
@@ -2134,6 +2249,20 @@ shinyServer(function(input, output, session) {
         
 
         pred_volume <- xts(pred_volume,date_sequence)
+        
+        ####drop in saved values here from model image
+        isolate({
+          if(!is.null(ModelImageUpdate[["VolumeDraw_data_extract"]])){
+            q <- ModelImageUpdate[["VolumeDraw_data_extract"]]
+            dimension <-ModelImageUpdate[["VolumeDraw_data_dimension_RowCol"]]
+            q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
+            pred_volume <- data.frame(TransFcst=as.numeric(q[,2]))
+            pred_volume <- xts(pred_volume,date_sequence)
+          }
+        })
+        
+        
+        
         return(list(volume=volume,pred_volume=pred_volume))
       })
 
