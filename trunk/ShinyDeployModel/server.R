@@ -519,7 +519,7 @@ shinyServer(function(input, output, session) {
       
       
       output$DestPlotCounties <- renderPlot({
-        load_page_1$complete <- TRUE
+        isolate(load_page_1$complete <- TRUE)
         plot_counties(counties=CountiesDestination(),
                       reduced=RAWPLOT()[["reduced_dest"]],
                       selectCounties=input$SelectDestCounties,
