@@ -14,6 +14,15 @@ shinyServer(function(input, output, session) {
       save(saved_settings, file = file)
     })
   
+  load_page_1 <- reactiveValues(complete=FALSE)
+  
+  output$settings_file <- renderUI({
+    if(load_page_1$complete==FALSE){return(NULL)}
+  fileInput('settings_file', 'Load Model Image?',
+            accept=c('RData'))
+  })
+  
+
   ####this will load a model image and set the values of the different selectors
   Read_Settings <- reactive({
     inFile <- input$settings_file
@@ -510,6 +519,7 @@ shinyServer(function(input, output, session) {
       
       
       output$DestPlotCounties <- renderPlot({
+        load_page_1$complete <- TRUE
         plot_counties(counties=CountiesDestination(),
                       reduced=RAWPLOT()[["reduced_dest"]],
                       selectCounties=input$SelectDestCounties,

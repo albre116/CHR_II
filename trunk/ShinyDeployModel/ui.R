@@ -27,8 +27,7 @@ sidebar <- dashboardSidebar(
   uiOutput("response"),
   uiOutput("FilterDate"),
   uiOutput("DateRange"),
-  fileInput('settings_file', 'Load Model Image? (Wait Until the Maps Have Rendered or it Will Crash!!!)',
-            accept=c('RData')))
+  uiOutput("settings_file"))
 )###end side bar
 
 body <- dashboardBody(
