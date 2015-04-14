@@ -41,7 +41,7 @@ body <- dashboardBody(
                        solidHeader = TRUE,collapsible = T,
                        uiOutput("OrigZip3"),
                        uiOutput("OrigCity"),
-                       numericInput("OrigRadius","Miles Around Origin City to Include",50,min=0,step=1)
+                       uiOutput("OrigRadius")
                      )#end box
               ),#end column
               column(width=6,
@@ -50,7 +50,7 @@ body <- dashboardBody(
                        solidHeader = TRUE,collapsible = T,
                        uiOutput("DestZip3"),
                        uiOutput("DestCity"),
-                       numericInput("DestRadius","Miles Around Destination City to Include",50,min=0,step=1)
+                       uiOutput("DestRadius")
                      )#end box
               )#end column
             ),#end fluid row
@@ -62,9 +62,7 @@ body <- dashboardBody(
                        h3(textOutput("AddStatesHoverSelectedOrigin")),
                        plotOutput(outputId = "OrigPlotState",clickId = "OriginStates",hoverId="OriginStatesHover",hoverDelay=300),
                        uiOutput("SelectOrigStates"),
-                       checkboxGroupInput("maplayersOrigStates","Map Layers to Display",
-                                          c("State Names","Data"),
-                                          selected=c("State Names","Data"),inline=TRUE)
+                       uiOutput("maplayersOrigStates")
                      ),
                      box(
                        title="Origin Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
@@ -73,13 +71,11 @@ body <- dashboardBody(
                        plotOutput(outputId = "OrigPlotCounties",clickId = "OriginCounties",hoverId="OriginCountiesHover",hoverDelay=300),
                        uiOutput("SelectOrigCounties"),
                        uiOutput("SelectOrigCircles"),
-                       fluidRow(column(width=6,checkboxGroupInput("maplayersOrigCounties","Map Layers to Display",
-                                          c("Data"),
-                                          selected=c("Data"),inline=T)
+                       fluidRow(column(width=6,uiOutput("maplayersOrigCounties")
                                        ),
                                 column(width=6,
                                        selectInput("OrigCircle","Select Method:",
-                                                          c("Counties","Bounding Circle"),selected="Counties"),
+                                                   c("Counties","Bounding Circle"),selected=c("Counties")),
                                        numericInput("CircleRadiusOrig","Radius of Circle (mi)", value=50,min=0,step=25)
                                        )
                                 )
@@ -92,9 +88,7 @@ body <- dashboardBody(
                        h3(textOutput("AddStatesHoverSelectedDestination")),
                        plotOutput(outputId = "DestPlotState",clickId = "DestinationStates",hoverId="DestinationStatesHover",hoverDelay=300),
                        uiOutput("SelectDestStates"),
-                       checkboxGroupInput("maplayersDestStates","Map Layers to Display",
-                                          c("State Names","Data"),
-                                          selected=c("State Names","Data"),inline=TRUE)
+                       uiOutput("maplayersDestStates")
                      ),
                      box(
                        title="Destination Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
@@ -103,13 +97,11 @@ body <- dashboardBody(
                        plotOutput(outputId = "DestPlotCounties",clickId = "DestinationCounties",hoverId="DestinationCountiesHover",hoverDelay=300),
                        uiOutput("SelectDestCounties"),
                        uiOutput("SelectDestCircles"),
-                       fluidRow(column(width=6,checkboxGroupInput("maplayersDestCounties","Map Layers to Display",
-                                                                  c("Data"),
-                                                                  selected=c("Data"),inline=T)
+                       fluidRow(column(width=6,uiOutput("maplayersDestCounties")
                        ),
                        column(width=6,
                               selectInput("DestCircle","Select Method:",
-                                          c("Counties","Bounding Circle"),selected="Counties"),
+                                          c("Counties","Bounding Circle"),selected=c("Counties")),
                               numericInput("CircleRadiusDest","Radius of Circle (mi)", value=50,min=0,step=25)
                        )
                        )

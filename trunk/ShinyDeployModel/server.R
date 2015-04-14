@@ -38,39 +38,31 @@ shinyServer(function(input, output, session) {
     if (is.null(Read_Settings())){return(NULL)}
     R <- Read_Settings()
     #####change the data selection settings on page 1
-    updateSelectInput(session,"response",selected = R[["response"]])
-    
-    updateSelectizeInput(session,"OrigZip3",selected=R[["OrigZip3"]])
-    updateSelectizeInput(session,"OrigCity",selected=R[["OrigCity"]])
-    updateNumericInput(session,"OrigRadius",value=R[["OrigRadius"]])
-    
-    updateSelectizeInput(session,"DestZip3",selected=R[["DestZip3"]])
-    updateSelectizeInput(session,"DestCity",selected=R[["DestCity"]])
-    updateNumericInput(session,"DestRadius",value=R[["DestRadius"]])
-    
-    updateSelectizeInput(session,"SelectOrigStates",selected=R[["SelectOrigStates"]])
-    updateCheckboxGroupInput(session,"maplayersOrigStates",selected = R[["maplayersOrigStates"]])
-    
-    updateSelectizeInput(session,"SelectDestStates",selected=R[["SelectDestStates"]])
-    updateCheckboxGroupInput(session,"maplayersDestStates",selected = R[["maplayersDestStates"]])
 
     
-    updateSelectizeInput(session,"SelectOrigCounties",selected = R[["SelectOrigCounties"]])
-    updateSelectizeInput(session,"SelectOrigCircles",selected = R[["SelectOrigCircles"]])
-    updateCheckboxGroupInput(session,"maplayersOrigCounties",selected = R[["maplayersOrigCounties"]])
-    updateSelectInput(session,"OrigCircle",selected=R[["OrigCircle"]])
-    updateNumericInput(session,"CircleRadiusOrig",value=R[["CircleRadiusOrig"]])
+    #updateSelectizeInput(session,"SelectOrigStates",selected=R[["SelectOrigStates"]])
+    #updateCheckboxGroupInput(session,"maplayersOrigStates",selected = R[["maplayersOrigStates"]])
     
-    updateSelectizeInput(session,"SelectDestCounties",selected = R[["SelectDestCounties"]])
-    updateSelectizeInput(session,"SelectDestCircles",selected = R[["SelectDestCircles"]])
-    updateCheckboxGroupInput(session,"maplayersDestCounties",selected = R[["maplayersDestCounties"]])
-    updateSelectInput(session,"DestCircle",selected=R[["DestCircle"]])
-    updateNumericInput(session,"CircleRadiusDest",value=R[["CircleRadiusDest"]])
+    #updateSelectizeInput(session,"SelectDestStates",selected=R[["SelectDestStates"]])
+    #updateCheckboxGroupInput(session,"maplayersDestStates",selected = R[["maplayersDestStates"]])
+
+    
+    #updateSelectizeInput(session,"SelectOrigCounties",selected = R[["SelectOrigCounties"]])
+    #updateSelectizeInput(session,"SelectOrigCircles",selected = R[["SelectOrigCircles"]])
+    #updateCheckboxGroupInput(session,"maplayersOrigCounties",selected = R[["maplayersOrigCounties"]])
+    #updateSelectInput(session,"OrigCircle",selected=R[["OrigCircle"]])
+    #updateNumericInput(session,"CircleRadiusOrig",value=R[["CircleRadiusOrig"]])
+    
+    #updateSelectizeInput(session,"SelectDestCounties",selected = R[["SelectDestCounties"]])
+    #updateSelectizeInput(session,"SelectDestCircles",selected = R[["SelectDestCircles"]])
+    #updateCheckboxGroupInput(session,"maplayersDestCounties",selected = R[["maplayersDestCounties"]])
+    #updateSelectInput(session,"DestCircle",selected=R[["DestCircle"]])
+    #updateNumericInput(session,"CircleRadiusDest",value=R[["CircleRadiusDest"]])
     
     
     #####Customer Specific Section of inputs
-    updateSelectInput(session,"ModelFamily",selected = R[["ModelFamily"]])
-    updateSliderInput(session,"ConfLimits",value = R[["ConfLimits"]])
+    #updateSelectInput(session,"ModelFamily",selected = R[["ModelFamily"]])
+    #updateSliderInput(session,"ConfLimits",value = R[["ConfLimits"]])
 
 
     
@@ -98,28 +90,104 @@ shinyServer(function(input, output, session) {
   ###########################################################
   output$response<- renderUI({
     idx <- colnames(RAW)
-    selectInput("response","Response",choices=idx,selected=c("CPM_AllInCarrier"))
+    selected=c("CPM_AllInCarrier")
+    if(!is.null(Read_Settings()[["response"]])){
+      selected <- Read_Settings()[["response"]]
+    }
+    selectInput("response","Response",choices=idx,selected=selected)
   })
   
   output$OrigZip3<- renderUI({
     idx <- unique(RAW$Orig3DigZip)
-    selectizeInput("OrigZip3","3-Digit Origin Zip",choices=idx,selected=NULL,multiple=TRUE)
+    selected=NULL
+    if(!is.null(Read_Settings()[["OrigZip3"]])){
+      selected <- Read_Settings()[["OrigZip3"]]
+    }
+    selectizeInput("OrigZip3","3-Digit Origin Zip",choices=idx,selected=selected,multiple=TRUE)
   })
   
   output$DestZip3<- renderUI({
     idx <- unique(RAW$Dest3DigZip)
-    selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx,selected=NULL,multiple = TRUE)
+    selected=NULL
+    if(!is.null(Read_Settings()[["DestZip3"]])){
+      selected <- Read_Settings()[["DestZip3"]]
+    }
+    selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx,selected=selected,multiple = TRUE)
   })
   
   output$OrigCity<- renderUI({
     idx <- unique(RAW$OrigCity)
-    selectizeInput("OrigCity","Origin City",choices=idx,selected=NULL,multiple=TRUE)
+    selected=NULL
+    if(!is.null(Read_Settings()[["OrigCity"]])){
+      selected <- Read_Settings()[["OrigCity"]]
+    }
+    selectizeInput("OrigCity","Origin City",choices=idx,selected=selected,multiple=TRUE)
   })
   
   output$DestCity<- renderUI({
     idx <- unique(RAW$DestCity)
-    selectizeInput("DestCity","Destination City",choices=idx,selected=NULL,multiple = TRUE)
+    selected=NULL
+    if(!is.null(Read_Settings()[["DestCity"]])){
+      selected <- Read_Settings()[["DestCity"]]
+    }
+    selectizeInput("DestCity","Destination City",choices=idx,selected=selected,multiple = TRUE)
   })
+  
+  output$OrigRadius<- renderUI({
+    value=50
+    if(!is.null(Read_Settings()[["OrigRadius"]])){
+      value <- Read_Settings()[["OrigRadius"]]
+    }
+    numericInput("OrigRadius","Miles Around Origin City to Include",value=value,min=0,step=1)
+  })
+  
+  output$DestRadius<- renderUI({
+    value=50
+    if(!is.null(Read_Settings()[["DestRadius"]])){
+      value <- Read_Settings()[["DestRadius"]]
+    }
+    numericInput("DestRadius","Miles Around Destination City to Include",value=value,min=0,step=1)
+  })
+  
+  
+  output$maplayersOrigStates <- renderUI({
+    selected=c("State Names","Data")
+    if(!is.null(Read_Settings()[["maplayersOrigStates"]])){
+      selected <- Read_Settings()[["maplayersOrigStates"]]
+    }
+  checkboxGroupInput("maplayersOrigStates","Map Layers to Display",
+                     c("State Names","Data"),
+                     selected=selected,inline=TRUE)
+  })
+  
+  output$maplayersDestStates <- renderUI({
+    selected=c("State Names","Data")
+    if(!is.null(Read_Settings()[["maplayersDestStates"]])){
+      selected <- Read_Settings()[["maplayersDestStates"]]
+    }
+    checkboxGroupInput("maplayersDestStates","Map Layers to Display",
+                       c("State Names","Data"),
+                       selected=selected,inline=TRUE)
+  })
+  
+  output$maplayersOrigCounties <- renderUI({
+    selected=c("Data")
+    if(!is.null(Read_Settings()[["maplayersOrigCounties"]])){
+      selected <- Read_Settings()[["maplayersOrigCounties"]]
+    }
+    checkboxGroupInput("maplayersOrigCounties","Map Layers to Display",
+                       c("Data"),selected=selected,inline=T)
+  })
+  
+  output$maplayersDestCounties <- renderUI({
+    selected=c("Data")
+    if(!is.null(Read_Settings()[["maplayersDestCounties"]])){
+      selected <- Read_Settings()[["maplayersDestCounties"]]
+    }
+    checkboxGroupInput("maplayersDestCounties","Map Layers to Display",
+                       c("Data"),selected=selected,inline=T)
+  })
+  
   
   output$DateRange <- renderUI({
     data <- RAW###data brought in after filtering is complete
@@ -194,6 +262,9 @@ shinyServer(function(input, output, session) {
       
       output$SelectOrigStates <- renderUI({
         isolate(selected <- input$SelectOrigStates)
+        if(!is.null(ModelImageUpdate[["SelectOrigStates"]])){
+          selected <- ModelImageUpdate[["SelectOrigStates"]]
+        }
         selected <- c(selected,ClickStateAddOrig())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
@@ -257,6 +328,9 @@ shinyServer(function(input, output, session) {
       
       output$SelectDestStates <- renderUI({
         isolate(selected <- input$SelectDestStates)
+          if(!is.null(ModelImageUpdate[["SelectDestStates"]])){
+            selected <- ModelImageUpdate[["SelectDestStates"]]
+          }
         selected <- c(selected,ClickStateAddDest())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
