@@ -29,8 +29,6 @@ shinyServer(function(input, output, session) {
     if (is.null(Read_Settings())){return(NULL)}
     R <- Read_Settings()
     #####change the data selection settings on page 1
-    
-    updateCheckboxInput(session,"FilterDate",value=R[["FilterDate"]])
     updateSelectInput(session,"response",selected = R[["response"]])
     
     updateSelectizeInput(session,"OrigZip3",selected=R[["OrigZip3"]])
@@ -72,6 +70,16 @@ shinyServer(function(input, output, session) {
       ModelImageUpdate[[i]] <- R[[i]]
     }
     
+  })
+  
+  
+  
+  output$FilterDate <- renderUI({
+    value=TRUE
+    if(!is.null(Read_Settings()[["FilterDate"]])){
+      value <- Read_Settings()[["FilterDate"]]
+    }
+    checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=value)
   })
   
 

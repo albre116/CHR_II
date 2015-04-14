@@ -25,9 +25,9 @@ sidebar <- dashboardSidebar(
              )),
   box(title="Major Modeling Options",width=NULL,status = "warning",solidHeader = TRUE,
   uiOutput("response"),
-  checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=T),
+  uiOutput("FilterDate"),
   uiOutput("DateRange"),
-  fileInput('settings_file', 'Load Model Image? (Wait Until the Maps Have Rendered or it Will Crash)',
+  fileInput('settings_file', 'Load Model Image? (Wait Until the Maps Have Rendered or it Will Crash!!!)',
             accept=c('RData')))
 )###end side bar
 
