@@ -14,10 +14,7 @@ shinyServer(function(input, output, session) {
       save(saved_settings, file = file)
     })
   
-  load_page_1 <- reactiveValues(complete=FALSE)
-  
   output$settings_file <- renderUI({
-    if(load_page_1$complete==FALSE){return(NULL)}
   fileInput('settings_file', 'Load Model Image? (wait until maps render fully or it will crash)',
             accept=c('RData'))
   })
@@ -39,48 +36,9 @@ shinyServer(function(input, output, session) {
          for(i in names(Read_Settings())){
            ModelImageUpdate[[i]] <- Read_Settings()[[i]]
         }
+    })
     
-    
-    #####change the data selection settings on page 1
 
-    
-    #updateSelectizeInput(session,"SelectOrigStates",selected=R[["SelectOrigStates"]])
-    #updateCheckboxGroupInput(session,"maplayersOrigStates",selected = R[["maplayersOrigStates"]])
-    
-    #updateSelectizeInput(session,"SelectDestStates",selected=R[["SelectDestStates"]])
-    #updateCheckboxGroupInput(session,"maplayersDestStates",selected = R[["maplayersDestStates"]])
-
-    
-    #updateSelectizeInput(session,"SelectOrigCounties",selected = R[["SelectOrigCounties"]])
-    #updateSelectizeInput(session,"SelectOrigCircles",selected = R[["SelectOrigCircles"]])
-    #updateCheckboxGroupInput(session,"maplayersOrigCounties",selected = R[["maplayersOrigCounties"]])
-    #updateSelectInput(session,"OrigCircle",selected=R[["OrigCircle"]])
-    #updateNumericInput(session,"CircleRadiusOrig",value=R[["CircleRadiusOrig"]])
-    
-    #updateSelectizeInput(session,"SelectDestCounties",selected = R[["SelectDestCounties"]])
-    #updateSelectizeInput(session,"SelectDestCircles",selected = R[["SelectDestCircles"]])
-    #updateCheckboxGroupInput(session,"maplayersDestCounties",selected = R[["maplayersDestCounties"]])
-    #updateSelectInput(session,"DestCircle",selected=R[["DestCircle"]])
-    #updateNumericInput(session,"CircleRadiusDest",value=R[["CircleRadiusDest"]])
-    
-    
-    #####Customer Specific Section of inputs
-    #updateSelectInput(session,"ModelFamily",selected = R[["ModelFamily"]])
-    #updateSliderInput(session,"ConfLimits",value = R[["ConfLimits"]])
-
-
-    
-    ####assign the values to slots in an object that can be re-written
-    #     for(i in names(R)){
-    #       ModelImageUpdate[[i]] <- R[[i]]
-    #     }
-    
-  })
-  
-  
-  
-  
-  
   output$FilterDate <- renderUI({
     value=TRUE
     if(!is.null(Read_Settings()[["FilterDate"]])){
@@ -103,40 +61,41 @@ shinyServer(function(input, output, session) {
     selectInput("response","Response",choices=idx,selected=selected)
   })
   
+  idx1 <- unique(RAW$Orig3DigZip)
   output$OrigZip3<- renderUI({
-    idx <- unique(RAW$Orig3DigZip)
     selected=NULL
     if(!is.null(Read_Settings()[["OrigZip3"]])){
       selected <- Read_Settings()[["OrigZip3"]]
     }
-    selectizeInput("OrigZip3","3-Digit Origin Zip",choices=idx,selected=selected,multiple=TRUE)
+    selectizeInput("OrigZip3","3-Digit Origin Zip",choices=idx1,selected=selected,multiple=TRUE)
   })
   
+  idx2 <- unique(RAW$Dest3DigZip)
   output$DestZip3<- renderUI({
-    idx <- unique(RAW$Dest3DigZip)
     selected=NULL
     if(!is.null(Read_Settings()[["DestZip3"]])){
       selected <- Read_Settings()[["DestZip3"]]
     }
-    selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx,selected=selected,multiple = TRUE)
+    selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx2,selected=selected,multiple = TRUE)
   })
   
+  idx3 <- unique(RAW$OrigCity)
   output$OrigCity<- renderUI({
-    idx <- unique(RAW$OrigCity)
     selected=NULL
     if(!is.null(Read_Settings()[["OrigCity"]])){
       selected <- Read_Settings()[["OrigCity"]]
     }
-    selectizeInput("OrigCity","Origin City",choices=idx,selected=selected,multiple=TRUE)
+    selectizeInput("OrigCity","Origin City",choices=idx3,selected=selected,multiple=TRUE)
   })
   
+  
+  idx4 <- unique(RAW$DestCity)
   output$DestCity<- renderUI({
-    idx <- unique(RAW$DestCity)
     selected=NULL
     if(!is.null(Read_Settings()[["DestCity"]])){
       selected <- Read_Settings()[["DestCity"]]
     }
-    selectizeInput("DestCity","Destination City",choices=idx,selected=selected,multiple = TRUE)
+    selectizeInput("DestCity","Destination City",choices=idx4,selected=selected,multiple = TRUE)
   })
   
   output$OrigRadius<- renderUI({
@@ -268,8 +227,8 @@ shinyServer(function(input, output, session) {
       
       output$SelectOrigStates <- renderUI({
         isolate(selected <- input$SelectOrigStates)
-        if(!is.null(ModelImageUpdate[["SelectOrigStates"]])){
-          selected <- ModelImageUpdate[["SelectOrigStates"]]
+        if(!is.null(Read_Settings()[["SelectOrigStates"]])){
+          selected <- Read_Settings()[["SelectOrigStates"]]
         }
         selected <- c(selected,ClickStateAddOrig())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
@@ -334,8 +293,8 @@ shinyServer(function(input, output, session) {
       
       output$SelectDestStates <- renderUI({
         isolate(selected <- input$SelectDestStates)
-          if(!is.null(ModelImageUpdate[["SelectDestStates"]])){
-            selected <- ModelImageUpdate[["SelectDestStates"]]
+          if(!is.null(Read_Settings()[["SelectDestStates"]])){
+            selected <- Read_Settings()[["SelectDestStates"]]
           }
         selected <- c(selected,ClickStateAddDest())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
@@ -599,7 +558,6 @@ shinyServer(function(input, output, session) {
       
       
       output$DestPlotCounties <- renderPlot({
-        isolate(load_page_1$complete <- TRUE)
         plot_counties(counties=CountiesDestination(),
                       reduced=RAWPLOT()[["reduced_dest"]],
                       selectCounties=input$SelectDestCounties,
@@ -1534,8 +1492,8 @@ shinyServer(function(input, output, session) {
           
           ####do the update here on the first pass through
           isolate({
-            if(!is.null(ModelImageUpdate[[inputname]])){
-              l <- ModelImageUpdate[[inputname]]
+            if(!is.null(Read_Settings()[[inputname]])){
+              l <- Read_Settings()[[inputname]]
             }
           })
           
@@ -1563,8 +1521,8 @@ shinyServer(function(input, output, session) {
           
           ####do the update here on the first pass through
           isolate({
-            if(!is.null(ModelImageUpdate[[inputname]])){
-              u <- ModelImageUpdate[[inputname]]
+            if(!is.null(Read_Settings()[[inputname]])){
+              u <- Read_Settings()[[inputname]]
             }
           })
           
@@ -1589,8 +1547,8 @@ shinyServer(function(input, output, session) {
           ####do the update here on the first pass through
           value=0.5
           isolate({
-            if(!is.null(ModelImageUpdate[[inputname]])){
-              value <- ModelImageUpdate[[inputname]]
+            if(!is.null(Read_Settings()[[inputname]])){
+              value <- Read_Settings()[[inputname]]
             }
           })
 
@@ -1620,8 +1578,8 @@ shinyServer(function(input, output, session) {
           ####do the update here on the first pass through
           selected=c("Automatic")
           isolate({
-            if(!is.null(ModelImageUpdate[[inputname]])){
-              selected <- ModelImageUpdate[[inputname]]
+            if(!is.null(Read_Settings()[[inputname]])){
+              selected <- Read_Settings()[[inputname]]
             }
           })
           
@@ -1647,8 +1605,8 @@ shinyServer(function(input, output, session) {
           pick <- as.character(c(unique(data$CustomerCCode),unique(data$CarrierTCode)))
           selected=NULL
           isolate({
-            if(!is.null(ModelImageUpdate[[inputname]])){
-              selected <- ModelImageUpdate[[inputname]]
+            if(!is.null(Read_Settings()[[inputname]])){
+              selected <- Read_Settings()[[inputname]]
             }
           })
 
@@ -1727,10 +1685,10 @@ shinyServer(function(input, output, session) {
           isolate({
             plotname <- paste("PredictorTerms_", terms[my_i], sep="")
             grob <- paste0(plotname,"_data_extract")
-            if(!is.null(ModelImageUpdate[[grob]])){
-              q <- ModelImageUpdate[[grob]]
+            if(!is.null(Read_Settings()[[grob]])){
+              q <- Read_Settings()[[grob]]
               grob <- paste0(plotname,"_data_dimension_RowCol")
-              dimension <-ModelImageUpdate[[grob]]
+              dimension <-Read_Settings()[[grob]]
               q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
               predictor <- eval(parse(text=paste0("data.frame(",terms[my_i],"=q[,2])")))
               predictor <- xts(predictor,date_sequence)###FIX
@@ -2350,9 +2308,9 @@ shinyServer(function(input, output, session) {
         
         ####drop in saved values here from model image
         isolate({
-          if(!is.null(ModelImageUpdate[["VolumeDraw_data_extract"]])){
-            q <- ModelImageUpdate[["VolumeDraw_data_extract"]]
-            dimension <-ModelImageUpdate[["VolumeDraw_data_dimension_RowCol"]]
+          if(!is.null(Read_Settings()[["VolumeDraw_data_extract"]])){
+            q <- Read_Settings()[["VolumeDraw_data_extract"]]
+            dimension <-Read_Settings()[["VolumeDraw_data_dimension_RowCol"]]
             q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
             pred_volume <- data.frame(TransFcst=as.numeric(q[,2]))
             pred_volume <- xts(pred_volume,date_sequence)
