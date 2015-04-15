@@ -34,12 +34,10 @@ shinyServer(function(input, output, session) {
   ####scan across inputs and set values for static inputs
   observe({
     if (is.null(Read_Settings())){return()}
-
         isolate(update_loop[["orig"]] <- 1)
         isolate(update_loop[["dest"]] <- 1)
         isolate(update_loop[["origcircle"]] <- 1)
         isolate(update_loop[["destcircle"]] <- 1)
-
     })
     
 
@@ -68,27 +66,33 @@ shinyServer(function(input, output, session) {
   idx1 <- unique(RAW$Orig3DigZip)
   output$OrigZip3<- renderUI({
     selected=NULL
+    isolate({
     if(!is.null(Read_Settings()[["OrigZip3"]])){
       selected <- Read_Settings()[["OrigZip3"]]
     }
+    })
     selectizeInput("OrigZip3","3-Digit Origin Zip",choices=idx1,selected=selected,multiple=TRUE)
   })
   
   idx2 <- unique(RAW$Dest3DigZip)
   output$DestZip3<- renderUI({
     selected=NULL
+    isolate({
     if(!is.null(Read_Settings()[["DestZip3"]])){
       selected <- Read_Settings()[["DestZip3"]]
     }
+    })
     selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx2,selected=selected,multiple = TRUE)
   })
   
   idx3 <- unique(RAW$OrigCity)
   output$OrigCity<- renderUI({
     selected=NULL
+    isolate({
     if(!is.null(Read_Settings()[["OrigCity"]])){
       selected <- Read_Settings()[["OrigCity"]]
     }
+    })
     selectizeInput("OrigCity","Origin City",choices=idx3,selected=selected,multiple=TRUE)
   })
   
@@ -96,25 +100,31 @@ shinyServer(function(input, output, session) {
   idx4 <- unique(RAW$DestCity)
   output$DestCity<- renderUI({
     selected=NULL
+    isolate({
     if(!is.null(Read_Settings()[["DestCity"]])){
       selected <- Read_Settings()[["DestCity"]]
     }
+    })
     selectizeInput("DestCity","Destination City",choices=idx4,selected=selected,multiple = TRUE)
   })
   
   output$OrigRadius<- renderUI({
     value=50
+    isolate({
     if(!is.null(Read_Settings()[["OrigRadius"]])){
       value <- Read_Settings()[["OrigRadius"]]
     }
+    })
     numericInput("OrigRadius","Miles Around Origin City to Include",value=value,min=0,step=1)
   })
   
   output$DestRadius<- renderUI({
     value=50
+    isolate({
     if(!is.null(Read_Settings()[["DestRadius"]])){
       value <- Read_Settings()[["DestRadius"]]
     }
+    })
     numericInput("DestRadius","Miles Around Destination City to Include",value=value,min=0,step=1)
   })
   
@@ -219,9 +229,11 @@ shinyServer(function(input, output, session) {
       
       output$SelectOrigStates <- renderUI({
         isolate(selected <- input$SelectOrigStates)
+        isolate({
         if(!is.null(Read_Settings()[["SelectOrigStates"]])){
           selected <- Read_Settings()[["SelectOrigStates"]]
         }
+        })
         selected <- c(selected,ClickStateAddOrig())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
@@ -285,9 +297,11 @@ shinyServer(function(input, output, session) {
       
       output$SelectDestStates <- renderUI({
         isolate(selected <- input$SelectDestStates)
+        isolate({
           if(!is.null(Read_Settings()[["SelectDestStates"]])){
             selected <- Read_Settings()[["SelectDestStates"]]
           }
+        })
         selected <- c(selected,ClickStateAddDest())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
@@ -567,36 +581,44 @@ shinyServer(function(input, output, session) {
       
       output$LinearTerms <- renderUI({
         terms <- colnames(RAW)
+        isolate({
         if(!is.null(Read_Settings())){
           selected <- Read_Settings()[["LinearTerms"]]
-          }else{selected <- c("NumericDate")}
+        }else{selected <- c("NumericDate")}
+        })
         selectizeInput("LinearTerms","Linear Terms in Model",
                        choices=terms,selected=selected,multiple=T)
       })
       
       output$FactorTerms <- renderUI({
         terms <- colnames(RAW)
+        isolate({
         if(!is.null(Read_Settings())){
           selected <- Read_Settings()[["FactorTerms"]]
         }else{selected <- c("SumOfStops")}
+        })
         selectizeInput("FactorTerms","Factors in Model",
                        choices=terms,selected=selected,multiple=T)
       })
       
       output$SplineTerms <- renderUI({
         terms <- colnames(RAW)
+        isolate({
         if(!is.null(Read_Settings())){
           selected <- Read_Settings()[["SplineTerms"]]
         }else{selected <- NULL}
+        })
         selectizeInput("SplineTerms","Spline Terms in Model (non cyclic)",
                        choices=terms,selected=selected,multiple=T)
       })
       
       output$SplineTermsCyclic <- renderUI({
         terms <- colnames(RAW)
+        isolate({
         if(!is.null(Read_Settings())){
           selected <- Read_Settings()[["SplineTermsCyclic"]]
         }else{selected <- c("Day365")}
+        })
         selectizeInput("SplineTermsCyclic","Cyclical Spline Terms in Model",
                        choices=terms,selected=selected,multiple=T)
       })
@@ -1390,18 +1412,22 @@ shinyServer(function(input, output, session) {
       ###########################################################
       output$ModelFamily <- renderUI({
         selected <- c("Generalized Additive Model")
+        isolate({
         if(!is.null(Read_Settings()[["ModelFamily"]])){
           selected <- Read_Settings()[["ModelFamily"]]
         }
+        })
         
         selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=selected)
       })
       
       output$ConfLimits <- renderUI({
         value <- c(0.15,0.85)
+        isolate({
         if(!is.null(Read_Settings()[["ConfLimits"]])){
           value <- Read_Settings()[["ConfLimits"]]
         }
+        })
         sliderInput("ConfLimits","Model Confidince Intervals",0,1,value=value)
       })
       
@@ -2172,9 +2198,11 @@ shinyServer(function(input, output, session) {
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         customers <- unique(data$CustomerCCode)
         selected <- NULL
+        isolate({
         if(!is.null(Read_Settings()[["CarrierSelect"]])){
           selected <- Read_Settings()[["CustomerSelect"]]
         }
+        })
         selectizeInput("CustomerSelect","Customer CCodes to Base Volume On",choices=customers,selected = selected,
                        multiple=TRUE)
       })
@@ -2184,9 +2212,11 @@ shinyServer(function(input, output, session) {
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         customers <- unique(data$CarrierTCode)
         selected <- NULL
+        isolate({
         if(!is.null(Read_Settings()[["CarrierSelect"]])){
           selected <- Read_Settings()[["CarrierSelect"]]
         }
+        })
         selectizeInput("CarrierSelect","Carrier TCodes to Base Volume On",choices=customers,selected=selected,
                        multiple=TRUE)
       })
@@ -2194,9 +2224,11 @@ shinyServer(function(input, output, session) {
       
       output$volbasis <- renderUI({
         selected <- c("Transactions in Lane")
+        isolate({
         if(!is.null(Read_Settings()[["volbasis"]])){
           selected <- Read_Settings()[["volbasis"]]
         }
+        })
         
         selectInput("volbasis","Volume Basis",
                   choices=c("Transactions in Lane","Specific Customer","Specific Carrier"),
@@ -2205,9 +2237,11 @@ shinyServer(function(input, output, session) {
       
       output$volmethod <- renderUI({
         selected <- c("GAM Weekly Max")
+        isolate({
         if(!is.null(Read_Settings()[["volmethod"]])){
           selected <- Read_Settings()[["volmethod"]]
         }
+        })
         
         selectInput("volmethod","Volume Modeling Method",
                     choices = c("GAM","GAM No Weekend","GAM Weekly Max"),
