@@ -5,6 +5,7 @@ header <- dashboardHeader(
 
 sidebar <- dashboardSidebar(
   sidebarMenu(
+    menuItem("Load Model Image?",tabName = "image",icon = icon("fa fa-file")),
     menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe"),
              badgeLabel = "Start Here",badgeColor = "red"),
     menuItem("Basic Quote", tabName = "basicquote", icon = icon("fa fa-camera"),
@@ -26,13 +27,26 @@ sidebar <- dashboardSidebar(
   box(title="Major Modeling Options",width=NULL,status = "warning",solidHeader = TRUE,
   uiOutput("response"),
   uiOutput("FilterDate"),
-  uiOutput("DateRange"),
-  uiOutput("settings_file"))
+  uiOutput("DateRange"))
 )###end side bar
 
 body <- dashboardBody(
 
   tabItems(
+    tabItem(tabName = "image",
+                fluidRow(
+                  column(width=6,
+                         box(title="Upload Model Image if Desired",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                             uiOutput("settings_file")
+                         )##end box
+                         ),###end column
+                  column(width=6,
+                         box(title="Introduction & Instructions",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                             h2("Add Instructions Here")
+                         )
+                         )###end column
+            )
+    ),###end current tab
     tabItem(tabName = "geography",
             fluidRow(
               column(width=6,

@@ -15,7 +15,7 @@ shinyServer(function(input, output, session) {
     })
   
   output$settings_file <- renderUI({
-  fileInput('settings_file', 'Load Model Image? (wait until maps render fully or it will crash)',
+  fileInput('settings_file', 'Load Model Image?',
             accept=c('RData'))
   })
   
@@ -28,14 +28,18 @@ shinyServer(function(input, output, session) {
     return(saved_settings)
   })
   
-  ModelImageUpdate <- reactiveValues()
+
+  update_loop <- reactiveValues(orig=1,dest=1,origcircle=1,destcircle=1)
   
   ####scan across inputs and set values for static inputs
   observe({
     if (is.null(Read_Settings())){return()}
-         for(i in names(Read_Settings())){
-           ModelImageUpdate[[i]] <- Read_Settings()[[i]]
-        }
+
+        isolate(update_loop[["orig"]] <- 1)
+        isolate(update_loop[["dest"]] <- 1)
+        isolate(update_loop[["origcircle"]] <- 1)
+        isolate(update_loop[["destcircle"]] <- 1)
+
     })
     
 
@@ -368,16 +372,16 @@ shinyServer(function(input, output, session) {
       output$SelectOrigCounties <- renderUI({
         counties <- CountiesOrigin()
         isolate(selected <- input$SelectOrigCounties)
-        isolate({
-        if(!is.null(ModelImageUpdate[["SelectOrigCounties"]])){
-          selected <- ModelImageUpdate[["SelectOrigCounties"]]
-          ModelImageUpdate[["SelectOrigCounties"]] <- NULL
-        }
-          })
         pick <- unlist(lapply(input$SelectOrigStates,function(x){strsplit(x,":")[[1]][1]}))
         pick <- c(pick,counties$names)
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddOrig())
+        isolate({
+          update_loop$orig <- update_loop$orig+1
+          if(update_loop$orig<=3){
+            selected <-Read_Settings()[["SelectOrigCounties"]]
+          }
+        })
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectOrigCounties","Selected Origin Counties or Entire State",choices=pick,selected=selected,multiple=T)
@@ -397,9 +401,9 @@ shinyServer(function(input, output, session) {
         pts <- OrigCircles()
         isolate(pick <- input$SelectOrigCircles)
         isolate({
-          if(!is.null(ModelImageUpdate[["SelectOrigCircles"]])){
-            pick <- ModelImageUpdate[["SelectOrigCircles"]]
-            ModelImageUpdate[["SelectOrigCircles"]] <- NULL
+          update_loop$origcircle <- update_loop$origcircle+1
+          if(update_loop$origcircle<=2){
+            pick <-Read_Settings()[["SelectOrigCircles"]]
           }
         })
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
@@ -494,16 +498,16 @@ shinyServer(function(input, output, session) {
       output$SelectDestCounties <- renderUI({
         counties <- CountiesDestination()
         isolate(selected <- input$SelectDestCounties)
-        isolate({
-          if(!is.null(ModelImageUpdate[["SelectDestCounties"]])){
-            selected <- ModelImageUpdate[["SelectDestCounties"]]
-            ModelImageUpdate[["SelectDestCounties"]] <- NULL
-          }
-        })
         pick <- unlist(lapply(input$SelectDestStates,function(x){strsplit(x,":")[[1]][1]}))
         pick <- c(pick,counties$names)
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddDest())
+        isolate({
+          update_loop$dest <- update_loop$dest+1
+          if(update_loop$dest<=3){
+            selected <-Read_Settings()[["SelectDestCounties"]]
+          }
+        })
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectDestCounties","Selected Destination Counties or Entire State",choices=pick,selected=selected,multiple=T)
@@ -521,9 +525,9 @@ shinyServer(function(input, output, session) {
         pts <- DestCircles()
         isolate(pick <- input$SelectDestCircles)
         isolate({
-          if(!is.null(ModelImageUpdate[["SelectDestCircles"]])){
-            pick <- ModelImageUpdate[["SelectDestCircles"]]
-            ModelImageUpdate[["SelectDestCircles"]] <- NULL
+          update_loop$destcircle <- update_loop$destcircle+1
+          if(update_loop$destcircle<=2){
+            pick <-Read_Settings()[["SelectDestCircles"]]
           }
         })
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
