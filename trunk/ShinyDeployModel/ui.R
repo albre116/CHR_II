@@ -37,6 +37,7 @@ body <- dashboardBody(
                 fluidRow(
                   column(width=6,
                          box(title="Upload Model Image if Desired",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                             h2("wait just a second before loading until all controls pop up"),
                              uiOutput("settings_file")
                          )##end box
                          ),###end column
