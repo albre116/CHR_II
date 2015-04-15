@@ -18,7 +18,7 @@ shinyServer(function(input, output, session) {
   
   output$settings_file <- renderUI({
     if(load_page_1$complete==FALSE){return(NULL)}
-  fileInput('settings_file', 'Load Model Image?',
+  fileInput('settings_file', 'Load Model Image? (wait until maps render fully or it will crash)',
             accept=c('RData'))
   })
   
@@ -34,9 +34,13 @@ shinyServer(function(input, output, session) {
   ModelImageUpdate <- reactiveValues()
   
   ####scan across inputs and set values for static inputs
-  Change_static_settings <- observe({
-    if (is.null(Read_Settings())){return(NULL)}
-    R <- Read_Settings()
+  observe({
+    if (is.null(Read_Settings())){return()}
+         for(i in names(Read_Settings())){
+           ModelImageUpdate[[i]] <- Read_Settings()[[i]]
+        }
+    
+    
     #####change the data selection settings on page 1
 
     
@@ -67,11 +71,13 @@ shinyServer(function(input, output, session) {
 
     
     ####assign the values to slots in an object that can be re-written
-    for(i in names(R)){
-      ModelImageUpdate[[i]] <- R[[i]]
-    }
+    #     for(i in names(R)){
+    #       ModelImageUpdate[[i]] <- R[[i]]
+    #     }
     
   })
+  
+  
   
   
   
