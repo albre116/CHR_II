@@ -10,7 +10,7 @@ shinyServer(function(input, output, session) {
   output$downloadData<-downloadHandler(
     filename = function(){paste(input$settings_name,".RData",sep = "")},
     content = function(file){
-      saved_settings <- reactiveValuesToList(input)
+      saved_settings = reactiveValuesToList(input)
       save(saved_settings, file = file)
     })
   
@@ -441,14 +441,45 @@ shinyServer(function(input, output, session) {
       
       
       output$OrigPlotCounties <- renderPlot({
-        plot_counties(counties=CountiesOrigin(),
-                      reduced=RAWPLOT()[["reduced_orig"]],
-                      selectCounties=input$SelectOrigCounties,
-                      City=input$OrigCity,
-                      radius=input$OrigRadius,
-                      Circles=input$SelectOrigCircles,
-                      layers=input$maplayersOrigCounties,
-                      color="blue")
+        counties=CountiesOrigin()
+        reduced=RAWPLOT()[["reduced_orig"]]
+        selectCounties=input$SelectOrigCounties
+        City=input$OrigCity
+        radius=input$OrigRadius
+        Circles=input$SelectOrigCircles
+        layers=input$maplayersOrigCounties
+        color="blue"
+        
+        
+        if(is.null(counties)){return(NULL)}
+        if(length(selectCounties)>0){
+          mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
+        map(counties)
+        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
+        
+        if(!is.null(City)){
+          pickadd <- city_lookup[city_lookup$city %in% City,,drop=F]
+          pickadd <- pickadd[1,,drop=F]
+          if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,radius,sep=":")}else{pickadd <- NULL}
+          lapply(pickadd,function(b){
+            b <- strsplit(b,":")
+            b <- unlist(b)
+            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+          })
+        }
+        
+        if(!is.null(Circles)){
+          tmp <- Circles
+          lapply(tmp,function(b){
+            b <- strsplit(b,":")
+            b <- unlist(b)
+            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+          })
+        }
+        if("Data" %in% layers){
+          points(x=reduced$x,y=reduced$y,cex=0.1,col=color,pch=19)
+        }
+        
       })
       
       ###########################################################
@@ -564,14 +595,44 @@ shinyServer(function(input, output, session) {
       
       
       output$DestPlotCounties <- renderPlot({
-        plot_counties(counties=CountiesDestination(),
-                      reduced=RAWPLOT()[["reduced_dest"]],
-                      selectCounties=input$SelectDestCounties,
-                      City=input$DestCity,
-                      radius=input$DestRadius,
-                      Circles=input$SelectDestCircles,
-                      layers=input$maplayersDestCounties,
-                      color="red")
+        counties=CountiesDestination()
+        reduced=RAWPLOT()[["reduced_dest"]]
+        selectCounties=input$SelectDestCounties
+        City=input$DestCity
+        radius=input$DestRadius
+        Circles=input$SelectDestCircles
+        layers=input$maplayersDestCounties
+        color="red"
+        
+        if(is.null(counties)){return(NULL)}
+        if(length(selectCounties)>0){
+          mapOrig <- map("county",regions = selectCounties,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
+        map(counties)
+        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
+        
+        if(!is.null(City)){
+          pickadd <- city_lookup[city_lookup$city %in% City,,drop=F]
+          pickadd <- pickadd[1,,drop=F]
+          if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,radius,sep=":")}else{pickadd <- NULL}
+          lapply(pickadd,function(b){
+            b <- strsplit(b,":")
+            b <- unlist(b)
+            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+          })
+        }
+        
+        if(!is.null(Circles)){
+          tmp <- Circles
+          lapply(tmp,function(b){
+            b <- strsplit(b,":")
+            b <- unlist(b)
+            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
+          })
+        }
+        if("Data" %in% layers){
+          points(x=reduced$x,y=reduced$y,cex=0.1,col=color,pch=19)
+        }
+        
       })
       
       
