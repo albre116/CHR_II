@@ -117,9 +117,6 @@ shinyServer(function(input, output, session) {
   
   output$maplayersOrigStates <- renderUI({
     selected=c("State Names","Data")
-    if(!is.null(Read_Settings()[["maplayersOrigStates"]])){
-      selected <- Read_Settings()[["maplayersOrigStates"]]
-    }
   checkboxGroupInput("maplayersOrigStates","Map Layers to Display",
                      c("State Names","Data"),
                      selected=selected,inline=TRUE)
@@ -127,9 +124,6 @@ shinyServer(function(input, output, session) {
   
   output$maplayersDestStates <- renderUI({
     selected=c("State Names","Data")
-    if(!is.null(Read_Settings()[["maplayersDestStates"]])){
-      selected <- Read_Settings()[["maplayersDestStates"]]
-    }
     checkboxGroupInput("maplayersDestStates","Map Layers to Display",
                        c("State Names","Data"),
                        selected=selected,inline=TRUE)
@@ -137,18 +131,12 @@ shinyServer(function(input, output, session) {
   
   output$maplayersOrigCounties <- renderUI({
     selected=c("Data")
-    if(!is.null(Read_Settings()[["maplayersOrigCounties"]])){
-      selected <- Read_Settings()[["maplayersOrigCounties"]]
-    }
     checkboxGroupInput("maplayersOrigCounties","Map Layers to Display",
                        c("Data"),selected=selected,inline=T)
   })
   
   output$maplayersDestCounties <- renderUI({
     selected=c("Data")
-    if(!is.null(Read_Settings()[["maplayersDestCounties"]])){
-      selected <- Read_Settings()[["maplayersDestCounties"]]
-    }
     checkboxGroupInput("maplayersDestCounties","Map Layers to Display",
                        c("Data"),selected=selected,inline=T)
   })
