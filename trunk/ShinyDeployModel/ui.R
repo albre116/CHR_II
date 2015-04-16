@@ -35,19 +35,36 @@ body <- dashboardBody(
   tabItems(
     tabItem(tabName = "image",
                 fluidRow(
-                  column(width=6,
+                  column(width=9,
+                         box(width=NULL,background = NULL,status="primary",
+                             withTags({
+                               div(class="header", checked=NA,
+                                   h2("Welcome to CPDS Time Series Modeling Applicaiton"),
+                                   h3("To use the tool you can take 1 of 2 paths:"),
+                                   ul(ol(
+                                     h3(li("You Can Generate a New Quote by Clicking on the \"Select Geography\" Tab")),
+                                     h3(li("Or You Can Load a Model Image by Clicking the Upload Button to 
+                                           the Right and then Clicking on the \"Select Geography\" Tab"))
+                                     )),
+                                   h3("After Selecting a Geography that Defines Your Data, 
+                                      You Have Two Modeling Options:"),
+                                   ul(ol(
+                                     h3(li("You Can Get A Market Average by Clicking the \"Basic Quote\" Tab")),
+                                     h3(li("Or You Can Enter Customer Specific Factors in the Model by Clicking
+                                           the \"Customer Specific Quote\" Tab"))
+                                     )),
+                                   h3("Advanced Modeling Options Controlling Data Filtering Can be Found Under
+                                      the \"Advanced Options\" Tab")
+                               )
+                             })
+                         )
+                         ),###end column
+                  column(width=3,
                          box(title="Upload Model Image if Desired",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
-                             h2("wait just a second before loading until all controls pop up (still a bit touchy but better)"),
-                             h2("otherwise a crash may occurr"),
                              uiOutput("settings_file")
                          )##end box
-                         ),###end column
-                  column(width=6,
-                         box(title="Introduction & Instructions",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
-                             h2("Add Instructions Here")
-                         )
-                         )###end column
-            )
+                  )###end column
+            )###end row
     ),###end current tab
     tabItem(tabName = "geography",
             fluidRow(

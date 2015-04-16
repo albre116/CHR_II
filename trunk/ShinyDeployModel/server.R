@@ -644,7 +644,7 @@ shinyServer(function(input, output, session) {
       output$LinearTerms <- renderUI({
         terms <- colnames(RAW)
         isolate({
-        if(!is.null(Read_Settings())){
+        if(!is.null(Read_Settings()[["LinearTerms"]])){
           selected <- Read_Settings()[["LinearTerms"]]
         }else{selected <- c("NumericDate")}
         })
@@ -655,7 +655,7 @@ shinyServer(function(input, output, session) {
       output$FactorTerms <- renderUI({
         terms <- colnames(RAW)
         isolate({
-        if(!is.null(Read_Settings())){
+        if(!is.null(Read_Settings()[["FactorTerms"]])){
           selected <- Read_Settings()[["FactorTerms"]]
         }else{selected <- c("SumOfStops")}
         })
@@ -666,7 +666,7 @@ shinyServer(function(input, output, session) {
       output$SplineTerms <- renderUI({
         terms <- colnames(RAW)
         isolate({
-        if(!is.null(Read_Settings())){
+        if(!is.null(Read_Settings()[["SplineTerms"]])){
           selected <- Read_Settings()[["SplineTerms"]]
         }else{selected <- NULL}
         })
@@ -677,7 +677,7 @@ shinyServer(function(input, output, session) {
       output$SplineTermsCyclic <- renderUI({
         terms <- colnames(RAW)
         isolate({
-        if(!is.null(Read_Settings())){
+        if(!is.null(Read_Settings()[["SplineTermsCyclic"]])){
           selected <- Read_Settings()[["SplineTermsCyclic"]]
         }else{selected <- c("Day365")}
         })
@@ -796,6 +796,7 @@ shinyServer(function(input, output, session) {
       ###########################################################
       #######Select the Appropriate Time Window
       ###########################################################
+
     
       
       PERCENTILES <- reactive({
@@ -807,11 +808,11 @@ shinyServer(function(input, output, session) {
 
         SELECTED <- DATA()[["SELECTED"]]
         input$applyDygraph
-        isolate(df <- input$dfspline)
-        isolate(df_fixed <- input$LambdaFixed)
-        isolate(tau_lower <- input$lowerTau)
-        isolate(tau_center <- input$centralTau)
-        isolate(tau_upper <- input$upperTau)
+        df <- input$dfspline
+        df_fixed <- input$LambdaFixed
+        tau_lower <- input$lowerTau
+        tau_center <- input$centralTau
+        tau_upper <- input$upperTau
         r <- input$response
         CLEAN <- SELECTED[,c(r,"EntryDate")]
         CLEAN <- CLEAN[!is.infinite(CLEAN[,r]) & !is.na(CLEAN[,r]),]
