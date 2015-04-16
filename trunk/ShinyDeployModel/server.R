@@ -15,7 +15,6 @@ shinyServer(function(input, output, session) {
     })
   
   output$settings_file <- renderUI({
-    if(exit_initial[["orig"]]<2 | exit_initial[["dest"]]<2){return(NULL)}
     fileInput('settings_file', 'Load Model Image?',
               accept=c('RData'))
   })
@@ -31,7 +30,7 @@ shinyServer(function(input, output, session) {
   
 
   update_loop <- reactiveValues(orig=1,dest=1,origcircle=1,destcircle=1)
-  exit_initial <-reactiveValues(orig=0,dest=0)
+
   
   ####scan across inputs and set values for static inputs
   observe({
@@ -40,8 +39,6 @@ shinyServer(function(input, output, session) {
         isolate(update_loop[["dest"]] <- 1)
         isolate(update_loop[["origcircle"]] <- 1)
         isolate(update_loop[["destcircle"]] <- 1)
-        isolate(exit_initial[["orig"]] <- 0)
-        isolate(exit_initial[["dest"]] <- 0)
     })
     
 
@@ -161,7 +158,7 @@ shinyServer(function(input, output, session) {
   
   
   output$DateRange <- renderUI({
-    data <- RAW###data brought in after filtering is complete
+    data <- RAW
     start_date <-max(data$EntryDate)
     yr <- format(start_date,format="%Y")
     mo <- format(start_date,format="%m")
@@ -396,7 +393,7 @@ shinyServer(function(input, output, session) {
         selected <- c(selected,ClickCountiesAddOrig())
         isolate({
           update_loop$orig <- update_loop$orig+1
-          if(update_loop$orig<=2){
+          if(update_loop$orig<=3){
             selected <-Read_Settings()[["SelectOrigCounties"]]
           }
         })
@@ -445,7 +442,6 @@ shinyServer(function(input, output, session) {
       
       
       output$OrigPlotCounties <- renderPlot({
-        isolate(exit_initial[["orig"]] <- exit_initial[["orig"]] + 1)
         counties=CountiesOrigin()
         reduced=RAWPLOT()[["reduced_orig"]]
         selectCounties=input$SelectOrigCounties
@@ -554,7 +550,7 @@ shinyServer(function(input, output, session) {
         selected <- c(selected,ClickCountiesAddDest())
         isolate({
           update_loop$dest <- update_loop$dest+1
-          if(update_loop$dest<=2){
+          if(update_loop$dest<=3){
             selected <-Read_Settings()[["SelectDestCounties"]]
           }
         })
@@ -600,7 +596,6 @@ shinyServer(function(input, output, session) {
       
       
       output$DestPlotCounties <- renderPlot({
-        isolate(exit_initial[["dest"]] <- exit_initial[["dest"]] + 1)
         counties=CountiesDestination()
         reduced=RAWPLOT()[["reduced_dest"]]
         selectCounties=input$SelectDestCounties
