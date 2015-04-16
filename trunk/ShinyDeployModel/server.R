@@ -15,8 +15,9 @@ shinyServer(function(input, output, session) {
     })
   
   output$settings_file <- renderUI({
-  fileInput('settings_file', 'Load Model Image?',
-            accept=c('RData'))
+    if(exit_initial[["orig"]]<2 | exit_initial[["dest"]]<2){return(NULL)}
+    fileInput('settings_file', 'Load Model Image?',
+              accept=c('RData'))
   })
   
 
@@ -30,6 +31,7 @@ shinyServer(function(input, output, session) {
   
 
   update_loop <- reactiveValues(orig=1,dest=1,origcircle=1,destcircle=1)
+  exit_initial <-reactiveValues(orig=0,dest=0)
   
   ####scan across inputs and set values for static inputs
   observe({
@@ -38,6 +40,8 @@ shinyServer(function(input, output, session) {
         isolate(update_loop[["dest"]] <- 1)
         isolate(update_loop[["origcircle"]] <- 1)
         isolate(update_loop[["destcircle"]] <- 1)
+        isolate(exit_initial[["orig"]] <- 0)
+        isolate(exit_initial[["dest"]] <- 0)
     })
     
 
@@ -66,33 +70,33 @@ shinyServer(function(input, output, session) {
   idx1 <- unique(RAW$Orig3DigZip)
   output$OrigZip3<- renderUI({
     selected=NULL
-    isolate({
+    #isolate({
     if(!is.null(Read_Settings()[["OrigZip3"]])){
       selected <- Read_Settings()[["OrigZip3"]]
     }
-    })
+    #})
     selectizeInput("OrigZip3","3-Digit Origin Zip",choices=idx1,selected=selected,multiple=TRUE)
   })
   
   idx2 <- unique(RAW$Dest3DigZip)
   output$DestZip3<- renderUI({
     selected=NULL
-    isolate({
+    #isolate({
     if(!is.null(Read_Settings()[["DestZip3"]])){
       selected <- Read_Settings()[["DestZip3"]]
     }
-    })
+    #})
     selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx2,selected=selected,multiple = TRUE)
   })
   
   idx3 <- unique(RAW$OrigCity)
   output$OrigCity<- renderUI({
     selected=NULL
-    isolate({
+    #isolate({
     if(!is.null(Read_Settings()[["OrigCity"]])){
       selected <- Read_Settings()[["OrigCity"]]
     }
-    })
+    #})
     selectizeInput("OrigCity","Origin City",choices=idx3,selected=selected,multiple=TRUE)
   })
   
@@ -100,31 +104,31 @@ shinyServer(function(input, output, session) {
   idx4 <- unique(RAW$DestCity)
   output$DestCity<- renderUI({
     selected=NULL
-    isolate({
+    #isolate({
     if(!is.null(Read_Settings()[["DestCity"]])){
       selected <- Read_Settings()[["DestCity"]]
     }
-    })
+    #})
     selectizeInput("DestCity","Destination City",choices=idx4,selected=selected,multiple = TRUE)
   })
   
   output$OrigRadius<- renderUI({
     value=50
-    isolate({
+    #isolate({
     if(!is.null(Read_Settings()[["OrigRadius"]])){
       value <- Read_Settings()[["OrigRadius"]]
     }
-    })
+    #})
     numericInput("OrigRadius","Miles Around Origin City to Include",value=value,min=0,step=1)
   })
   
   output$DestRadius<- renderUI({
     value=50
-    isolate({
+    #isolate({
     if(!is.null(Read_Settings()[["DestRadius"]])){
       value <- Read_Settings()[["DestRadius"]]
     }
-    })
+    #})
     numericInput("DestRadius","Miles Around Destination City to Include",value=value,min=0,step=1)
   })
   
@@ -229,11 +233,11 @@ shinyServer(function(input, output, session) {
       
       output$SelectOrigStates <- renderUI({
         isolate(selected <- input$SelectOrigStates)
-        isolate({
+        #isolate({
         if(!is.null(Read_Settings()[["SelectOrigStates"]])){
           selected <- Read_Settings()[["SelectOrigStates"]]
         }
-        })
+        #})
         selected <- c(selected,ClickStateAddOrig())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
@@ -297,11 +301,11 @@ shinyServer(function(input, output, session) {
       
       output$SelectDestStates <- renderUI({
         isolate(selected <- input$SelectDestStates)
-        isolate({
+        #isolate({
           if(!is.null(Read_Settings()[["SelectDestStates"]])){
             selected <- Read_Settings()[["SelectDestStates"]]
           }
-        })
+        #})
         selected <- c(selected,ClickStateAddDest())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
@@ -392,7 +396,7 @@ shinyServer(function(input, output, session) {
         selected <- c(selected,ClickCountiesAddOrig())
         isolate({
           update_loop$orig <- update_loop$orig+1
-          if(update_loop$orig<=3){
+          if(update_loop$orig<=2){
             selected <-Read_Settings()[["SelectOrigCounties"]]
           }
         })
@@ -441,6 +445,7 @@ shinyServer(function(input, output, session) {
       
       
       output$OrigPlotCounties <- renderPlot({
+        isolate(exit_initial[["orig"]] <- exit_initial[["orig"]] + 1)
         counties=CountiesOrigin()
         reduced=RAWPLOT()[["reduced_orig"]]
         selectCounties=input$SelectOrigCounties
@@ -549,7 +554,7 @@ shinyServer(function(input, output, session) {
         selected <- c(selected,ClickCountiesAddDest())
         isolate({
           update_loop$dest <- update_loop$dest+1
-          if(update_loop$dest<=3){
+          if(update_loop$dest<=2){
             selected <-Read_Settings()[["SelectDestCounties"]]
           }
         })
@@ -595,6 +600,7 @@ shinyServer(function(input, output, session) {
       
       
       output$DestPlotCounties <- renderPlot({
+        isolate(exit_initial[["dest"]] <- exit_initial[["dest"]] + 1)
         counties=CountiesDestination()
         reduced=RAWPLOT()[["reduced_dest"]]
         selectCounties=input$SelectDestCounties
