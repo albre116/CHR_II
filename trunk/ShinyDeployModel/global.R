@@ -82,6 +82,8 @@ if(!require("shape"))
   install.packages("shape")
 if (!require("DT"))
   devtools::install_github("rstudio/DT")
+if (!require("shinyFiles"))
+  devtools::install_github("thomasp85/shinyFiles")
 
 ###custom and local packages
 if(!require('dyPencilgraphs')) {
@@ -90,7 +92,7 @@ if(!require('dyPencilgraphs')) {
 
 
 ####Load Data File
-load("RAW_100_New.RData")
+load("RAW_10.RData")
 
 
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota",

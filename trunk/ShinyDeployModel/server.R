@@ -7,24 +7,31 @@ shinyServer(function(input, output, session) {
   #######Model Saving/Loading Features
   ###########################################################
   #####This saves a model image of all of the chosen settings
-  output$downloadData<-downloadHandler(
-    filename = function(){paste(input$settings_name,".RData",sep = "")},
-    content = function(file){
-      saved_settings = reactiveValuesToList(input)
-      save(saved_settings, file = file)
-    })
+#   output$downloadData<-downloadHandler(
+#     filename = function(){paste(input$settings_name,".RData",sep = "")},
+#     content = function(file){
+#       saved_settings = reactiveValuesToList(input)
+#       save(saved_settings, file = file)
+#     })
   
-  output$settings_file <- renderUI({
-    fileInput('settings_file', 'Load Model Image?',
-              accept=c('RData'))
-  })
+#   output$settings_file <- renderUI({
+#     fileInput('settings_file', 'Load Model Image?',
+#               accept=c('RData'))
+#   })
+  
+  
+  if(Sys.info()["sysname"]=="Windows"){volumes <- c('Quote Images'="www")}else{
+    volumes <- c('Quote Images'="/srv/shiny_quotes")
+  }
+  shinyFileChoose(input, 'settings_file', roots=volumes, 
+                  session=session)
   
 
   ####this will load a model image and set the values of the different selectors
   Read_Settings <- reactive({
-    inFile <- input$settings_file
-    if (is.null(inFile)) return(NULL)
-    load(inFile$datapath)
+    if (is.null(input$settings_file)) return(NULL)
+    inFile <- parseFilePaths(volumes,input$settings_file)
+    load(as.character(inFile$datapath))
     return(saved_settings)
   })
   

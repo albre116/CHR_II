@@ -61,7 +61,8 @@ body <- dashboardBody(
                          ),###end column
                   column(width=3,
                          box(title="Upload Model Image if Desired",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
-                             uiOutput("settings_file")
+                             #uiOutput("settings_file")
+                             shinyFilesButton('settings_file', 'File select', 'Please select a file', FALSE)
                          )##end box
                   )###end column
             )###end row
