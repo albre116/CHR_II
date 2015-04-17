@@ -61,30 +61,26 @@ shinyServer(function(input, output, session) {
         isolate(update_loop[["origcircle"]] <- 1)
         isolate(update_loop[["destcircle"]] <- 1)
     
-    #updateSliderInput(session,"lowerTau",value=Read_Settings()[["lowerTau"]])
-    #updateSliderInput(session,"centralTau",value=Read_Settings()[["centralTau"]])
-    #updateSliderInput(session,"upperTau",value=Read_Settings()[["upperTau"]])
-    #updateCheckboxInput(session,"doEstimation",value=Read_Settings()[["doEstimation"]])
-    #updateSliderInput(session,"dfspline",value=c(Read_Settings()[["dfspline"]][1],Read_Settings()[["dfspline"]][2]))
-    #updateSliderInput(session,"LambdaFixed",value=Read_Settings()[["LambdaFixed"]])
-    #updateCheckboxGroupInput(session,"QuantileFilter",selected=Read_Settings()[["QuantileFilter"]])
-    
-    
-    
-    
-    
+    updateSliderInput(session,"lowerTau",value=Read_Settings()[["lowerTau"]])
+    updateSliderInput(session,"centralTau",value=Read_Settings()[["centralTau"]])
+    updateSliderInput(session,"upperTau",value=Read_Settings()[["upperTau"]])
+    updateCheckboxInput(session,"doEstimation",value=Read_Settings()[["doEstimation"]])
+    updateSliderInput(session,"dfspline",value=c(Read_Settings()[["dfspline"]][1],Read_Settings()[["dfspline"]][2]))
+    updateSliderInput(session,"LambdaFixed",value=Read_Settings()[["LambdaFixed"]])
+    updateCheckboxGroupInput(session,"QuantileFilter",selected=Read_Settings()[["QuantileFilter"]])
+    updateCheckboxInput(session,"FilterDate",value=Read_Settings()[["FilterDate"]])
     
     
     })
     
 
-  output$FilterDate <- renderUI({
-    value=TRUE
-    if(!is.null(Read_Settings()[["FilterDate"]])){
-      value <- Read_Settings()[["FilterDate"]]
-    }
-    checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=value)
-  })
+#   output$FilterDate <- renderUI({
+#     value=TRUE
+#      if(!is.null(Read_Settings()[["FilterDate"]])){
+#        value <- Read_Settings()[["FilterDate"]]
+#      }
+#     checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=value)
+#   })
   
 
 
