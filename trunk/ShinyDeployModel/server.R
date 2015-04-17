@@ -35,11 +35,9 @@ shinyServer(function(input, output, session) {
   ####this will save a model image in the designated server folder
   observe({
     if (is.null(input$downloadData)) return()
-    isolate({
     saveFile <- parseSavePath(volumes, input$downloadData)
     saved_settings = reactiveValuesToList(input)
     save(saved_settings, file = as.character(saveFile$datapath))
-    })
   })
   
 
