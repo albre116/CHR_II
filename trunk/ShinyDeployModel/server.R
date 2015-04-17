@@ -28,6 +28,7 @@ shinyServer(function(input, output, session) {
   
   shinyFileChoose(input, 'settings_file', roots=volumes, 
                   session=session)
+  
   shinyFileSave(input, 'downloadData', roots=volumes,
                 session=session)
   
