@@ -277,8 +277,9 @@ body <- dashboardBody(
                 )
             ),
             box(title="Save model image?",width=NULL,status = "warning",solidHeader = TRUE,
-                textInput("settings_name","Save Settings to File Name:",value="settings_name"),
-                downloadButton('downloadData','Save Model Settings?')
+                #textInput("settings_name","Save Settings to File Name:",value="settings_name"),
+                #downloadButton('downloadData','Save Model Settings?')
+                shinySaveButton('downloadData', 'Save Model Image', 'Save file as...', filetype=list(imgage='RData'))
             )
     ),###end current tab
     

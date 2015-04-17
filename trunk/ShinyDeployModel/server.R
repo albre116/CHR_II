@@ -20,11 +20,24 @@ shinyServer(function(input, output, session) {
 #   })
   
   
+  
+  ####this is a stable server side file uploader
   if(Sys.info()["sysname"]=="Windows"){volumes <- c('Quote Images'="www")}else{
-    volumes <- c('Quote Images'="/srv/shiny_quotes")
+    volumes <- c('Quote Images'="/srv/shiny_data/shiny_quotes")
   }
+  
   shinyFileChoose(input, 'settings_file', roots=volumes, 
                   session=session)
+  shinyFileSave(input, 'downloadData', roots=volumes,
+                session=session)
+  
+  ####this will save a model image in the designated server folder
+  observe({
+    if (is.null(input$downloadData)) return()
+    saveFile <- parseSavePath(volumes, input$downloadData)
+    saved_settings = reactiveValuesToList(input)
+    save(saved_settings, file = as.character(saveFile$datapath))
+  })
   
 
   ####this will load a model image and set the values of the different selectors
