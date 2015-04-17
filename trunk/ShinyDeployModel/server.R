@@ -284,11 +284,32 @@ shinyServer(function(input, output, session) {
       
       
       output$OrigPlotState <- renderPlot({
-        plot_states(selectStates=input$SelectOrigStates,
-                    reduced=RAWPLOT()[["reduced_orig"]],
-                    cities=input$OrigCity,
-                    mapLayer=input$maplayersOrigStates,
-                    color="blue")
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Plotting origin states',
+                     detail = 'Hold Tight...')
+        on.exit(progress$close())
+        
+        selectStates=input$SelectOrigStates
+        reduced=RAWPLOT()[["reduced_orig"]]
+        cities=input$OrigCity
+        mapLayer=input$maplayersOrigStates
+        color="blue"
+      
+        map(states)
+        if(!is.null(cities) | !is.null(selectStates)){
+          selected <- c(selectStates,
+                        (as.character(state.fips$polyname[
+                          state.fips$abb %in% unlist(lapply(cities,function(x){strsplit(x,",")[[1]][2]}))])))
+          selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
+          selected <- unique(selected)
+          selected <- selected[!is.null(selected)]
+          mapOrig <- map("state",regions = selected,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
+        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
+        if("State Names" %in% mapLayer){map.text(state_labs,add=T)}
+        if("Data" %in% mapLayer){
+          points(x=reduced$x,y=reduced$y,cex=0.1,col=color,pch=19)
+        }
+        
       })
       
       ################################################################
@@ -352,11 +373,32 @@ shinyServer(function(input, output, session) {
       
       
       output$DestPlotState <- renderPlot({
-        plot_states(selectStates=input$SelectDestStates,
-                    reduced=RAWPLOT()[["reduced_dest"]],
-                    cities=input$DestCity,
-                    mapLayer=input$maplayersDestStates,
-                    color="red")
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Plotting destination states',
+                     detail = 'Hold Tight...')
+        on.exit(progress$close())
+        
+        selectStates=input$SelectDestStates
+        reduced=RAWPLOT()[["reduced_dest"]]
+        cities=input$DestCity
+        mapLayer=input$maplayersDestStates
+        color="red"
+        
+        map(states)
+        if(!is.null(cities) | !is.null(selectStates)){
+          selected <- c(selectStates,
+                        (as.character(state.fips$polyname[
+                          state.fips$abb %in% unlist(lapply(cities,function(x){strsplit(x,",")[[1]][2]}))])))
+          selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
+          selected <- unique(selected)
+          selected <- selected[!is.null(selected)]
+          mapOrig <- map("state",regions = selected,plot=F,fill=T,col="yellow")} else{mapOrig <- NULL}
+        if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
+        if("State Names" %in% mapLayer){map.text(state_labs,add=T)}
+        if("Data" %in% mapLayer){
+          points(x=reduced$x,y=reduced$y,cex=0.1,col=color,pch=19)
+        }
+        
       })
       
       ###########################################################
@@ -474,6 +516,11 @@ shinyServer(function(input, output, session) {
       
       
       output$OrigPlotCounties <- renderPlot({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Plotting origin counties',
+                     detail = 'Hold Tight...')
+        on.exit(progress$close())
+        
         counties=CountiesOrigin()
         reduced=RAWPLOT()[["reduced_orig"]]
         selectCounties=input$SelectOrigCounties
@@ -628,6 +675,11 @@ shinyServer(function(input, output, session) {
       
       
       output$DestPlotCounties <- renderPlot({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Plotting Dest Counties',
+                     detail = 'Hold Tight...')
+        on.exit(progress$close())
+        
         counties=CountiesDestination()
         reduced=RAWPLOT()[["reduced_dest"]]
         selectCounties=input$SelectDestCounties
