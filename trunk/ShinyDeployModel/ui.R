@@ -26,7 +26,7 @@ sidebar <- dashboardSidebar(
              )),
   box(title="Major Modeling Options",width=NULL,status = "warning",solidHeader = TRUE,
   uiOutput("response"),
-  checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=value),
+  checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=TRUE),
   uiOutput("DateRange"))
 )###end side bar
 
