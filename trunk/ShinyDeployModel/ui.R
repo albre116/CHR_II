@@ -88,7 +88,7 @@ shinyUI(fluidPage(
                     ),####end tabPanel
                     
                     tabPanel("Basic Quote",value="BasicQuote",
-                             fluidRow(valueBoxOutput("mile15_QUICK"),valueBoxOutput("mile50_QUICK"),valueBoxOutput("mile85_QUICK")),
+                             fluidRow(DT::dataTableOutput("mile_QUICK")),
                              wellPanel(
                                wellHeader("Historical Integrated: Market Average"),
                                  fluidRow(
@@ -153,8 +153,6 @@ shinyUI(fluidPage(
                                               )
                                             )
                                         )                                        
-                                 
-                                 
                                )###end tab panel
                       
                       
