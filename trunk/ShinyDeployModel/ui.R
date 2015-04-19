@@ -231,11 +231,7 @@ shinyUI(fluidPage(
                         )###end current tab
                     
                     ),###close navbarmenu
-                    
-                    
-                    
-                    
-                    
+
                     navbarMenu("Advanced Options",
                                tabPanel("Outliers & Date",value="OutlierFilter",
                                        # box(title="Select Date Range For Analysis By Dragging on Screen",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
