@@ -39,58 +39,58 @@ shinyServer(function(input, output, session) {
 #   textInput("settings_name","Save Settings to File Name:",value=path)
 #   })
   
-  shinyFileChoose(input, 'settings_file', roots=volumes, 
-                  session=session)
-  
-
-  shinyFileSave(input, 'downloadData', roots=volumes,
-                 session=session)
-   
+#   shinyFileChoose(input, 'settings_file', roots=volumes, 
+#                   session=session)
+#   
+# 
+#   shinyFileSave(input, 'downloadData', roots=volumes,
+#                  session=session)
+#    
    DumpData <- reactive({
      input$captureModelImage
      isolate(reactiveValuesToList(input))
    })
-  
-  ####this will save a model image in the designated server folder
-  observe({
-    if (is.null(input$downloadData)) return()
-    saveFile <- parseSavePath(volumes, input$downloadData)
-    isolate(saved_settings <-  DumpData())
-    save(saved_settings, file = as.character(saveFile$datapath))
-  })
+#   
+#   ####this will save a model image in the designated server folder
+#   observe({
+#     if (is.null(input$downloadData)) return()
+#     saveFile <- parseSavePath(volumes, input$downloadData)
+#     isolate(saved_settings <-  DumpData())
+#     save(saved_settings, file = as.character(saveFile$datapath))
+#   })
+#   
+# 
+#   ####this will load a model image and set the values of the different selectors
+#   Read_Settings <- reactive({
+#     if (is.null(input$settings_file)) return(NULL)
+#     inFile <- parseFilePaths(volumes,input$settings_file)
+#     load(as.character(inFile$datapath))
+#     return(saved_settings)
+#   })
   
 
-  ####this will load a model image and set the values of the different selectors
-  Read_Settings <- reactive({
-    if (is.null(input$settings_file)) return(NULL)
-    inFile <- parseFilePaths(volumes,input$settings_file)
-    load(as.character(inFile$datapath))
-    return(saved_settings)
-  })
-  
-
-  update_loop <- reactiveValues(orig=1,dest=1,origcircle=1,destcircle=1)
+  # update_loop <- reactiveValues(orig=1,dest=1,origcircle=1,destcircle=1)
 
   
   ####scan across inputs and set values for static inputs
-  observe({
-    if (is.null(Read_Settings())){return()}
-        isolate(update_loop[["orig"]] <- 1)
-        isolate(update_loop[["dest"]] <- 1)
-        isolate(update_loop[["origcircle"]] <- 1)
-        isolate(update_loop[["destcircle"]] <- 1)
-    updateSliderInput(session,"lowerTau",value=Read_Settings()[["lowerTau"]])
-    updateSliderInput(session,"centralTau",value=Read_Settings()[["centralTau"]])
-    updateSliderInput(session,"upperTau",value=Read_Settings()[["upperTau"]])
-    updateCheckboxInput(session,"doEstimation",value=Read_Settings()[["doEstimation"]])
-    updateSliderInput(session,"dfspline",value=c(Read_Settings()[["dfspline"]][1],Read_Settings()[["dfspline"]][2]))
-    updateSliderInput(session,"LambdaFixed",value=Read_Settings()[["LambdaFixed"]])
-    updateCheckboxGroupInput(session,"QuantileFilter",selected=Read_Settings()[["QuantileFilter"]])
-    updateCheckboxInput(session,"FilterDate",value=Read_Settings()[["FilterDate"]])
-    updateSelectizeInput(session,"SelectOrigStates",selected =Read_Settings()[["SelectOrigStates"]])
-    updateSelectizeInput(session,"SelectDestStates",selected =Read_Settings()[["SelectDestStates"]])
-    
-    })
+#   observe({
+#     if (is.null(Read_Settings())){return()}
+#         isolate(update_loop[["orig"]] <- 1)
+#         isolate(update_loop[["dest"]] <- 1)
+#         isolate(update_loop[["origcircle"]] <- 1)
+#         isolate(update_loop[["destcircle"]] <- 1)
+#     #updateSliderInput(session,"lowerTau",value=Read_Settings()[["lowerTau"]])
+#     #updateSliderInput(session,"centralTau",value=Read_Settings()[["centralTau"]])
+#     #updateSliderInput(session,"upperTau",value=Read_Settings()[["upperTau"]])
+#     #updateCheckboxInput(session,"doEstimation",value=Read_Settings()[["doEstimation"]])
+#     #updateSliderInput(session,"dfspline",value=c(Read_Settings()[["dfspline"]][1],Read_Settings()[["dfspline"]][2]))
+#     #updateSliderInput(session,"LambdaFixed",value=Read_Settings()[["LambdaFixed"]])
+#     #updateCheckboxGroupInput(session,"QuantileFilter",selected=Read_Settings()[["QuantileFilter"]])
+#     #updateCheckboxInput(session,"FilterDate",value=Read_Settings()[["FilterDate"]])
+#     #updateSelectizeInput(session,"SelectOrigStates",selected =Read_Settings()[["SelectOrigStates"]])
+#     #updateSelectizeInput(session,"SelectDestStates",selected =Read_Settings()[["SelectDestStates"]])
+#     
+#     })
     
 
 #   output$FilterDate <- renderUI({
@@ -109,9 +109,9 @@ shinyServer(function(input, output, session) {
   output$response<- renderUI({
     idx <- colnames(RAW)
     selected=c("CPM_AllInCarrier")
-    if(!is.null(Read_Settings()[["response"]])){
-      selected <- Read_Settings()[["response"]]
-    }
+#     if(!is.null(Read_Settings()[["response"]])){
+#      selected <- Read_Settings()[["response"]]
+#     }
     selectInput("response","Response",choices=idx,selected=selected)
   })
   
@@ -119,11 +119,11 @@ shinyServer(function(input, output, session) {
   output$OrigZip3<- renderUI({
     idx1 <- unique(RAW$Orig3DigZip)
     selected=NULL
-    #isolate({
-    if(!is.null(Read_Settings()[["OrigZip3"]])){
-      selected <- Read_Settings()[["OrigZip3"]]
-    }
-    #})
+#     #isolate({
+#     if(!is.null(Read_Settings()[["OrigZip3"]])){
+#       selected <- Read_Settings()[["OrigZip3"]]
+#     }
+#     #})
     selectizeInput("OrigZip3","3-Digit Origin Zip",choices=idx1,selected=selected,multiple=TRUE)
   })
   
@@ -131,11 +131,11 @@ shinyServer(function(input, output, session) {
   output$DestZip3<- renderUI({
     idx2 <- unique(RAW$Dest3DigZip)
     selected=NULL
-    #isolate({
-    if(!is.null(Read_Settings()[["DestZip3"]])){
-      selected <- Read_Settings()[["DestZip3"]]
-    }
-    #})
+#     #isolate({
+#     if(!is.null(Read_Settings()[["DestZip3"]])){
+#       selected <- Read_Settings()[["DestZip3"]]
+#     }
+#     #})
     selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx2,selected=selected,multiple = TRUE)
   })
   
@@ -143,11 +143,11 @@ shinyServer(function(input, output, session) {
   output$OrigCity<- renderUI({
     idx3 <- unique(RAW$OrigCity)
     selected=NULL
-    #isolate({
-    if(!is.null(Read_Settings()[["OrigCity"]])){
-      selected <- Read_Settings()[["OrigCity"]]
-    }
-    #})
+#     #isolate({
+#     if(!is.null(Read_Settings()[["OrigCity"]])){
+#       selected <- Read_Settings()[["OrigCity"]]
+#     }
+#     #})
     selectizeInput("OrigCity","Origin City",choices=idx3,selected=selected,multiple=TRUE)
   })
   
@@ -156,31 +156,31 @@ shinyServer(function(input, output, session) {
   output$DestCity<- renderUI({
     idx4 <- unique(RAW$DestCity)
     selected=NULL
-    #isolate({
-    if(!is.null(Read_Settings()[["DestCity"]])){
-      selected <- Read_Settings()[["DestCity"]]
-    }
-    #})
+#     #isolate({
+#     if(!is.null(Read_Settings()[["DestCity"]])){
+#       selected <- Read_Settings()[["DestCity"]]
+#     }
+#     #})
     selectizeInput("DestCity","Destination City",choices=idx4,selected=selected,multiple = TRUE)
   })
   
   output$OrigRadius<- renderUI({
     value=50
-    #isolate({
-    if(!is.null(Read_Settings()[["OrigRadius"]])){
-      value <- Read_Settings()[["OrigRadius"]]
-    }
-    #})
+#     #isolate({
+#     if(!is.null(Read_Settings()[["OrigRadius"]])){
+#       value <- Read_Settings()[["OrigRadius"]]
+#     }
+#     #})
     numericInput("OrigRadius","Miles Around Origin City to Include",value=value,min=0,step=1)
   })
   
   output$DestRadius<- renderUI({
     value=50
-    #isolate({
-    if(!is.null(Read_Settings()[["DestRadius"]])){
-      value <- Read_Settings()[["DestRadius"]]
-    }
-    #})
+#     #isolate({
+#     if(!is.null(Read_Settings()[["DestRadius"]])){
+#       value <- Read_Settings()[["DestRadius"]]
+#     }
+#     #})
     numericInput("DestRadius","Miles Around Destination City to Include",value=value,min=0,step=1)
   })
   
@@ -221,11 +221,11 @@ shinyServer(function(input, output, session) {
     yr <- as.numeric(yr)+1
     end_date <- as.Date(format(paste(yr,mo,day,sep="-"),
                                format="%y-%m-%d"))
-    
-    if(!is.null(Read_Settings()[["DateRange"]])){
-      start_date <- Read_Settings()[["DateRange"]][1]
-      end_date <- Read_Settings()[["DateRange"]][2]
-    }
+#     
+#     if(!is.null(Read_Settings()[["DateRange"]])){
+#       start_date <- Read_Settings()[["DateRange"]][1]
+#       end_date <- Read_Settings()[["DateRange"]][2]
+#     }
     
     
     dateRangeInput("DateRange","Select Prediction Date Range ",
@@ -479,14 +479,14 @@ shinyServer(function(input, output, session) {
         pick <- c(pick,counties$names)
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddOrig())
-        isolate({
-          if(!is.null(Read_Settings()[["SelectOrigCounties"]])){
-          update_loop$orig <- update_loop$orig+1
-          if(update_loop$orig<=3){
-            selected <-Read_Settings()[["SelectOrigCounties"]]
-          }
-          }
-        })
+#         isolate({
+#           if(!is.null(Read_Settings()[["SelectOrigCounties"]])){
+#           update_loop$orig <- update_loop$orig+1
+#           if(update_loop$orig<=3){
+#             selected <-Read_Settings()[["SelectOrigCounties"]]
+#           }
+#           }
+#         })
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectOrigCounties","Selected Origin Counties or Entire State",choices=pick,selected=selected,multiple=T)
@@ -507,14 +507,14 @@ shinyServer(function(input, output, session) {
         counties <- CountiesOrigin()
         pts <- OrigCircles()
         isolate(pick <- input$SelectOrigCircles)
-        isolate({
-          if(!is.null(Read_Settings()[["SelectOrigCircles"]])){
-          update_loop$origcircle <- update_loop$origcircle+1
-          if(update_loop$origcircle<=2){
-            pick <-Read_Settings()[["SelectOrigCircles"]]
-          }
-          }
-        })
+#         isolate({
+#           if(!is.null(Read_Settings()[["SelectOrigCircles"]])){
+#           update_loop$origcircle <- update_loop$origcircle+1
+#           if(update_loop$origcircle<=2){
+#             pick <-Read_Settings()[["SelectOrigCircles"]]
+#           }
+#           }
+#         })
         
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
         pick <- pick[!is.na(pick)]
@@ -654,14 +654,14 @@ shinyServer(function(input, output, session) {
         pick <- c(pick,counties$names)
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddDest())
-        isolate({
-          if(!is.null(Read_Settings()[["SelectDestCounties"]])){
-          update_loop$dest <- update_loop$dest+1
-          if(update_loop$dest<=3){
-            selected <-Read_Settings()[["SelectDestCounties"]]
-          }
-          }
-        })
+#         isolate({
+#           if(!is.null(Read_Settings()[["SelectDestCounties"]])){
+#           update_loop$dest <- update_loop$dest+1
+#           if(update_loop$dest<=3){
+#             selected <-Read_Settings()[["SelectDestCounties"]]
+#           }
+#           }
+#         })
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectDestCounties","Selected Destination Counties or Entire State",choices=pick,selected=selected,multiple=T)
@@ -678,14 +678,14 @@ shinyServer(function(input, output, session) {
         counties <- CountiesDestination()
         pts <- DestCircles()
         isolate(pick <- input$SelectDestCircles)
-        isolate({
-          if(!is.null(Read_Settings()[["SelectDestCircles"]])){
-          update_loop$destcircle <- update_loop$destcircle+1
-          if(update_loop$destcircle<=2){
-            pick <-Read_Settings()[["SelectDestCircles"]]
-          }
-          }
-        })
+#         isolate({
+#           if(!is.null(Read_Settings()[["SelectDestCircles"]])){
+#           update_loop$destcircle <- update_loop$destcircle+1
+#           if(update_loop$destcircle<=2){
+#             pick <-Read_Settings()[["SelectDestCircles"]]
+#           }
+#           }
+#         })
 
         
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
@@ -766,44 +766,48 @@ shinyServer(function(input, output, session) {
       
       output$LinearTerms <- renderUI({
         terms <- colnames(RAW)
-        isolate({
-        if(!is.null(Read_Settings()[["LinearTerms"]])){
-          selected <- Read_Settings()[["LinearTerms"]]
-        }else{selected <- c("NumericDate")}
-        })
+        selected <- c("NumericDate")
+#         isolate({
+#         if(!is.null(Read_Settings()[["LinearTerms"]])){
+#           selected <- Read_Settings()[["LinearTerms"]]
+#         }
+#         })
         selectizeInput("LinearTerms","Linear Terms in Model",
                        choices=terms,selected=selected,multiple=T)
       })
       
       output$FactorTerms <- renderUI({
         terms <- colnames(RAW)
-        isolate({
-        if(!is.null(Read_Settings()[["FactorTerms"]])){
-          selected <- Read_Settings()[["FactorTerms"]]
-        }else{selected <- c("SumOfStops")}
-        })
+        selected <- c("SumOfStops")
+#         isolate({
+#         if(!is.null(Read_Settings()[["FactorTerms"]])){
+#           selected <- Read_Settings()[["FactorTerms"]]
+#         }
+#         })
         selectizeInput("FactorTerms","Factors in Model",
                        choices=terms,selected=selected,multiple=T)
       })
       
       output$SplineTerms <- renderUI({
         terms <- colnames(RAW)
-        isolate({
-        if(!is.null(Read_Settings()[["SplineTerms"]])){
-          selected <- Read_Settings()[["SplineTerms"]]
-        }else{selected <- NULL}
-        })
+        selected <- NULL
+#         isolate({
+#         if(!is.null(Read_Settings()[["SplineTerms"]])){
+#           selected <- Read_Settings()[["SplineTerms"]]
+#         }
+#         })
         selectizeInput("SplineTerms","Spline Terms in Model (non cyclic)",
                        choices=terms,selected=selected,multiple=T)
       })
       
       output$SplineTermsCyclic <- renderUI({
         terms <- colnames(RAW)
-        isolate({
-        if(!is.null(Read_Settings()[["SplineTermsCyclic"]])){
-          selected <- Read_Settings()[["SplineTermsCyclic"]]
-        }else{selected <- c("Day365")}
-        })
+        selected <- c("Day365")
+#         isolate({
+#         if(!is.null(Read_Settings()[["SplineTermsCyclic"]])){
+#           selected <- Read_Settings()[["SplineTermsCyclic"]]
+#         }
+#         })
         selectizeInput("SplineTermsCyclic","Cyclical Spline Terms in Model",
                        choices=terms,selected=selected,multiple=T)
       })
@@ -1603,9 +1607,9 @@ shinyServer(function(input, output, session) {
       output$ModelFamily <- renderUI({
         selected <- c("Generalized Additive Model")
         isolate({
-        if(!is.null(Read_Settings()[["ModelFamily"]])){
-          selected <- Read_Settings()[["ModelFamily"]]
-        }
+#         if(!is.null(Read_Settings()[["ModelFamily"]])){
+#           selected <- Read_Settings()[["ModelFamily"]]
+#         }
         })
         
         selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=selected)
@@ -1613,11 +1617,11 @@ shinyServer(function(input, output, session) {
       
       output$ConfLimits <- renderUI({
         value <- c(0.15,0.85)
-        isolate({
-        if(!is.null(Read_Settings()[["ConfLimits"]])){
-          value <- Read_Settings()[["ConfLimits"]]
-        }
-        })
+#         isolate({
+#         if(!is.null(Read_Settings()[["ConfLimits"]])){
+#           value <- Read_Settings()[["ConfLimits"]]
+#         }
+#         })
         sliderInput("ConfLimits","Model Confidince Intervals",0,1,value=value)
       })
       
@@ -1699,11 +1703,11 @@ shinyServer(function(input, output, session) {
           l <- min(data[,terms[i]])
           
           ####do the update here on the first pass through
-          isolate({
-            if(!is.null(Read_Settings()[[inputname]])){
-              l <- Read_Settings()[[inputname]]
-            }
-          })
+#           isolate({
+#             if(!is.null(Read_Settings()[[inputname]])){
+#               l <- Read_Settings()[[inputname]]
+#             }
+#           })
           
           numericInput(inputname,paste0("Lower Y Range:",terms[i]),value=l)
         })
@@ -1728,11 +1732,11 @@ shinyServer(function(input, output, session) {
           
           
           ####do the update here on the first pass through
-          isolate({
-            if(!is.null(Read_Settings()[[inputname]])){
-              u <- Read_Settings()[[inputname]]
-            }
-          })
+#           isolate({
+#             if(!is.null(Read_Settings()[[inputname]])){
+#               u <- Read_Settings()[[inputname]]
+#             }
+#           })
           
           numericInput(inputname,paste0("Upper Y Range:",terms[i]),value=u)
         })
@@ -1754,11 +1758,11 @@ shinyServer(function(input, output, session) {
           inputname <- paste("PredictorTerms_percentile_", terms[i], sep="")
           ####do the update here on the first pass through
           value=0.5
-          isolate({
-            if(!is.null(Read_Settings()[[inputname]])){
-              value <- Read_Settings()[[inputname]]
-            }
-          })
+#           isolate({
+#             if(!is.null(Read_Settings()[[inputname]])){
+#               value <- Read_Settings()[[inputname]]
+#             }
+#           })
 
           sliderInput(inputname,paste0("Percentile:",terms[i]),value=value,min=0,max=1)
         })
@@ -1785,11 +1789,11 @@ shinyServer(function(input, output, session) {
           pick <- as.character(c("Automatic",pick))
           ####do the update here on the first pass through
           selected=c("Automatic")
-          isolate({
-            if(!is.null(Read_Settings()[[inputname]])){
-              selected <- Read_Settings()[[inputname]]
-            }
-          })
+#           isolate({
+#             if(!is.null(Read_Settings()[[inputname]])){
+#               selected <- Read_Settings()[[inputname]]
+#             }
+#           })
           
           selectInput(inputname,paste0("Input Value:",terms[i]),choices=pick,selected=selected)
         })
@@ -1812,11 +1816,11 @@ shinyServer(function(input, output, session) {
           inputname <- paste("PredictorTerms_dataType_", terms[i], sep="")
           pick <- as.character(c(unique(data$CustomerCCode),unique(data$CarrierTCode)))
           selected=NULL
-          isolate({
-            if(!is.null(Read_Settings()[[inputname]])){
-              selected <- Read_Settings()[[inputname]]
-            }
-          })
+#           isolate({
+#             if(!is.null(Read_Settings()[[inputname]])){
+#               selected <- Read_Settings()[[inputname]]
+#             }
+#           })
 
           selectizeInput(inputname,paste0("Include in Plot (no selection includes all):",terms[i]),choices=pick,selected=selected,multiple=TRUE)
         })
@@ -1890,18 +1894,18 @@ shinyServer(function(input, output, session) {
           
           
           ####drop in saved values here from model image
-          isolate({
-            plotname <- paste("PredictorTerms_", terms[my_i], sep="")
-            grob <- paste0(plotname,"_data_extract")
-            if(!is.null(Read_Settings()[[grob]])){
-              q <- Read_Settings()[[grob]]
-              grob <- paste0(plotname,"_data_dimension_RowCol")
-              dimension <-Read_Settings()[[grob]]
-              q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
-              predictor <- eval(parse(text=paste0("data.frame(",terms[my_i],"=q[,2])")))
-              predictor <- xts(predictor,date_sequence)###FIX
-            }
-          })
+#           isolate({
+#             plotname <- paste("PredictorTerms_", terms[my_i], sep="")
+#             grob <- paste0(plotname,"_data_extract")
+#             if(!is.null(Read_Settings()[[grob]])){
+#               q <- Read_Settings()[[grob]]
+#               grob <- paste0(plotname,"_data_dimension_RowCol")
+#               dimension <-Read_Settings()[[grob]]
+#               q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
+#               predictor <- eval(parse(text=paste0("data.frame(",terms[my_i],"=q[,2])")))
+#               predictor <- xts(predictor,date_sequence)###FIX
+#             }
+#          })
           
           
           
@@ -2388,11 +2392,11 @@ shinyServer(function(input, output, session) {
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         customers <- unique(data$CustomerCCode)
         selected <- NULL
-        isolate({
-        if(!is.null(Read_Settings()[["CarrierSelect"]])){
-          selected <- Read_Settings()[["CustomerSelect"]]
-        }
-        })
+#         isolate({
+#         if(!is.null(Read_Settings()[["CarrierSelect"]])){
+#           selected <- Read_Settings()[["CustomerSelect"]]
+#         }
+#         })
         selectizeInput("CustomerSelect","Customer CCodes to Base Volume On",choices=customers,selected = selected,
                        multiple=TRUE)
       })
@@ -2402,11 +2406,11 @@ shinyServer(function(input, output, session) {
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         customers <- unique(data$CarrierTCode)
         selected <- NULL
-        isolate({
-        if(!is.null(Read_Settings()[["CarrierSelect"]])){
-          selected <- Read_Settings()[["CarrierSelect"]]
-        }
-        })
+#         isolate({
+#         if(!is.null(Read_Settings()[["CarrierSelect"]])){
+#           selected <- Read_Settings()[["CarrierSelect"]]
+#         }
+#         })
         selectizeInput("CarrierSelect","Carrier TCodes to Base Volume On",choices=customers,selected=selected,
                        multiple=TRUE)
       })
@@ -2414,11 +2418,11 @@ shinyServer(function(input, output, session) {
       
       output$volbasis <- renderUI({
         selected <- c("Transactions in Lane")
-        isolate({
-        if(!is.null(Read_Settings()[["volbasis"]])){
-          selected <- Read_Settings()[["volbasis"]]
-        }
-        })
+#         isolate({
+#         if(!is.null(Read_Settings()[["volbasis"]])){
+#           selected <- Read_Settings()[["volbasis"]]
+#         }
+#         })
         
         selectInput("volbasis","Volume Basis",
                   choices=c("Transactions in Lane","Specific Customer","Specific Carrier"),
@@ -2427,11 +2431,11 @@ shinyServer(function(input, output, session) {
       
       output$volmethod <- renderUI({
         selected <- c("GAM Weekly Max")
-        isolate({
-        if(!is.null(Read_Settings()[["volmethod"]])){
-          selected <- Read_Settings()[["volmethod"]]
-        }
-        })
+#         isolate({
+#         if(!is.null(Read_Settings()[["volmethod"]])){
+#           selected <- Read_Settings()[["volmethod"]]
+#         }
+#         })
         
         selectInput("volmethod","Volume Modeling Method",
                     choices = c("GAM","GAM No Weekend","GAM Weekly Max"),
@@ -2523,15 +2527,15 @@ shinyServer(function(input, output, session) {
         pred_volume <- xts(pred_volume,date_sequence)
         
         ####drop in saved values here from model image
-        isolate({
-          if(!is.null(Read_Settings()[["VolumeDraw_data_extract"]])){
-            q <- Read_Settings()[["VolumeDraw_data_extract"]]
-            dimension <-Read_Settings()[["VolumeDraw_data_dimension_RowCol"]]
-            q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
-            pred_volume <- data.frame(TransFcst=as.numeric(q[,2]))
-            pred_volume <- xts(pred_volume,date_sequence)
-          }
-        })
+#         isolate({
+#           if(!is.null(Read_Settings()[["VolumeDraw_data_extract"]])){
+#             q <- Read_Settings()[["VolumeDraw_data_extract"]]
+#             dimension <-Read_Settings()[["VolumeDraw_data_dimension_RowCol"]]
+#             q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
+#             pred_volume <- data.frame(TransFcst=as.numeric(q[,2]))
+#             pred_volume <- xts(pred_volume,date_sequence)
+#           }
+#         })
         
         
         
