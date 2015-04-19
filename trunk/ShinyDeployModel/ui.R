@@ -24,7 +24,7 @@ sidebar <- dashboardSidebar(
              menuSubItem("Session Info 1","sessionInfo"),
              menuSubItem("Session Info 2","sessionInfo2")
              ),
-    menuItem("Save Model Image?",tabName = "saveimage",icon = icon("fa fa-file"))),
+  menuItem("Save Model Image?",tabName = "saveimage",icon = icon("fa fa-file"))),
   box(title="Major Modeling Options",width=NULL,status = "warning",solidHeader = TRUE,
   uiOutput("response"),
   checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=TRUE),

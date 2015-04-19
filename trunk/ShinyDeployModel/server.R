@@ -11,12 +11,12 @@ shinyServer(function(input, output, session) {
   #######Model Saving/Loading Features
   ###########################################################
   #####This saves a model image of all of the chosen settings
-  output$downloadData<-downloadHandler(
-    filename = function(){paste(input$settings_name,".RData",sep = "")},
-    content = function(file){
-      saved_settings = reactiveValuesToList(input)
-      save(saved_settings, file = file)
-    })
+#   output$downloadData<-downloadHandler(
+#     filename = function(){paste(input$settings_name,".RData",sep = "")},
+#     content = function(file){
+#       saved_settings = reactiveValuesToList(input)
+#       save(saved_settings, file = file)
+#     })
   
 #   output$settings_file <- renderUI({
 #     fileInput('settings_file', 'Load Model Image?',
@@ -42,7 +42,6 @@ shinyServer(function(input, output, session) {
   shinyFileChoose(input, 'settings_file', roots=volumes, 
                   session=session)
   
-
 
   shinyFileSave(input, 'downloadData', roots=volumes,
                  session=session)
@@ -481,9 +480,11 @@ shinyServer(function(input, output, session) {
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddOrig())
         isolate({
+          if(!is.null(Read_Settings()[["SelectOrigCounties"]])){
           update_loop$orig <- update_loop$orig+1
           if(update_loop$orig<=3){
             selected <-Read_Settings()[["SelectOrigCounties"]]
+          }
           }
         })
         selected <- unique(selected)
@@ -507,9 +508,11 @@ shinyServer(function(input, output, session) {
         pts <- OrigCircles()
         isolate(pick <- input$SelectOrigCircles)
         isolate({
+          if(!is.null(Read_Settings()[["SelectOrigCircles"]])){
           update_loop$origcircle <- update_loop$origcircle+1
           if(update_loop$origcircle<=2){
             pick <-Read_Settings()[["SelectOrigCircles"]]
+          }
           }
         })
         
@@ -652,9 +655,11 @@ shinyServer(function(input, output, session) {
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddDest())
         isolate({
+          if(!is.null(Read_Settings()[["SelectDestCounties"]])){
           update_loop$dest <- update_loop$dest+1
           if(update_loop$dest<=3){
             selected <-Read_Settings()[["SelectDestCounties"]]
+          }
           }
         })
         selected <- unique(selected)
@@ -674,9 +679,11 @@ shinyServer(function(input, output, session) {
         pts <- DestCircles()
         isolate(pick <- input$SelectDestCircles)
         isolate({
+          if(!is.null(Read_Settings()[["SelectDestCircles"]])){
           update_loop$destcircle <- update_loop$destcircle+1
           if(update_loop$destcircle<=2){
             pick <-Read_Settings()[["SelectDestCircles"]]
+          }
           }
         })
 
