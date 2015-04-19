@@ -92,7 +92,7 @@ if(!require('dyPencilgraphs')) {
 
 
 ####Load Data File
-load("RAW_10.RData")
+load("RAW_100_New2.RData")
 
 
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota",
