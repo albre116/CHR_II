@@ -82,8 +82,8 @@ if(!require("shape"))
   install.packages("shape")
 if (!require("DT"))
   devtools::install_github("rstudio/DT")
-if (!require("shinyFiles"))
-  devtools::install_github("thomasp85/shinyFiles")
+#if (!require("shinyFiles"))
+#  devtools::install_github("thomasp85/shinyFiles")
 
 ###custom and local packages
 if(!require('dyPencilgraphs')) {

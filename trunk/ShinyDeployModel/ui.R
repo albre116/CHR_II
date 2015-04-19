@@ -5,7 +5,7 @@ header <- dashboardHeader(
 
 sidebar <- dashboardSidebar(
   sidebarMenu(
-#    menuItem("Load Model Image?",tabName = "image",icon = icon("fa fa-file")),
+    menuItem("Load Model Image?",tabName = "image",icon = icon("fa fa-file")),
     menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe"),
              badgeLabel = "Start Here",badgeColor = "red"),
     menuItem("Basic Quote", tabName = "basicquote", icon = icon("fa fa-camera"),
@@ -23,8 +23,8 @@ sidebar <- dashboardSidebar(
              menuSubItem("Adjusted Predictions","prediction"),
              menuSubItem("Session Info 1","sessionInfo"),
              menuSubItem("Session Info 2","sessionInfo2")
-             )
-#  menuItem("Save Model Image?",tabName = "saveimage",icon = icon("fa fa-file"))
+             ),
+   menuItem("Save Model Image?",tabName = "saveimage",icon = icon("fa fa-file"))
 ),
   box(title="Major Modeling Options",width=NULL,status = "warning",solidHeader = TRUE,
   uiOutput("response"),
@@ -37,40 +37,41 @@ body <- dashboardBody(
     tags$head(tags$script(src = "message-handler.js"))
   ),
   tabItems(
-#     tabItem(tabName = "image",
-#                 fluidRow(
-#                   column(width=9,
-#                          box(width=NULL,background = NULL,status="primary",
-#                              withTags({
-#                                div(class="header", checked=NA,
-#                                    h2("Welcome to CPDS Time Series Modeling Applicaiton"),
-#                                    h3("To use the tool you can take 1 of 2 paths:"),
-#                                    ul(ol(
-#                                      h3(li("You Can Generate a New Quote by Clicking on the \"Select Geography\" Tab")),
-#                                      h3(li("Or You Can Load a Model Image by Clicking the Upload Button to 
-#                                            the Right and then Clicking on the \"Select Geography\" Tab"))
-#                                      )),
-#                                    h3("After Selecting a Geography that Defines Your Data, 
-#                                       You Have Two Modeling Options:"),
-#                                    ul(ol(
-#                                      h3(li("You Can Get A Market Average by Clicking the \"Basic Quote\" Tab")),
-#                                      h3(li("Or You Can Enter Customer Specific Factors in the Model by Clicking
-#                                            the \"Customer Specific Quote\" Tab"))
-#                                      )),
-#                                    h3("Advanced Modeling Options Controlling Data Filtering Can be Found Under
-#                                       the \"Advanced Options\" Tab")
-#                                )
-#                              })
-#                          )
-#                          ),###end column
-#                   column(width=3,
-#                          box(title="Upload Model Image if Desired",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
-#                              #uiOutput("settings_file")
-#                              shinyFilesButton('settings_file', 'File select', 'Please select a file', FALSE)
-#                          )##end box
-#                   )###end column
-#             )###end row
-#     ),###end current tab
+    tabItem(tabName = "image",
+                fluidRow(
+                  column(width=9,
+                         box(width=NULL,background = NULL,status="primary",
+                             withTags({
+                               div(class="header", checked=NA,
+                                   h2("Welcome to CPDS Time Series Modeling Applicaiton"),
+                                   h3("To use the tool you can take 1 of 2 paths:"),
+                                   ul(ol(
+                                     h3(li("You Can Generate a New Quote by Clicking on the \"Select Geography\" Tab")),
+                                     h3(li("Or You Can Load a Model Image by Clicking the Upload Button to 
+                                           the Right and then Clicking on the \"Select Geography\" Tab"))
+                                     )),
+                                   h3("After Selecting a Geography that Defines Your Data, 
+                                      You Have Two Modeling Options:"),
+                                   ul(ol(
+                                     h3(li("You Can Get A Market Average by Clicking the \"Basic Quote\" Tab")),
+                                     h3(li("Or You Can Enter Customer Specific Factors in the Model by Clicking
+                                           the \"Customer Specific Quote\" Tab"))
+                                     )),
+                                   h3("Advanced Modeling Options Controlling Data Filtering Can be Found Under
+                                      the \"Advanced Options\" Tab")
+                               )
+                             })
+                         )
+                         ),###end column
+                  column(width=3,
+                         box(title="Upload Model Image if Desired",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                             #uiOutput("settings_file")
+                             #shinyFilesButton('settings_file', 'File select', 'Please select a file', FALSE)
+                             h2("Model upload is disabled for stability at this time")
+                         )##end box
+                  )###end column
+            )###end row
+    ),###end current tab
     tabItem(tabName = "geography",
             fluidRow(
               column(width=6,
@@ -282,18 +283,19 @@ body <- dashboardBody(
             )
     ),###end current tab
     
-#     tabItem(tabName = "saveimage",
-#             box(title="Save model image?",width=NULL,status = "warning",solidHeader = TRUE,
-#                 h2("To save a model click the capture model button 
-#                    and then if you like the values stored below click save model image to store (You must first capture)"),
-#                 actionButton("captureModelImage","Capture Model Image"),
-#                 shinySaveButton('downloadData', 'Save Model Image', 'Save file as...', filetype=list(imgage='RData')),
-#                 #downloadButton('downloadData','Save Model Settings?'),
-#                 box(title="Model Image Values at Current",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
-#                     div(class="span7", verbatimTextOutput("modelInput"))
-#                 )###end box
-#             )
-#     ),###end current tab
+    tabItem(tabName = "saveimage",
+            box(title="Save model image?",width=NULL,status = "warning",solidHeader = TRUE,
+                h2("To save a model click the capture model button 
+                   and then if you like the values stored below click save model image to store (You must first capture)"),
+                h2("This feature is disabled for stability"),
+                actionButton("captureModelImage","Capture Model Image"),
+                #shinySaveButton('downloadData', 'Save Model Image', 'Save file as...', filetype=list(imgage='RData')),
+                #downloadButton('downloadData','Save Model Settings?'),
+                box(title="Model Image Values at Current",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                    div(class="span7", verbatimTextOutput("modelInput"))
+                )###end box
+            )
+    ),###end current tab
     
     tabItem(tabName = "MapSelected",
             box(title="Map of Selected Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
