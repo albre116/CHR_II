@@ -224,7 +224,7 @@ wellHeader <- function(title="title",id=NULL,value=TRUE){
   }else{
   fluidRow(
     column(width=11,
-  h1(title,
+  h2(title,
      style = "font-family: 'Source Sans Pro'; font-weight: 300;
      color: #fff; text-align: left;
      background-image: url(texturebg.png);
