@@ -1594,8 +1594,8 @@ shinyServer(function(input, output, session) {
       })
       
       output$HistVolIntegratedTable_QUICK<- DT::renderDataTable(
-        DT::datatable(tdat2_QUICK(),filter='bottom',extensions = 'TableTools',
-                      options=list(scrollX=TRUE,    dom = 'T<"clear">lfrtip',
+        DT::datatable(tdat2_QUICK(),extensions = 'TableTools',
+                      options=list(dom = 'T<"clear">lfrtip',
                                    tableTools = list(sSwfPath = copySWF())))
       )
       

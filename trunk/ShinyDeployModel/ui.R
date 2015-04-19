@@ -1,18 +1,5 @@
 shinyUI(fluidPage(
 
-    tags$head(tags$style(HTML("
-    .shiny-text-output {
-                              background-color:#fff;
-                              }
-                              "))),
-    
-    h1("Shiny", span("Widgets Gallery", style = "font-weight: 300"), 
-       style = "font-family: 'Source Sans Pro';
-       color: #fff; text-align: center;
-       background-image: url('texturebg.png');
-       padding: 20px"),
-    br(),
-    
   fluidRow(
     column(2,
            wellPanel(
@@ -28,8 +15,7 @@ shinyUI(fluidPage(
                              fluidRow(
                                column(width=6,
                                       wellPanel(
-                                        #title="Origin Zips & Cities: Select to Include",width=NULL,status="primary",
-                                        #solidHeader = TRUE,collapsible = F,
+                                        wellHeader("Origin Zips & Cities: Select to Include"),
                                         uiOutput("OrigZip3"),
                                         uiOutput("OrigCity"),
                                         uiOutput("OrigRadius")
@@ -37,8 +23,7 @@ shinyUI(fluidPage(
                                ),#end column
                                column(width=6,
                                       wellPanel(
-                                        #title="Destination Zips & Cities: Select to Include",width=NULL,status="primary",
-                                        #solidHeader = TRUE,collapsible = F,
+                                        wellHeader("Destination Zips & Cities: Select to Include"),
                                         uiOutput("DestZip3"),
                                         uiOutput("DestCity"),
                                         uiOutput("DestRadius")
@@ -48,16 +33,16 @@ shinyUI(fluidPage(
                              fluidRow(
                                column(width=6,
                                       wellPanel(
-                                        #title="Origin States: Click To Select or Enter/Delete In List",width=NULL,status="primary",
-                                        #solidHeader = TRUE,collapsible = T,
+                                        wellHeader("Origin States: Click or Enter/Delete",id="O",value=FALSE),
+                                        conditionalPanel(condition='input.O',
                                         h3(textOutput("AddStatesHoverSelectedOrigin")),
                                         plotOutput(outputId = "OrigPlotState",clickId = "OriginStates",hoverId="OriginStatesHover",hoverDelay=300),
                                         uiOutput("SelectOrigStates"),
                                         uiOutput("maplayersOrigStates")
+                                        )###end condition
                                       ),
                                       wellPanel(
-                                        #title="Origin Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
-                                        #solidHeader = TRUE,collapsible = F,
+                                        wellHeader("Origin Counties: Click or Enter/Delete"),
                                         h3(textOutput("AddCountiesHoverSelectedOrigin")),
                                         plotOutput(outputId = "OrigPlotCounties",clickId = "OriginCounties",hoverId="OriginCountiesHover",hoverDelay=300),
                                         uiOutput("SelectOrigCounties"),
@@ -74,16 +59,16 @@ shinyUI(fluidPage(
                                ),###end first column
                                column(width=6,
                                       wellPanel(
-                                        #title="Destination States: Click To Select or Enter/Delete In List",width=NULL,status="primary",
-                                        #solidHeader = TRUE,collapsible = T,
+                                        wellHeader("Destination States: Click or Enter/Delete",id="D",value=FALSE),
+                                        conditionalPanel(condition='input.D',
                                         h3(textOutput("AddStatesHoverSelectedDestination")),
                                         plotOutput(outputId = "DestPlotState",clickId = "DestinationStates",hoverId="DestinationStatesHover",hoverDelay=300),
                                         uiOutput("SelectDestStates"),
                                         uiOutput("maplayersDestStates")
+                                        )###end condition
                                       ),
                                       wellPanel(
-                                        #title="Destination Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
-                                        #solidHeader = TRUE,collapsible = F,
+                                        wellHeader("Destination Counties: Click or Enter/Delete"),
                                         h3(textOutput("AddCountiesHoverSelectedDestination")),
                                         plotOutput(outputId = "DestPlotCounties",clickId = "DestinationCounties",hoverId="DestinationCountiesHover",hoverDelay=300),
                                         uiOutput("SelectDestCounties"),
@@ -97,9 +82,88 @@ shinyUI(fluidPage(
                                         )
                                         )
                                       )
+
                                )###end second column
                              )###end fluid row
-                    )####end tabPanel
+                    ),####end tabPanel
+                    
+                    tabPanel("Basic Quote",value="BasicQuote",
+                             fluidRow(valueBoxOutput("mile15_QUICK"),valueBoxOutput("mile50_QUICK"),valueBoxOutput("mile85_QUICK")),
+                             wellPanel(
+                               wellHeader("Historical Integrated: Market Average"),
+                                 fluidRow(
+                                   column(width=12,
+                                          dygraphOutput("Historical_QUICK")
+                                   )
+                                 )
+                             ),
+                             
+                             wellPanel(
+                               wellHeader("Volume Integrated Yearly Average: Market Average"),
+                                 fluidRow(
+                                   column(width=6,
+                                          dygraphOutput("HistVolIntegrated_QUICK")
+                                   ),
+                                   column(width=6,
+                                          div(style = 'overflow-x: scroll',DT::dataTableOutput("HistVolIntegratedTable_QUICK"))
+                                   )
+                                 )
+                             )
+                    ),####end tabPanel
+                    
+                    navbarMenu("Advanced Options",
+                               tabPanel("Outliers & Date",value="OutlierFilter",
+                                       # box(title="Select Date Range For Analysis By Dragging on Screen",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                                            wellPanel(
+                                              wellHeader("Select Date Range For Analysis By Dragging on Screen"),
+                                            fluidRow(
+                                              column(width=2,
+                                                     sliderInput("lowerTau","Lower Percentile",min=0,max=1,value=0.05),
+                                                     sliderInput("centralTau","Center Percentile",min=0,max=1,value=0.5),
+                                                     sliderInput("upperTau","Upper Percentile",min=0,max=1,value=0.95),
+                                                     checkboxInput("doEstimation","Optimize Spline Fit",FALSE),
+                                                     sliderInput("dfspline","Spline df Penalty Range",min=1,max=50,value=c(1,20)),
+                                                     sliderInput("LambdaFixed","Fixed df Penalty",min=1,max=50,value=c(10)),
+                                                     actionButton("applyDygraph","Apply Date & Percentile Selections",icon=icon("fa fa-refresh"))
+                                              ),
+                                              column(width=10,
+                                                     dygraphOutput("dygraph_cut",height="400px")
+                                              )
+                                            )
+                                        ),
+                                        #box(title="Clean Up Fixed Rate Contracts: Click Data to Identify Groups for Removal",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                                            wellPanel(
+                                              wellHeader("Clean Up Fixed Rate Contracts: Click Data to Identify Groups for Removal"),
+                                            fluidRow(
+                                              column(width=2,
+                                                     h3(textOutput("RemoveCustomerCarrierHover")),
+                                                     checkboxInput("EnableSelect","Enable Customer Carrier Click Removal (warning only use with smaller data sets)",value=FALSE),
+                                                     uiOutput("UpperLower"),
+                                                     actionButton("applyUpperLower","Apply Rate Per Mile Filter",icon=icon("fa fa-refresh")),
+                                                     checkboxGroupInput("QuantileFilter","Apply Quantile Filter",c("Lower Quantile","Upper Quantile"),c("Lower Quantile","Upper Quantile")),
+                                                     checkboxGroupInput("TypeRemoval","Point Click Removal Method",c("Customer Carrier","Individual Load"),selected = c("Customer Carrier")),
+                                                     uiOutput("RemoveCustomerCarrier"),
+                                                     uiOutput("RemoveIndividual"),
+                                                     checkboxGroupInput("plotControls","Plot Layers to Display",
+                                                                        c("Percentiles","Kept","Removed"),
+                                                                        selected=c("Kept","Removed","Percentiles"))
+                                              ),
+                                              column(width=10,
+                                                     plotOutput(outputId = "RemovalPlot",height="800px",clickId = "RemoveGroups",hoverId="RemoveGroupsHover",hoverDelay=300)
+                                              )
+                                            )
+                                        )                                        
+                                 
+                                 
+                               )###end tab panel
+                      
+                      
+                      
+                    )####end nav bar menu
+                    
+                    
+                    
+                    
          )####end major navbar
          )####end right hand side column
   )####end major fluid Row
