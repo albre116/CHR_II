@@ -3,9 +3,9 @@ options(shiny.maxRequestSize=50*1024^2)###50 megabyte file upload limit set
 
 shinyServer(function(input, output, session) {
   
-#   ####this closes all of the collapasable boxes that pop up
-#   session$sendCustomMessage(type = 'testmessage',
-#                             message = list())
+  ####this closes all of the collapasable boxes that pop up
+  session$sendCustomMessage(type = 'testmessage',
+                            message = list())
   
   ###########################################################
   #######Model Saving/Loading Features
