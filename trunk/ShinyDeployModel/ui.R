@@ -1,4 +1,18 @@
 shinyUI(fluidPage(
+
+    tags$head(tags$style(HTML("
+    .shiny-text-output {
+                              background-color:#fff;
+                              }
+                              "))),
+    
+    h1("Shiny", span("Widgets Gallery", style = "font-weight: 300"), 
+       style = "font-family: 'Source Sans Pro';
+       color: #fff; text-align: center;
+       background-image: url('texturebg.png');
+       padding: 20px"),
+    br(),
+    
   fluidRow(
     column(2,
            wellPanel(
