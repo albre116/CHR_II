@@ -95,7 +95,7 @@ if(!require('dyPencilgraphs')) {
 
 
 ####Load Data File
-load("RAW_10.RData")
+load("RAW_100_Min.RData")
 
 
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota",
@@ -216,7 +216,7 @@ radius_xyunits<-function(miles=50,earth_radius = 3960.0, radians_to_degrees = 18
 
 wellHeader <- function(title="title",id=NULL,value=TRUE){
   if(is.null(id)){
-    h1(title,
+    h3(title,
        style = "font-family: 'Source Sans Pro'; font-weight: 300;
        color: #fff; text-align: left;
        background-image: url(texturebg.png);
@@ -224,7 +224,7 @@ wellHeader <- function(title="title",id=NULL,value=TRUE){
   }else{
   fluidRow(
     column(width=11,
-  h2(title,
+  h3(title,
      style = "font-family: 'Source Sans Pro'; font-weight: 300;
      color: #fff; text-align: left;
      background-image: url(texturebg.png);
