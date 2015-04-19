@@ -111,6 +111,131 @@ shinyUI(fluidPage(
                              )
                     ),####end tabPanel
                     
+                    navbarMenu("Customer Specific",                   
+                               tabPanel("Predictor Entry",value="PredictorEntry",
+                                fluidRow(
+                                  column(width=4,
+                                         wellPanel(
+                                           wellHeader("Model Terms and Parameters"),
+                                           fluidRow(
+                                             column(width=6,
+                                                    uiOutput("ModelFamily"),
+                                                    uiOutput("ConfLimits")
+                                             ),
+                                             column(width=6,
+                                                    uiOutput("FactorTerms"),
+                                                    uiOutput("LinearTerms"),
+                                                    uiOutput("SplineTerms"),
+                                                    uiOutput("SplineTermsCyclic")
+                                             )
+                                           )
+                                         )              
+                                  ),###end first column
+                                  column(width=8,
+                                         wellPanel(
+                                           wellHeader("Ranges for Graph Below"),
+                                           fluidRow(
+                                             column(width=2,
+                                                    uiOutput("DataType")
+                                             ),
+                                             column(width=2,
+                                                    uiOutput("PredicitonRangesLower")
+                                                    ),
+                                             column(width=2,
+                                                    uiOutput("PredicitonRangesUpper")
+                                                    ),
+                                             column(width=3,
+                                                    uiOutput("PredicitonPercentiles")
+                                             ),
+                                             column(width=3,
+                                                    uiOutput("PredictorEntryFixed")
+                                             )
+                                           )###end row
+                                         )
+                                  )###end second column
+                                ),###end fluid row
+                                wellPanel(
+                                  wellHeader("Set Predictor Values for Forecasts"),
+                                    fluidRow(
+                                      column(width=6,
+                                             uiOutput("PredictionHistorical")
+                                      ),###end column
+                                      column(width=6,
+                                             uiOutput("PredictionLevels")
+                                      )###end column
+                                    )###end fluid row
+                                )###end box
+                        ),
+                        tabPanel("Volume",value="VolumeEntry",
+                                fluidRow(
+                                  column(width=6,
+                                         wellPanel(
+                                           wellHeader("Model Fit and Predictions"),
+                                           dygraphOutput("PredictionPlotInteractive")
+                                         )
+                                         ),###end first column
+                                  column(width=6,
+                                         wellPanel(
+                                           wellHeader("Customer Volume Pattern"),
+                                           dygraphOutput("VolumeIntegrated")
+                                         )
+                                  )###end second column
+                                ),###end fluid row
+                                fluidRow(
+                                  column(width=6,
+                                         wellPanel(
+                                           wellHeader("Table of Predicted Values"),
+                                           div(style = 'overflow-x: scroll',DT::dataTableOutput("PredicitonTable"))
+                                         )
+                                  ),###end first column
+                                  column(width=6,
+                                         wellPanel(
+                                           wellHeader("Draw Volume Profile"),
+                                           fluidRow(
+                                             column(width=2,
+                                                    uiOutput("CustomerSelect"),
+                                                    uiOutput("CarrierSelect"),
+                                                    uiOutput("volbasis"),
+                                                    uiOutput("volmethod")
+                                             ),
+                                             column(width=10,
+                                                    dyPencilgraphOutput("VolumeDraw")
+                                             )
+                                           )
+                                         )
+                                  )###end second column
+                                )###end fluid row
+                        ),
+                        
+                        tabPanel("Volume Integrated Quote",value="VolumeIntegratedQuote",
+                                fluidRow(DT::dataTableOutput("mile")),
+                                wellPanel(
+                                  wellHeader("Volume and Response"),
+                                    fluidRow(
+                                      column(width=12,
+                                             dygraphOutput("Historical")
+                                      )
+                                    )
+                                ),
+                                wellPanel(
+                                  wellHeader("Volume Integrated yearly Average"),
+                                    fluidRow(
+                                      column(width=6,
+                                             dygraphOutput("HistVolIntegrated")
+                                      ),
+                                      column(width=6,
+                                             div(style = 'overflow-x: scroll',DT::dataTableOutput("HistVolIntegratedTable"))
+                                      )
+                                    )
+                                )
+                        )###end current tab
+                    
+                    ),###close navbarmenu
+                    
+                    
+                    
+                    
+                    
                     navbarMenu("Advanced Options",
                                tabPanel("Outliers & Date",value="OutlierFilter",
                                        # box(title="Select Date Range For Analysis By Dragging on Screen",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
@@ -154,14 +279,7 @@ shinyUI(fluidPage(
                                             )
                                         )                                        
                                )###end tab panel
-                      
-                      
-                      
                     )####end nav bar menu
-                    
-                    
-                    
-                    
          )####end major navbar
          )####end right hand side column
   )####end major fluid Row

@@ -2346,7 +2346,7 @@ shinyServer(function(input, output, session) {
       
       output$PredicitonTable <- DT::renderDataTable({
         DT::datatable(tdat1(),filter='bottom',extensions = 'TableTools',
-                      options=list(scrollX=TRUE,    dom = 'T<"clear">lfrtip',
+                      options=list(dom = 'T<"clear">lfrtip',
                                    tableTools = list(sSwfPath = copySWF())))
       })
       
@@ -2793,8 +2793,8 @@ shinyServer(function(input, output, session) {
       })
 
       output$HistVolIntegratedTable<- DT::renderDataTable(
-        DT::datatable(tdat2(),filter='bottom',extensions = 'TableTools',
-                      options=list(scrollX=TRUE,    dom = 'T<"clear">lfrtip',
+        DT::datatable(tdat2(),extensions = 'TableTools',
+                      options=list(dom = 'T<"clear">lfrtip',
                                    tableTools = list(sSwfPath = copySWF())))
       )
       
