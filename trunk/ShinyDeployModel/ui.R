@@ -283,9 +283,11 @@ body <- dashboardBody(
     
     tabItem(tabName = "saveimage",
             box(title="Save model image?",width=NULL,status = "warning",solidHeader = TRUE,
-                renderUI("settings_name"),
-                downloadButton('downloadData','Save Model Settings?'),
-                #shinySaveButton('downloadData', 'Save Model Image', 'Save file as...', filetype=list(imgage='RData')),
+                h2("To save a model click the capture model button 
+                   and then if you like the values stored below click save model image to store (You must first capture)"),
+                actionButton("captureModelImage","Capture Model Image"),
+                shinySaveButton('downloadData', 'Save Model Image', 'Save file as...', filetype=list(imgage='RData')),
+                #downloadButton('downloadData','Save Model Settings?'),
                 box(title="Model Image Values at Current",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                     div(class="span7", verbatimTextOutput("modelInput"))
                 )###end box

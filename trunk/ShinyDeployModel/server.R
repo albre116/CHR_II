@@ -30,33 +30,35 @@ shinyServer(function(input, output, session) {
     volumes <- c('Quote Images'="/srv/shiny_data/shiny_quotes")
   }
   
-  ####this is for default download path
-  if(Sys.info()["sysname"]=="Windows"){path <- c("images/model")}else{
-    path <- c("/srv/shiny_data/shiny_quotes/model")
-  }
-  
-  output$settings_name <- renderUI({
-  textInput("settings_name","Save Settings to File Name:",value=path)
-  })
+#   ####this is for default download path
+#   if(Sys.info()["sysname"]=="Windows"){path <- c("images/model")}else{
+#     path <- c("/srv/shiny_data/shiny_quotes/model")
+#   }
+#   
+#   output$settings_name <- renderUI({
+#   textInput("settings_name","Save Settings to File Name:",value=path)
+#   })
   
   shinyFileChoose(input, 'settings_file', roots=volumes, 
                   session=session)
   
-  
-#   shinyFileSave(input, 'downloadData', roots=volumes,
-#                 session=session)
-#   
-#   DumpData <- reactive({
-#     reactiveValuesToList(input)
-#   })
+
+
+  shinyFileSave(input, 'downloadData', roots=volumes,
+                 session=session)
+   
+   DumpData <- reactive({
+     input$captureModelImage
+     isolate(reactiveValuesToList(input))
+   })
   
   ####this will save a model image in the designated server folder
-#   observe({
-#     if (is.null(input$downloadData)) return()
-#     saveFile <- parseSavePath(volumes, input$downloadData)
-#     isolate(saved_settings <-  DumpData())
-#     save(saved_settings, file = as.character(saveFile$datapath))
-#   })
+  observe({
+    if (is.null(input$downloadData)) return()
+    saveFile <- parseSavePath(volumes, input$downloadData)
+    isolate(saved_settings <-  DumpData())
+    save(saved_settings, file = as.character(saveFile$datapath))
+  })
   
 
   ####this will load a model image and set the values of the different selectors
@@ -3046,7 +3048,7 @@ shinyServer(function(input, output, session) {
       })
       
       output$modelInput <- renderPrint({
-        reactiveValuesToList(input)
+        DumpData()
       })
       
 
