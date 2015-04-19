@@ -2,11 +2,11 @@ shinyUI(fluidPage(
 
   fluidRow(
     column(2,
-           wellPanel(
-             box(title="Major Modeling Options",width=NULL,status = "warning",solidHeader = TRUE,
+             wellPanel(
+                 wellHeader("Major Modeling Options"),
                  uiOutput("response"),
                  checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=TRUE),
-                 uiOutput("DateRange"))
+                 uiOutput("DateRange")
            )####end well Panel
            ),####end left hand side column
   column(10,

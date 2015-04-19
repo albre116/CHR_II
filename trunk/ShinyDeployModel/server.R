@@ -2634,32 +2634,19 @@ shinyServer(function(input, output, session) {
       #######Historical Volume Integrated Quote
       ###########################################################
       
-      output$mile15<- renderValueBox({
+      
+      output$mile<- DT::renderDataTable({
         Fn <- mileECDF()
-        pct <- 0.15
-        valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
-          color = "purple"
-        )
+        pct <- c(0.15,0.5,0.85)
+        v <- quantile(Fn,pct)
+        names <- c(paste0(pct[1]*100,"th Mileage Percentile"),
+                   paste0(pct[2]*100,"th Mileage Percentile"),
+                   paste0(pct[3]*100,"th Mileage Percentile"))
+        out <- data.frame(matrix(v,ncol=3))
+        colnames(out) <- names
+        DT::datatable(out)
       })
       
-      output$mile50<- renderValueBox({
-        Fn <- mileECDF()
-        pct <- 0.5
-        valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
-          color = "purple"
-        )
-      })
-      
-      output$mile85<- renderValueBox({
-        Fn <- mileECDF()
-        pct <- 0.85
-        valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
-          color = "purple"
-        )
-      })
       
       
       HistoricalData <- reactive({
