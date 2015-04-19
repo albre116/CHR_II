@@ -1,4 +1,4 @@
-options(shiny.maxRequestSize=500*1024^2)###500 megabyte file upload limit set
+options(shiny.maxRequestSize=50*1024^2)###50 megabyte file upload limit set
 
 
 shinyServer(function(input, output, session) {
@@ -26,9 +26,9 @@ shinyServer(function(input, output, session) {
   
   
   ####this is a stable server side file uploader
-  if(Sys.info()["sysname"]=="Windows"){volumes <- c('Quote Images'="images")}else{
-    volumes <- c('Quote Images'="/srv/shiny_data/shiny_quotes")
-  }
+#   if(Sys.info()["sysname"]=="Windows"){volumes <- c('Quote Images'="images")}else{
+#     volumes <- c('Quote Images'="/srv/shiny_data/shiny_quotes")
+#   }
   
 #   ####this is for default download path
 #   if(Sys.info()["sysname"]=="Windows"){path <- c("images/model")}else{

@@ -1,3 +1,6 @@
+rm(list=ls(all=TRUE))
+gc()
+
 if(!require("devtools"))
   install.packages("devtools")
 if(!require("shiny"))
