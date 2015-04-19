@@ -23,7 +23,8 @@ sidebar <- dashboardSidebar(
              menuSubItem("Adjusted Predictions","prediction"),
              menuSubItem("Session Info 1","sessionInfo"),
              menuSubItem("Session Info 2","sessionInfo2")
-             )),
+             ),
+    menuItem("Save Model Image?",tabName = "saveimage",icon = icon("fa fa-file"))),
   box(title="Major Modeling Options",width=NULL,status = "warning",solidHeader = TRUE,
   uiOutput("response"),
   checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=TRUE),
@@ -31,7 +32,9 @@ sidebar <- dashboardSidebar(
 )###end side bar
 
 body <- dashboardBody(
-
+  singleton(
+    tags$head(tags$script(src = "message-handler.js"))
+  ),
   tabItems(
     tabItem(tabName = "image",
                 fluidRow(
@@ -60,7 +63,7 @@ body <- dashboardBody(
                          )
                          ),###end column
                   column(width=3,
-                         box(title="Upload Model Image if Desired",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                         box(title="Upload Model Image if Desired",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                              #uiOutput("settings_file")
                              shinyFilesButton('settings_file', 'File select', 'Please select a file', FALSE)
                          )##end box
@@ -72,7 +75,7 @@ body <- dashboardBody(
               column(width=6,
                      box(
                        title="Origin Zips & Cities: Select to Include",width=NULL,status="primary",
-                       solidHeader = TRUE,collapsible = T,
+                       solidHeader = TRUE,collapsible = F,
                        uiOutput("OrigZip3"),
                        uiOutput("OrigCity"),
                        uiOutput("OrigRadius")
@@ -81,7 +84,7 @@ body <- dashboardBody(
               column(width=6,
                      box(
                        title="Destination Zips & Cities: Select to Include",width=NULL,status="primary",
-                       solidHeader = TRUE,collapsible = T,
+                       solidHeader = TRUE,collapsible = F,
                        uiOutput("DestZip3"),
                        uiOutput("DestCity"),
                        uiOutput("DestRadius")
@@ -100,7 +103,7 @@ body <- dashboardBody(
                      ),
                      box(
                        title="Origin Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
-                       solidHeader = TRUE,collapsible = T,
+                       solidHeader = TRUE,collapsible = F,
                        h3(textOutput("AddCountiesHoverSelectedOrigin")),
                        plotOutput(outputId = "OrigPlotCounties",clickId = "OriginCounties",hoverId="OriginCountiesHover",hoverDelay=300),
                        uiOutput("SelectOrigCounties"),
@@ -126,7 +129,7 @@ body <- dashboardBody(
                      ),
                      box(
                        title="Destination Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
-                       solidHeader = TRUE,collapsible = T,
+                       solidHeader = TRUE,collapsible = F,
                        h3(textOutput("AddCountiesHoverSelectedDestination")),
                        plotOutput(outputId = "DestPlotCounties",clickId = "DestinationCounties",hoverId="DestinationCountiesHover",hoverDelay=300),
                        uiOutput("SelectDestCounties"),
@@ -145,14 +148,14 @@ body <- dashboardBody(
     ),
     tabItem(tabName = "basicquote",
             fluidRow(valueBoxOutput("mile15_QUICK"),valueBoxOutput("mile50_QUICK"),valueBoxOutput("mile85_QUICK")),
-            box(title="Historical Integrated: Market Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Historical Integrated: Market Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=12,
                          dygraphOutput("Historical_QUICK")
                   )
                 )
             ),
-            box(title="Volume Integrated Yearly Average: Market Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Volume Integrated Yearly Average: Market Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=6,
                          dygraphOutput("HistVolIntegrated_QUICK")
@@ -168,7 +171,7 @@ body <- dashboardBody(
             fluidRow(
               column(width=4,
                      box(
-                       title="Model Terms and Parameters",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                       title="Model Terms and Parameters",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                        fluidRow(
                          column(width=6,
                                 uiOutput("ModelFamily"),
@@ -207,7 +210,7 @@ body <- dashboardBody(
                      )
               )###end second column
             ),###end fluid row
-            box(title="Predictors to Set Value for Forecast",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Predictors to Set Value for Forecast",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=6,
                          uiOutput("PredictionHistorical")
@@ -221,7 +224,7 @@ body <- dashboardBody(
     tabItem(tabName = "VolumeEntry",
             fluidRow(
               column(width=6,
-                     box(title="Model Fit & Predictions",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                     box(title="Model Fit & Predictions",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                        dygraphOutput("PredictionPlotInteractive")
                      )
                      ),###end first column
@@ -234,7 +237,7 @@ body <- dashboardBody(
             ),###end fluid row
             fluidRow(
               column(width=6,
-                     box(title="Table of Predictions",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+                     box(title="Table of Predictions",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                                      DT::dataTableOutput("PredicitonTable")
                      )
               ),###end first column
@@ -259,14 +262,14 @@ body <- dashboardBody(
     
     tabItem(tabName = "SummaryPredictions",
             fluidRow(valueBoxOutput("mile15"),valueBoxOutput("mile50"),valueBoxOutput("mile85")),
-            box(title="Historical Integrated: Customer Specific",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Historical Integrated: Customer Specific",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=12,
                          dygraphOutput("Historical")
                   )
                 )
             ),
-            box(title="Volume Integrated Yearly Average: Customer Specific",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Volume Integrated Yearly Average: Customer Specific",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=6,
                          dygraphOutput("HistVolIntegrated")
@@ -275,11 +278,17 @@ body <- dashboardBody(
                          DT::dataTableOutput("HistVolIntegratedTable")
                   )
                 )
-            ),
+            )
+    ),###end current tab
+    
+    tabItem(tabName = "saveimage",
             box(title="Save model image?",width=NULL,status = "warning",solidHeader = TRUE,
-                #textInput("settings_name","Save Settings to File Name:",value="settings_name"),
-                #downloadButton('downloadData','Save Model Settings?')
-                shinySaveButton('downloadData', 'Save Model Image', 'Save file as...', filetype=list(imgage='RData'))
+                renderUI("settings_name"),
+                downloadButton('downloadData','Save Model Settings?'),
+                #shinySaveButton('downloadData', 'Save Model Image', 'Save file as...', filetype=list(imgage='RData')),
+                box(title="Model Image Values at Current",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                    div(class="span7", verbatimTextOutput("modelInput"))
+                )###end box
             )
     ),###end current tab
     
@@ -298,7 +307,7 @@ body <- dashboardBody(
               )
     ),
     tabItem(tabName = "DateRange",
-            box(title="Select Date Range For Analysis By Dragging on Screen",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Select Date Range For Analysis By Dragging on Screen",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=2,
                          sliderInput("lowerTau","Lower Percentile",min=0,max=1,value=0.05),
@@ -314,7 +323,7 @@ body <- dashboardBody(
                   )
                 )
             ),
-            box(title="Clean Up Fixed Rate Contracts: Click Data to Identify Groups for Removal",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Clean Up Fixed Rate Contracts: Click Data to Identify Groups for Removal",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=2,
                          h3(textOutput("RemoveCustomerCarrierHover")),
@@ -378,7 +387,7 @@ body <- dashboardBody(
                 )
     ),###end current tab
     tabItem(tabName = "prediction",
-            box(title="Model Fit To Raw Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Model Fit To Raw Data",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=2,
                          checkboxGroupInput("PredictionPartial","Select Layers",
@@ -393,12 +402,12 @@ body <- dashboardBody(
             
             ),###end current tab
     tabItem(tabName = "sessionInfo",
-            box(title="Session Info",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Session Info",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 div(class="span7", verbatimTextOutput("session"))
             )###end box
     ),###end current tab
     tabItem(tabName = "sessionInfo2",
-            box(title="Session Info 2",width=NULL,status="primary",solidHeader = TRUE,collapsible = T,
+            box(title="Session Info 2",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 div(class="span7", verbatimTextOutput("session2"))
             )###end box
     )###end current tab

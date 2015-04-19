@@ -3,16 +3,20 @@ options(shiny.maxRequestSize=500*1024^2)###500 megabyte file upload limit set
 
 shinyServer(function(input, output, session) {
   
+  ####this closes all of the collapasable boxes that pop up
+  session$sendCustomMessage(type = 'testmessage',
+                            message = list())
+  
   ###########################################################
   #######Model Saving/Loading Features
   ###########################################################
   #####This saves a model image of all of the chosen settings
-#   output$downloadData<-downloadHandler(
-#     filename = function(){paste(input$settings_name,".RData",sep = "")},
-#     content = function(file){
-#       saved_settings = reactiveValuesToList(input)
-#       save(saved_settings, file = file)
-#     })
+  output$downloadData<-downloadHandler(
+    filename = function(){paste(input$settings_name,".RData",sep = "")},
+    content = function(file){
+      saved_settings = reactiveValuesToList(input)
+      save(saved_settings, file = file)
+    })
   
 #   output$settings_file <- renderUI({
 #     fileInput('settings_file', 'Load Model Image?',
@@ -22,23 +26,37 @@ shinyServer(function(input, output, session) {
   
   
   ####this is a stable server side file uploader
-  if(Sys.info()["sysname"]=="Windows"){volumes <- c('Quote Images'="www")}else{
+  if(Sys.info()["sysname"]=="Windows"){volumes <- c('Quote Images'="images")}else{
     volumes <- c('Quote Images'="/srv/shiny_data/shiny_quotes")
   }
+  
+  ####this is for default download path
+  if(Sys.info()["sysname"]=="Windows"){path <- c("images/model")}else{
+    path <- c("/srv/shiny_data/shiny_quotes/model")
+  }
+  
+  output$settings_name <- renderUI({
+  textInput("settings_name","Save Settings to File Name:",value=path)
+  })
   
   shinyFileChoose(input, 'settings_file', roots=volumes, 
                   session=session)
   
-  shinyFileSave(input, 'downloadData', roots=volumes,
-                session=session)
+  
+#   shinyFileSave(input, 'downloadData', roots=volumes,
+#                 session=session)
+#   
+#   DumpData <- reactive({
+#     reactiveValuesToList(input)
+#   })
   
   ####this will save a model image in the designated server folder
-  observe({
-    if (is.null(input$downloadData)) return()
-    saveFile <- parseSavePath(volumes, input$downloadData)
-    saved_settings = reactiveValuesToList(input)
-    save(saved_settings, file = as.character(saveFile$datapath))
-  })
+#   observe({
+#     if (is.null(input$downloadData)) return()
+#     saveFile <- parseSavePath(volumes, input$downloadData)
+#     isolate(saved_settings <-  DumpData())
+#     save(saved_settings, file = as.character(saveFile$datapath))
+#   })
   
 
   ####this will load a model image and set the values of the different selectors
@@ -60,16 +78,16 @@ shinyServer(function(input, output, session) {
         isolate(update_loop[["dest"]] <- 1)
         isolate(update_loop[["origcircle"]] <- 1)
         isolate(update_loop[["destcircle"]] <- 1)
-    
-    updateSliderInput(session,"lowerTau",value=Read_Settings()[["lowerTau"]])
-    updateSliderInput(session,"centralTau",value=Read_Settings()[["centralTau"]])
-    updateSliderInput(session,"upperTau",value=Read_Settings()[["upperTau"]])
-    updateCheckboxInput(session,"doEstimation",value=Read_Settings()[["doEstimation"]])
-    updateSliderInput(session,"dfspline",value=c(Read_Settings()[["dfspline"]][1],Read_Settings()[["dfspline"]][2]))
-    updateSliderInput(session,"LambdaFixed",value=Read_Settings()[["LambdaFixed"]])
-    updateCheckboxGroupInput(session,"QuantileFilter",selected=Read_Settings()[["QuantileFilter"]])
-    updateCheckboxInput(session,"FilterDate",value=Read_Settings()[["FilterDate"]])
-    
+    #updateSliderInput(session,"lowerTau",value=Read_Settings()[["lowerTau"]])
+    #updateSliderInput(session,"centralTau",value=Read_Settings()[["centralTau"]])
+    #updateSliderInput(session,"upperTau",value=Read_Settings()[["upperTau"]])
+    #updateCheckboxInput(session,"doEstimation",value=Read_Settings()[["doEstimation"]])
+    #updateSliderInput(session,"dfspline",value=c(Read_Settings()[["dfspline"]][1],Read_Settings()[["dfspline"]][2]))
+    #updateSliderInput(session,"LambdaFixed",value=Read_Settings()[["LambdaFixed"]])
+    #updateCheckboxGroupInput(session,"QuantileFilter",selected=Read_Settings()[["QuantileFilter"]])
+    #updateCheckboxInput(session,"FilterDate",value=Read_Settings()[["FilterDate"]])
+    #updateSelectizeInput(session,"SelectOrigStates",selected =Read_Settings()[["SelectOrigStates"]])
+    #updateSelectizeInput(session,"SelectDestStates",selected =Read_Settings()[["SelectDestStates"]])
     
     })
     
@@ -96,8 +114,9 @@ shinyServer(function(input, output, session) {
     selectInput("response","Response",choices=idx,selected=selected)
   })
   
-  idx1 <- unique(RAW$Orig3DigZip)
+
   output$OrigZip3<- renderUI({
+    idx1 <- unique(RAW$Orig3DigZip)
     selected=NULL
     #isolate({
     if(!is.null(Read_Settings()[["OrigZip3"]])){
@@ -107,8 +126,9 @@ shinyServer(function(input, output, session) {
     selectizeInput("OrigZip3","3-Digit Origin Zip",choices=idx1,selected=selected,multiple=TRUE)
   })
   
-  idx2 <- unique(RAW$Dest3DigZip)
+
   output$DestZip3<- renderUI({
+    idx2 <- unique(RAW$Dest3DigZip)
     selected=NULL
     #isolate({
     if(!is.null(Read_Settings()[["DestZip3"]])){
@@ -118,8 +138,9 @@ shinyServer(function(input, output, session) {
     selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx2,selected=selected,multiple = TRUE)
   })
   
-  idx3 <- unique(RAW$OrigCity)
+
   output$OrigCity<- renderUI({
+    idx3 <- unique(RAW$OrigCity)
     selected=NULL
     #isolate({
     if(!is.null(Read_Settings()[["OrigCity"]])){
@@ -130,8 +151,9 @@ shinyServer(function(input, output, session) {
   })
   
   
-  idx4 <- unique(RAW$DestCity)
+
   output$DestCity<- renderUI({
+    idx4 <- unique(RAW$DestCity)
     selected=NULL
     #isolate({
     if(!is.null(Read_Settings()[["DestCity"]])){
@@ -262,11 +284,6 @@ shinyServer(function(input, output, session) {
       
       output$SelectOrigStates <- renderUI({
         isolate(selected <- input$SelectOrigStates)
-        #isolate({
-        if(!is.null(Read_Settings()[["SelectOrigStates"]])){
-          selected <- Read_Settings()[["SelectOrigStates"]]
-        }
-        #})
         selected <- c(selected,ClickStateAddOrig())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
@@ -351,11 +368,6 @@ shinyServer(function(input, output, session) {
       
       output$SelectDestStates <- renderUI({
         isolate(selected <- input$SelectDestStates)
-        #isolate({
-          if(!is.null(Read_Settings()[["SelectDestStates"]])){
-            selected <- Read_Settings()[["SelectDestStates"]]
-          }
-        #})
         selected <- c(selected,ClickStateAddDest())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
@@ -406,6 +418,7 @@ shinyServer(function(input, output, session) {
       ###########################################################
       CountiesOrigin <- reactive({
         pick <- input$SelectOrigStates
+        
         if(!is.null(pick)){pick <- unlist(lapply(pick,function(x){strsplit(x,":")[[1]][1]}))}
         
         if(!is.null(input$OrigCity) | !is.null(pick)){
@@ -486,6 +499,8 @@ shinyServer(function(input, output, session) {
 
 
       output$SelectOrigCircles<- renderUI({
+        City=input$OrigCity
+        radius=input$OrigRadius
         counties <- CountiesOrigin()
         pts <- OrigCircles()
         isolate(pick <- input$SelectOrigCircles)
@@ -495,12 +510,30 @@ shinyServer(function(input, output, session) {
             pick <-Read_Settings()[["SelectOrigCircles"]]
           }
         })
+        
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
         pick <- pick[!is.na(pick)]
         selected <- pick
         selected <- unique(selected)
         selected <- selected[!is.na(selected)]
         selectizeInput("SelectOrigCircles","Selected Circle Coordinates",choices=pick,selected=selected,multiple=T)
+      })
+      
+      OrigCityCircles <- reactive({
+        City=input$OrigCity
+        radius=input$OrigRadius
+        pickadd <- NULL
+        if(!is.null(City)){
+          pickadd <- data.frame()
+          for(i in 1:length(City)){
+            temp <- city_lookup[city_lookup$city %in% City[i],,drop=F]
+            temp <- temp[1,,drop=F]
+            pickadd <- rbind(pickadd,temp)
+          }
+          pickadd <- paste(pickadd$x,pickadd$y,radius,sep=":")
+        }
+        
+        return(pickadd)
       })
       
       
@@ -521,11 +554,10 @@ shinyServer(function(input, output, session) {
                      detail = 'Hold Tight...')
         on.exit(progress$close())
         
+        citycircles <- OrigCityCircles()
         counties=CountiesOrigin()
         reduced=RAWPLOT()[["reduced_orig"]]
         selectCounties=input$SelectOrigCounties
-        City=input$OrigCity
-        radius=input$OrigRadius
         Circles=input$SelectOrigCircles
         layers=input$maplayersOrigCounties
         color="blue"
@@ -537,19 +569,9 @@ shinyServer(function(input, output, session) {
         map(counties)
         if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
         
-        if(!is.null(City)){
-          pickadd <- city_lookup[city_lookup$city %in% City,,drop=F]
-          pickadd <- pickadd[1,,drop=F]
-          if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,radius,sep=":")}else{pickadd <- NULL}
-          lapply(pickadd,function(b){
-            b <- strsplit(b,":")
-            b <- unlist(b)
-            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
-          })
-        }
-        
-        if(!is.null(Circles)){
-          tmp <- Circles
+        if(!is.null(Circles) | !is.null(citycircles)){
+          tmp <- c(Circles,citycircles)
+          tmp <- tmp[!is.null(tmp)]
           lapply(tmp,function(b){
             b <- strsplit(b,":")
             b <- unlist(b)
@@ -655,12 +677,31 @@ shinyServer(function(input, output, session) {
             pick <-Read_Settings()[["SelectDestCircles"]]
           }
         })
+
+        
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
         pick <- pick[!is.na(pick)]
         selected <- pick
         selected <- unique(selected)
         selected <- selected[!is.na(selected)]
         selectizeInput("SelectDestCircles","Selected Circle Coordinates",choices=pick,selected=selected,multiple=T)
+      })
+      
+      DestCityCircles <- reactive({
+        City=input$DestCity
+        radius=input$DestRadius
+        pickadd <- NULL
+        if(!is.null(City)){
+          pickadd <- data.frame()
+          for(i in 1:length(City)){
+            temp <- city_lookup[city_lookup$city %in% City[i],,drop=F]
+            temp <- temp[1,,drop=F]
+            pickadd <- rbind(pickadd,temp)
+          }
+          pickadd <- paste(pickadd$x,pickadd$y,radius,sep=":")
+        }
+        
+        return(pickadd)
       })
       
       output$AddCountiesHoverSelectedDestination <- renderText({
@@ -680,11 +721,10 @@ shinyServer(function(input, output, session) {
                      detail = 'Hold Tight...')
         on.exit(progress$close())
         
+        citycircles <- DestCityCircles()
         counties=CountiesDestination()
         reduced=RAWPLOT()[["reduced_dest"]]
         selectCounties=input$SelectDestCounties
-        City=input$DestCity
-        radius=input$DestRadius
         Circles=input$SelectDestCircles
         layers=input$maplayersDestCounties
         color="red"
@@ -695,19 +735,9 @@ shinyServer(function(input, output, session) {
         map(counties)
         if(!is.null(mapOrig)){map(mapOrig,fill=T,add=T,col="yellow")}
         
-        if(!is.null(City)){
-          pickadd <- city_lookup[city_lookup$city %in% City,,drop=F]
-          pickadd <- pickadd[1,,drop=F]
-          if(!is.null(pickadd) & !is.na(pickadd)){pickadd <- paste(pickadd$x,pickadd$y,radius,sep=":")}else{pickadd <- NULL}
-          lapply(pickadd,function(b){
-            b <- strsplit(b,":")
-            b <- unlist(b)
-            plotcircle(r=radius_xyunits(miles=as.numeric(b[3])),mid=c(as.numeric(b[1]),as.numeric(b[2])),col="yellow",type="n")
-          })
-        }
-        
-        if(!is.null(Circles)){
-          tmp <- Circles
+        if(!is.null(Circles) | !is.null(citycircles)){
+          tmp <- c(Circles,citycircles)
+          tmp <- tmp[!is.null(tmp)]
           lapply(tmp,function(b){
             b <- strsplit(b,":")
             b <- unlist(b)
@@ -777,7 +807,8 @@ shinyServer(function(input, output, session) {
         factors <- input$FactorTerms
         additional <- c("CustomerCarrier","EntryDate","CustomerCCode",
                         "CarrierTCode","OrigLongitude","OrigLatitude","LoadMiles",
-                        "DestLongitude","DestLatitude","loadnum","NumericDate","Day365")
+                        "DestLongitude","DestLatitude","loadnum","NumericDate","Day365",
+                        "OrigCity","DestCity","Dest3DigZip","Orig3DigZip")
         kept <- as.character(unique(c(r,linear,spline,splineCC,factors,additional)))
         data <- RAW[,kept]
         return(data)
@@ -805,8 +836,10 @@ shinyServer(function(input, output, session) {
           indexOrigCounty <- map.where(selectOrigin,x=RAW$OrigLongitude,y=RAW$OrigLatitude)
         }else{indexOrigCounty <- rep(NA,nrow(RAW))}
         
-        if(!is.null(input$SelectDestCircles)){
+        if(!is.null(input$SelectDestCircles) | !is.null(DestCityCircles())){
           circles <- input$SelectDestCircles
+          circles <- c(circles,DestCityCircles())
+          circles <- circles[!is.null(circles)]
           circles <- lapply(circles,function(b){
             b <- strsplit(b,":")
             b <- unlist(b)
@@ -829,8 +862,10 @@ shinyServer(function(input, output, session) {
          indexDestCircle[is.na(indexDestCircle)] <- FALSE
         }else{indexDestCircle <- rep(FALSE,nrow(RAW))}
         
-        if(!is.null(input$SelectOrigCircles)){
+        if(!is.null(input$SelectOrigCircles) | !is.null(OrigCityCircles())){
           circles <- input$SelectOrigCircles
+          circles <- c(circles,OrigCityCircles())
+          circles <- circles[!is.null(circles)]
           circles <- lapply(circles,function(b){
             b <- strsplit(b,":")
             b <- unlist(b)
@@ -869,7 +904,6 @@ shinyServer(function(input, output, session) {
         ####dplyr version consider for speed
         SELECTED <- data %>% filter(idxx)
         SELECTED <- as.data.frame(SELECTED)
-        
         NOTSELECTED_IDX <- !idxx
         return(list(SELECTED=SELECTED,NOTSELECTED_IDX=NOTSELECTED_IDX))
       })
@@ -976,7 +1010,7 @@ shinyServer(function(input, output, session) {
         isolate(max_dte <- input$dygraph_cut_date_window[2])
         low <-input$UpperLower[1]
         high <-input$UpperLower[2]
-        SELECTED <- SELECTED[(EntryDate>=min_dte & EntryDate<=max_dte),]
+        SELECTED <- SELECTED[(SELECTED$EntryDate>=min_dte & SELECTED$EntryDate<=max_dte),]
         idx <- (SELECTED[,r] >= low) & (SELECTED[,r] <= high)
         SELECTED <- SELECTED[idx,]
         return(list(SELECTED=SELECTED))
@@ -3009,6 +3043,10 @@ shinyServer(function(input, output, session) {
       
       output$session2 <- renderPrint({
         sessionInfo()
+      })
+      
+      output$modelInput <- renderPrint({
+        reactiveValuesToList(input)
       })
       
 
