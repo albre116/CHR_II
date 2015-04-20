@@ -5,5 +5,5 @@ Version: 1.0
 Date: 6/16/2014
 Author: Mark Albrecht
 Maintainer: Mark Albrecht <albre116@gmail.com>
-  Description: Run file for a branch of CHR code
+Description: This is the source code for the Beta Release of the CHR Generalized Additive Modeling Tool, now modified to have daily predictions
 License: None
