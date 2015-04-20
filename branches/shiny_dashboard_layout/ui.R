@@ -5,7 +5,7 @@ header <- dashboardHeader(
 
 sidebar <- dashboardSidebar(
   sidebarMenu(
-    menuItem("Load Model Image?",tabName = "image",icon = icon("fa fa-file")),
+    menuItem("Load Model and Data?",tabName = "image",icon = icon("fa fa-file")),
     menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe"),
              badgeLabel = "Start Here",badgeColor = "red"),
     menuItem("Basic Quote", tabName = "basicquote", icon = icon("fa fa-camera"),
@@ -64,10 +64,9 @@ body <- dashboardBody(
                          )
                          ),###end column
                   column(width=3,
-                         box(title="Upload Model Image if Desired",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
-                             #uiOutput("settings_file")
-                             #shinyFilesButton('settings_file', 'File select', 'Please select a file', FALSE)
-                             h2("Model upload is disabled for stability at this time")
+                         box(title="Upload Data File",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                             fileInput('rawdata', 'Choose CSV File',
+                                       accept=c('.RData'))
                          )##end box
                   )###end column
             )###end row

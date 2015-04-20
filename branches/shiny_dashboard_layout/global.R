@@ -95,7 +95,7 @@ if(!require('dyPencilgraphs')) {
 
 
 ####Load Data File
-load("RAW_100_Min.RData")
+#load("RAW_100_Min.RData")
 
 
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota",
@@ -118,9 +118,7 @@ state_labs <- states
 state_labs$names <- as.character(states_labels$abb)
 
 
-city_lookup <- data.frame(city=RAW$OrigCity,x=RAW$OrigLongitude,y=RAW$OrigLatitude)
-city_lookup <- rbind(city_lookup,data.frame(city=RAW$DestCity,x=RAW$DestLongitude,y=RAW$DestLatitude))
-city_lookup <- unique(city_lookup)
+
 
 
 

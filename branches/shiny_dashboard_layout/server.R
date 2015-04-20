@@ -1,11 +1,28 @@
-options(shiny.maxRequestSize=50*1024^2)###50 megabyte file upload limit set
-
+options(shiny.maxRequestSize=500*1024^2)###500 megabyte file upload limit set
 
 shinyServer(function(input, output, session) {
   
   ####this closes all of the collapasable boxes that pop up
   session$sendCustomMessage(type = 'testmessage',
                             message = list())
+  
+  
+  ####use this to load all of the data
+  RAW<-reactive({
+    inFile <- input$rawdata
+    if (is.null(inFile))
+      return(NULL)
+    dat<-load(inFile$datapath)
+    return(RAW)
+  })
+  
+  city_lookup <- reactive({
+    city_lookup <- data.frame(city=RAW()$OrigCity,x=RAW()$OrigLongitude,y=RAW()$OrigLatitude)
+    city_lookup <- rbind(city_lookup,data.frame(city=RAW()$DestCity,x=RAW()$DestLongitude,y=RAW()$DestLatitude))
+    city_lookup <- unique(city_lookup)
+    return(city_lookup)
+  })
+
   
   ###########################################################
   #######Model Saving/Loading Features
@@ -107,7 +124,7 @@ shinyServer(function(input, output, session) {
   #######Tab Panel 1:  Geography
   ###########################################################
   output$response<- renderUI({
-    idx <- colnames(RAW)
+    idx <- colnames(RAW())
     selected=c("CPM_AllInCarrier")
 #     if(!is.null(Read_Settings()[["response"]])){
 #      selected <- Read_Settings()[["response"]]
@@ -117,7 +134,7 @@ shinyServer(function(input, output, session) {
   
 
   output$OrigZip3<- renderUI({
-    idx1 <- unique(RAW$Orig3DigZip)
+    idx1 <- unique(RAW()$Orig3DigZip)
     selected=NULL
 #     #isolate({
 #     if(!is.null(Read_Settings()[["OrigZip3"]])){
@@ -129,7 +146,7 @@ shinyServer(function(input, output, session) {
   
 
   output$DestZip3<- renderUI({
-    idx2 <- unique(RAW$Dest3DigZip)
+    idx2 <- unique(RAW()$Dest3DigZip)
     selected=NULL
 #     #isolate({
 #     if(!is.null(Read_Settings()[["DestZip3"]])){
@@ -141,7 +158,7 @@ shinyServer(function(input, output, session) {
   
 
   output$OrigCity<- renderUI({
-    idx3 <- unique(RAW$OrigCity)
+    idx3 <- unique(RAW()$OrigCity)
     selected=NULL
 #     #isolate({
 #     if(!is.null(Read_Settings()[["OrigCity"]])){
@@ -154,7 +171,7 @@ shinyServer(function(input, output, session) {
   
 
   output$DestCity<- renderUI({
-    idx4 <- unique(RAW$DestCity)
+    idx4 <- unique(RAW()$DestCity)
     selected=NULL
 #     #isolate({
 #     if(!is.null(Read_Settings()[["DestCity"]])){
@@ -213,7 +230,7 @@ shinyServer(function(input, output, session) {
   
   
   output$DateRange <- renderUI({
-    data <- RAW
+    data <- RAW()
     start_date <-max(data$EntryDate)
     yr <- format(start_date,format="%Y")
     mo <- format(start_date,format="%m")
@@ -239,9 +256,9 @@ shinyServer(function(input, output, session) {
   
   
   RAWPLOT <- reactive({
-    reduced_orig <- data.frame(x=RAW$OrigLongitude,y=RAW$OrigLatitude)
+    reduced_orig <- data.frame(x=RAW()$OrigLongitude,y=RAW()$OrigLatitude)
     reduced_orig <- unique(reduced_orig)
-    reduced_dest <- data.frame(x=RAW$DestLongitude,y=RAW$DestLatitude)
+    reduced_dest <- data.frame(x=RAW()$DestLongitude,y=RAW()$DestLatitude)
     reduced_dest <- unique(reduced_dest)
     return(list(reduced_orig=reduced_orig,reduced_dest=reduced_dest))
   })
@@ -531,7 +548,7 @@ shinyServer(function(input, output, session) {
         if(!is.null(City)){
           pickadd <- data.frame()
           for(i in 1:length(City)){
-            temp <- city_lookup[city_lookup$city %in% City[i],,drop=F]
+            temp <- city_lookup()[city_lookup()$city %in% City[i],,drop=F]
             temp <- temp[1,,drop=F]
             pickadd <- rbind(pickadd,temp)
           }
@@ -703,7 +720,7 @@ shinyServer(function(input, output, session) {
         if(!is.null(City)){
           pickadd <- data.frame()
           for(i in 1:length(City)){
-            temp <- city_lookup[city_lookup$city %in% City[i],,drop=F]
+            temp <- city_lookup()[city_lookup()$city %in% City[i],,drop=F]
             temp <- temp[1,,drop=F]
             pickadd <- rbind(pickadd,temp)
           }
@@ -765,7 +782,7 @@ shinyServer(function(input, output, session) {
       ###########################################################
       
       output$LinearTerms <- renderUI({
-        terms <- colnames(RAW)
+        terms <- colnames(RAW())
         selected <- c("NumericDate")
 #         isolate({
 #         if(!is.null(Read_Settings()[["LinearTerms"]])){
@@ -777,7 +794,7 @@ shinyServer(function(input, output, session) {
       })
       
       output$FactorTerms <- renderUI({
-        terms <- colnames(RAW)
+        terms <- colnames(RAW())
         selected <- c("SumOfStops")
 #         isolate({
 #         if(!is.null(Read_Settings()[["FactorTerms"]])){
@@ -789,7 +806,7 @@ shinyServer(function(input, output, session) {
       })
       
       output$SplineTerms <- renderUI({
-        terms <- colnames(RAW)
+        terms <- colnames(RAW())
         selected <- NULL
 #         isolate({
 #         if(!is.null(Read_Settings()[["SplineTerms"]])){
@@ -801,7 +818,7 @@ shinyServer(function(input, output, session) {
       })
       
       output$SplineTermsCyclic <- renderUI({
-        terms <- colnames(RAW)
+        terms <- colnames(RAW())
         selected <- c("Day365")
 #         isolate({
 #         if(!is.null(Read_Settings()[["SplineTermsCyclic"]])){
@@ -823,7 +840,7 @@ shinyServer(function(input, output, session) {
                         "DestLongitude","DestLatitude","loadnum","NumericDate","Day365",
                         "OrigCity","DestCity","Dest3DigZip","Orig3DigZip")
         kept <- as.character(unique(c(r,linear,spline,splineCC,factors,additional)))
-        data <- RAW[,kept]
+        data <- RAW()[,kept]
         return(data)
       })
       
@@ -840,14 +857,14 @@ shinyServer(function(input, output, session) {
         if(!is.null(input$SelectDestCounties)){
           countiesDestination <- input$SelectDestCounties
           selectDestination <- map("county",regions = countiesDestination,fill=T,plot=F)
-          indexDestCounty <- map.where(selectDestination,x=RAW$DestLongitude,y=RAW$DestLatitude)
-        }else{indexDestCounty <- rep(NA,nrow(RAW))}
+          indexDestCounty <- map.where(selectDestination,x=RAW()$DestLongitude,y=RAW()$DestLatitude)
+        }else{indexDestCounty <- rep(NA,nrow(RAW()))}
           
         if(!is.null(input$SelectOrigCounties)){
           countiesOrigin <- input$SelectOrigCounties
           selectOrigin <- map("county",regions = countiesOrigin,fill=T,plot=F)
-          indexOrigCounty <- map.where(selectOrigin,x=RAW$OrigLongitude,y=RAW$OrigLatitude)
-        }else{indexOrigCounty <- rep(NA,nrow(RAW))}
+          indexOrigCounty <- map.where(selectOrigin,x=RAW()$OrigLongitude,y=RAW()$OrigLatitude)
+        }else{indexOrigCounty <- rep(NA,nrow(RAW()))}
         
         if(!is.null(input$SelectDestCircles) | !is.null(DestCityCircles())){
           circles <- input$SelectDestCircles
@@ -863,8 +880,8 @@ shinyServer(function(input, output, session) {
           })
           
          idx <- lapply(circles,function(b){
-           x=RAW$DestLongitude-b$x_center
-           y=RAW$DestLatitude-b$y_center
+           x=RAW()$DestLongitude-b$x_center
+           y=RAW()$DestLatitude-b$y_center
            dist <- sqrt(x^2+y^2)
            idx <- dist<=b$r
            return(idx)
@@ -873,7 +890,7 @@ shinyServer(function(input, output, session) {
          idx <- matrix(unlist(idx),ncol=length(idx),byrow=F)
          indexDestCircle <- apply(idx,1,any)
          indexDestCircle[is.na(indexDestCircle)] <- FALSE
-        }else{indexDestCircle <- rep(FALSE,nrow(RAW))}
+        }else{indexDestCircle <- rep(FALSE,nrow(RAW()))}
         
         if(!is.null(input$SelectOrigCircles) | !is.null(OrigCityCircles())){
           circles <- input$SelectOrigCircles
@@ -889,8 +906,8 @@ shinyServer(function(input, output, session) {
           })
           
           idx <- lapply(circles,function(b){
-            x=RAW$OrigLongitude-b$x_center
-            y=RAW$OrigLatitude-b$y_center
+            x=RAW()$OrigLongitude-b$x_center
+            y=RAW()$OrigLatitude-b$y_center
             dist <- sqrt(x^2+y^2)
             idx <- dist<=b$r
             return(idx)
@@ -899,20 +916,20 @@ shinyServer(function(input, output, session) {
           idx <- matrix(unlist(idx),ncol=length(idx),byrow=F)
           indexOrigCircle <- apply(idx,1,any)
           indexOrigCircle[is.na(indexOrigCircle)] <- FALSE
-        }else{indexOrigCircle <- rep(FALSE,nrow(RAW))}
+        }else{indexOrigCircle <- rep(FALSE,nrow(RAW()))}
         
         
-        a <- RAW$Orig3DigZip %in% input$OrigZip3
-        b <- RAW$Dest3DigZip %in% input$DestZip3
-        e <- RAW$OrigCity %in% input$OrigCity
-        f <- RAW$DestCity %in% input$DestCity
+        a <- RAW()$Orig3DigZip %in% input$OrigZip3
+        b <- RAW()$Dest3DigZip %in% input$DestZip3
+        e <- RAW()$OrigCity %in% input$OrigCity
+        f <- RAW()$DestCity %in% input$DestCity
         orig <- ((a |  e) | indexOrigCircle)
         dest <- ((b |  f) | indexDestCircle)
         r <- input$response
-        idxx <- (!is.na(indexOrigCounty) | orig) & (!is.na(indexDestCounty) | dest) & (!is.infinite(RAW[,r]) & !is.na(RAW[,r]))
+        idxx <- (!is.na(indexOrigCounty) | orig) & (!is.na(indexDestCounty) | dest) & (!is.infinite(RAW()[,r]) & !is.na(RAW()[,r]))
         
         ####non dplyr version (consider for stability)
-        #SELECTED <- RAW[idxx,]
+        #SELECTED <- RAW()[idxx,]
 
         ####dplyr version consider for speed
         SELECTED <- data %>% filter(idxx)
