@@ -44,6 +44,7 @@ body <- dashboardBody(
                              withTags({
                                div(class="header", checked=NA,
                                    h2("Welcome to CPDS Time Series Modeling Applicaiton"),
+                                   h2("First upload your data with the data upload botton on the Right"),
                                    h3("To use the tool you can take 1 of 2 paths:"),
                                    ul(ol(
                                      h3(li("You Can Generate a New Quote by Clicking on the \"Select Geography\" Tab")),
@@ -65,7 +66,11 @@ body <- dashboardBody(
                          ),###end column
                   column(width=3,
                          box(title="Upload Data File",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
-                             fileInput('rawdata', 'Choose CSV File',
+                             fileInput('rawdata', 'Choose RData File',
+                                       accept=c('.RData'))
+                         ),##end box
+                         box(title="Upload Model Image",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                             fileInput('modelimage', 'Choose RData File',
                                        accept=c('.RData'))
                          )##end box
                   )###end column
@@ -79,7 +84,7 @@ body <- dashboardBody(
                        solidHeader = TRUE,collapsible = F,
                        uiOutput("OrigZip3"),
                        uiOutput("OrigCity"),
-                       uiOutput("OrigRadius")
+                       numericInput("OrigRadius","Miles Around Origin City to Include",value=50,min=0,step=1)
                      )#end box
               ),#end column
               column(width=6,
@@ -88,7 +93,7 @@ body <- dashboardBody(
                        solidHeader = TRUE,collapsible = F,
                        uiOutput("DestZip3"),
                        uiOutput("DestCity"),
-                       uiOutput("DestRadius")
+                       numericInput("DestRadius","Miles Around Destination City to Include",value=50,min=0,step=1)
                      )#end box
               )#end column
             ),#end fluid row
@@ -100,7 +105,9 @@ body <- dashboardBody(
                        h3(textOutput("AddStatesHoverSelectedOrigin")),
                        plotOutput(outputId = "OrigPlotState",clickId = "OriginStates",hoverId="OriginStatesHover",hoverDelay=300),
                        uiOutput("SelectOrigStates"),
-                       uiOutput("maplayersOrigStates")
+                       checkboxGroupInput("maplayersOrigStates","Map Layers to Display",
+                                          c("State Names","Data"),
+                                          selected=c("State Names","Data"),inline=TRUE)
                      ),
                      box(
                        title="Origin Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
@@ -109,7 +116,8 @@ body <- dashboardBody(
                        plotOutput(outputId = "OrigPlotCounties",clickId = "OriginCounties",hoverId="OriginCountiesHover",hoverDelay=300),
                        uiOutput("SelectOrigCounties"),
                        uiOutput("SelectOrigCircles"),
-                       fluidRow(column(width=6,uiOutput("maplayersOrigCounties")
+                       fluidRow(column(width=6,checkboxGroupInput("maplayersOrigCounties","Map Layers to Display",
+                                                                      c("Data"),selected=c("Data"),inline=T)
                                        ),
                                 column(width=6,
                                        selectInput("OrigCircle","Select Method:",
@@ -126,7 +134,9 @@ body <- dashboardBody(
                        h3(textOutput("AddStatesHoverSelectedDestination")),
                        plotOutput(outputId = "DestPlotState",clickId = "DestinationStates",hoverId="DestinationStatesHover",hoverDelay=300),
                        uiOutput("SelectDestStates"),
-                       uiOutput("maplayersDestStates")
+                       checkboxGroupInput("maplayersDestStates","Map Layers to Display",
+                                          c("State Names","Data"),
+                                          selected=c("State Names","Data"),inline=TRUE)
                      ),
                      box(
                        title="Destination Counties: Click To Select or Enter/Delete In List",width=NULL,status="primary",
@@ -135,7 +145,8 @@ body <- dashboardBody(
                        plotOutput(outputId = "DestPlotCounties",clickId = "DestinationCounties",hoverId="DestinationCountiesHover",hoverDelay=300),
                        uiOutput("SelectDestCounties"),
                        uiOutput("SelectDestCircles"),
-                       fluidRow(column(width=6,uiOutput("maplayersDestCounties")
+                       fluidRow(column(width=6,checkboxGroupInput("maplayersDestCounties","Map Layers to Display",
+                                                                      c("Data"),selected=c("Data"),inline=T)
                        ),
                        column(width=6,
                               selectInput("DestCircle","Select Method:",
@@ -284,16 +295,12 @@ body <- dashboardBody(
     
     tabItem(tabName = "saveimage",
             box(title="Save model image?",width=NULL,status = "warning",solidHeader = TRUE,
-                h2("To save a model click the capture model button 
-                   and then if you like the values stored below click save model image to store (You must first capture)"),
-                h2("This feature is disabled for stability"),
-                actionButton("captureModelImage","Capture Model Image"),
                 #shinySaveButton('downloadData', 'Save Model Image', 'Save file as...', filetype=list(imgage='RData')),
-                #downloadButton('downloadData','Save Model Settings?'),
-                box(title="Model Image Values at Current",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                downloadButton('downloadData','Save Model Settings?')),
+            
+            box(title="Model Image Values at Current",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                     div(class="span7", verbatimTextOutput("modelInput"))
                 )###end box
-            )
     ),###end current tab
     
     tabItem(tabName = "MapSelected",

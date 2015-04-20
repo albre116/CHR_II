@@ -12,7 +12,7 @@ shinyServer(function(input, output, session) {
     inFile <- input$rawdata
     if (is.null(inFile))
       return(NULL)
-    dat<-load(inFile$datapath)
+    load(inFile$datapath)
     return(RAW)
   })
   
@@ -28,18 +28,22 @@ shinyServer(function(input, output, session) {
   #######Model Saving/Loading Features
   ###########################################################
   #####This saves a model image of all of the chosen settings
-#   output$downloadData<-downloadHandler(
-#     filename = function(){paste(input$settings_name,".RData",sep = "")},
-#     content = function(file){
-#       saved_settings = reactiveValuesToList(input)
-#       save(saved_settings, file = file)
-#     })
+  output$downloadData<-downloadHandler(
+    filename = function(){paste("Model_Image",".RData",sep = "")},
+    content = function(file){
+      saved_settings = reactiveValuesToList(input)
+      save(saved_settings, file = file)
+    })
   
-#   output$settings_file <- renderUI({
-#     fileInput('settings_file', 'Load Model Image?',
-#               accept=c('RData'))
-#   })
   
+  ####this will load a model image and set the values of the different selectors
+  Read_Settings <- reactive({
+    inFile <- input$modelimage
+    if (is.null(inFile))
+      return(NULL)
+    load(inFile$datapath)
+    return(saved_settings)
+  })
   
   
   ####this is a stable server side file uploader
@@ -63,10 +67,10 @@ shinyServer(function(input, output, session) {
 #   shinyFileSave(input, 'downloadData', roots=volumes,
 #                  session=session)
 #    
-   DumpData <- reactive({
-     input$captureModelImage
-     isolate(reactiveValuesToList(input))
-   })
+#    DumpData <- reactive({
+#      input$captureModelImage
+#      isolate(reactiveValuesToList(input))
+#    })
 #   
 #   ####this will save a model image in the designated server folder
 #   observe({
@@ -77,46 +81,37 @@ shinyServer(function(input, output, session) {
 #   })
 #   
 # 
-#   ####this will load a model image and set the values of the different selectors
-#   Read_Settings <- reactive({
-#     if (is.null(input$settings_file)) return(NULL)
-#     inFile <- parseFilePaths(volumes,input$settings_file)
-#     load(as.character(inFile$datapath))
-#     return(saved_settings)
-#   })
+
   
 
-  # update_loop <- reactiveValues(orig=1,dest=1,origcircle=1,destcircle=1)
+  update_loop <- reactiveValues(orig=1,dest=1,origcircle=1,destcircle=1)
 
   
   ####scan across inputs and set values for static inputs
-#   observe({
-#     if (is.null(Read_Settings())){return()}
-#         isolate(update_loop[["orig"]] <- 1)
-#         isolate(update_loop[["dest"]] <- 1)
-#         isolate(update_loop[["origcircle"]] <- 1)
-#         isolate(update_loop[["destcircle"]] <- 1)
-#     #updateSliderInput(session,"lowerTau",value=Read_Settings()[["lowerTau"]])
-#     #updateSliderInput(session,"centralTau",value=Read_Settings()[["centralTau"]])
-#     #updateSliderInput(session,"upperTau",value=Read_Settings()[["upperTau"]])
-#     #updateCheckboxInput(session,"doEstimation",value=Read_Settings()[["doEstimation"]])
-#     #updateSliderInput(session,"dfspline",value=c(Read_Settings()[["dfspline"]][1],Read_Settings()[["dfspline"]][2]))
-#     #updateSliderInput(session,"LambdaFixed",value=Read_Settings()[["LambdaFixed"]])
-#     #updateCheckboxGroupInput(session,"QuantileFilter",selected=Read_Settings()[["QuantileFilter"]])
-#     #updateCheckboxInput(session,"FilterDate",value=Read_Settings()[["FilterDate"]])
-#     #updateSelectizeInput(session,"SelectOrigStates",selected =Read_Settings()[["SelectOrigStates"]])
-#     #updateSelectizeInput(session,"SelectDestStates",selected =Read_Settings()[["SelectDestStates"]])
-#     
-#     })
+  observe({
+    if (is.null(Read_Settings())){return()}
+        isolate(update_loop[["orig"]] <- 1)
+        isolate(update_loop[["dest"]] <- 1)
+        isolate(update_loop[["origcircle"]] <- 1)
+        isolate(update_loop[["destcircle"]] <- 1)
+    
+    ###data filtering options
+    updateSliderInput(session,"lowerTau",value=Read_Settings()[["lowerTau"]])
+    updateSliderInput(session,"centralTau",value=Read_Settings()[["centralTau"]])
+    updateSliderInput(session,"upperTau",value=Read_Settings()[["upperTau"]])
+    updateCheckboxInput(session,"doEstimation",value=Read_Settings()[["doEstimation"]])
+    updateSliderInput(session,"dfspline",value=c(Read_Settings()[["dfspline"]][1],Read_Settings()[["dfspline"]][2]))
+    updateSliderInput(session,"LambdaFixed",value=Read_Settings()[["LambdaFixed"]])
+    updateCheckboxGroupInput(session,"QuantileFilter",selected=Read_Settings()[["QuantileFilter"]])
+    
+    ####static geography
+    updateNumericInput(session,"OrigRadius",value=Read_Settings()[["OrigRadius"]])
+    updateNumericInput(session,"DestRadius",value=Read_Settings()[["DestRadius"]])
+  
+    
+    })
     
 
-#   output$FilterDate <- renderUI({
-#     value=TRUE
-#      if(!is.null(Read_Settings()[["FilterDate"]])){
-#        value <- Read_Settings()[["FilterDate"]]
-#      }
-#     checkboxInput("FilterDate","Perform Date and Observation Filtering?",value=value)
-#   })
   
 
 
@@ -126,9 +121,9 @@ shinyServer(function(input, output, session) {
   output$response<- renderUI({
     idx <- colnames(RAW())
     selected=c("CPM_AllInCarrier")
-#     if(!is.null(Read_Settings()[["response"]])){
-#      selected <- Read_Settings()[["response"]]
-#     }
+    if(!is.null(Read_Settings()[["response"]])){
+     selected <- Read_Settings()[["response"]]
+    }
     selectInput("response","Response",choices=idx,selected=selected)
   })
   
@@ -136,11 +131,9 @@ shinyServer(function(input, output, session) {
   output$OrigZip3<- renderUI({
     idx1 <- unique(RAW()$Orig3DigZip)
     selected=NULL
-#     #isolate({
-#     if(!is.null(Read_Settings()[["OrigZip3"]])){
-#       selected <- Read_Settings()[["OrigZip3"]]
-#     }
-#     #})
+    if(!is.null(Read_Settings()[["OrigZip3"]])){
+      selected <- Read_Settings()[["OrigZip3"]]
+    }
     selectizeInput("OrigZip3","3-Digit Origin Zip",choices=idx1,selected=selected,multiple=TRUE)
   })
   
@@ -148,11 +141,9 @@ shinyServer(function(input, output, session) {
   output$DestZip3<- renderUI({
     idx2 <- unique(RAW()$Dest3DigZip)
     selected=NULL
-#     #isolate({
-#     if(!is.null(Read_Settings()[["DestZip3"]])){
-#       selected <- Read_Settings()[["DestZip3"]]
-#     }
-#     #})
+    if(!is.null(Read_Settings()[["DestZip3"]])){
+      selected <- Read_Settings()[["DestZip3"]]
+    }
     selectizeInput("DestZip3","3-Digit Destination Zip",choices=idx2,selected=selected,multiple = TRUE)
   })
   
@@ -160,11 +151,9 @@ shinyServer(function(input, output, session) {
   output$OrigCity<- renderUI({
     idx3 <- unique(RAW()$OrigCity)
     selected=NULL
-#     #isolate({
-#     if(!is.null(Read_Settings()[["OrigCity"]])){
-#       selected <- Read_Settings()[["OrigCity"]]
-#     }
-#     #})
+    if(!is.null(Read_Settings()[["OrigCity"]])){
+      selected <- Read_Settings()[["OrigCity"]]
+    }
     selectizeInput("OrigCity","Origin City",choices=idx3,selected=selected,multiple=TRUE)
   })
   
@@ -173,60 +162,58 @@ shinyServer(function(input, output, session) {
   output$DestCity<- renderUI({
     idx4 <- unique(RAW()$DestCity)
     selected=NULL
-#     #isolate({
-#     if(!is.null(Read_Settings()[["DestCity"]])){
-#       selected <- Read_Settings()[["DestCity"]]
-#     }
-#     #})
+    if(!is.null(Read_Settings()[["DestCity"]])){
+      selected <- Read_Settings()[["DestCity"]]
+    }
     selectizeInput("DestCity","Destination City",choices=idx4,selected=selected,multiple = TRUE)
   })
   
-  output$OrigRadius<- renderUI({
-    value=50
-#     #isolate({
-#     if(!is.null(Read_Settings()[["OrigRadius"]])){
-#       value <- Read_Settings()[["OrigRadius"]]
-#     }
-#     #})
-    numericInput("OrigRadius","Miles Around Origin City to Include",value=value,min=0,step=1)
-  })
+#   output$OrigRadius<- renderUI({
+#     value=50
+# #     #isolate({
+# #     if(!is.null(Read_Settings()[["OrigRadius"]])){
+# #       value <- Read_Settings()[["OrigRadius"]]
+# #     }
+# #     #})
+#     numericInput("OrigRadius","Miles Around Origin City to Include",value=value,min=0,step=1)
+#   })
   
-  output$DestRadius<- renderUI({
-    value=50
-#     #isolate({
-#     if(!is.null(Read_Settings()[["DestRadius"]])){
-#       value <- Read_Settings()[["DestRadius"]]
-#     }
-#     #})
-    numericInput("DestRadius","Miles Around Destination City to Include",value=value,min=0,step=1)
-  })
+#   output$DestRadius<- renderUI({
+#     value=50
+# #     #isolate({
+# #     if(!is.null(Read_Settings()[["DestRadius"]])){
+# #       value <- Read_Settings()[["DestRadius"]]
+# #     }
+# #     #})
+#     numericInput("DestRadius","Miles Around Destination City to Include",value=value,min=0,step=1)
+#   })
   
   
-  output$maplayersOrigStates <- renderUI({
-    selected=c("State Names","Data")
-  checkboxGroupInput("maplayersOrigStates","Map Layers to Display",
-                     c("State Names","Data"),
-                     selected=selected,inline=TRUE)
-  })
+#   output$maplayersOrigStates <- renderUI({
+#     selected=c("State Names","Data")
+#   checkboxGroupInput("maplayersOrigStates","Map Layers to Display",
+#                      c("State Names","Data"),
+#                      selected=c("State Names","Data"),inline=TRUE)
+#   })
   
-  output$maplayersDestStates <- renderUI({
-    selected=c("State Names","Data")
-    checkboxGroupInput("maplayersDestStates","Map Layers to Display",
-                       c("State Names","Data"),
-                       selected=selected,inline=TRUE)
-  })
+#   output$maplayersDestStates <- renderUI({
+#     selected=c("State Names","Data")
+#     checkboxGroupInput("maplayersDestStates","Map Layers to Display",
+#                        c("State Names","Data"),
+#                        selected=c("State Names","Data"),inline=TRUE)
+#   })
+#   
+#   output$maplayersOrigCounties <- renderUI({
+#     selected=c("Data")
+#     checkboxGroupInput("maplayersOrigCounties","Map Layers to Display",
+#                        c("Data"),selected=c("Data"),inline=T)
+#   })
   
-  output$maplayersOrigCounties <- renderUI({
-    selected=c("Data")
-    checkboxGroupInput("maplayersOrigCounties","Map Layers to Display",
-                       c("Data"),selected=selected,inline=T)
-  })
-  
-  output$maplayersDestCounties <- renderUI({
-    selected=c("Data")
-    checkboxGroupInput("maplayersDestCounties","Map Layers to Display",
-                       c("Data"),selected=selected,inline=T)
-  })
+#   output$maplayersDestCounties <- renderUI({
+#     selected=c("Data")
+#     checkboxGroupInput("maplayersDestCounties","Map Layers to Display",
+#                        c("Data"),selected=c("Data"),inline=T)
+#   })
   
   
   output$DateRange <- renderUI({
@@ -238,11 +225,11 @@ shinyServer(function(input, output, session) {
     yr <- as.numeric(yr)+1
     end_date <- as.Date(format(paste(yr,mo,day,sep="-"),
                                format="%y-%m-%d"))
-#     
-#     if(!is.null(Read_Settings()[["DateRange"]])){
-#       start_date <- Read_Settings()[["DateRange"]][1]
-#       end_date <- Read_Settings()[["DateRange"]][2]
-#     }
+    
+    if(!is.null(Read_Settings()[["DateRange"]])){
+      start_date <- Read_Settings()[["DateRange"]][1]
+      end_date <- Read_Settings()[["DateRange"]][2]
+    }
     
     
     dateRangeInput("DateRange","Select Prediction Date Range ",
@@ -436,6 +423,9 @@ shinyServer(function(input, output, session) {
       ###########################################################
       CountiesOrigin <- reactive({
         pick <- input$SelectOrigStates
+        if(is.null(pick)){
+          pick <- Read_Settings()[["SelectOrigStates"]]
+        }
         
         if(!is.null(pick)){pick <- unlist(lapply(pick,function(x){strsplit(x,":")[[1]][1]}))}
         
@@ -496,14 +486,14 @@ shinyServer(function(input, output, session) {
         pick <- c(pick,counties$names)
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddOrig())
-#         isolate({
-#           if(!is.null(Read_Settings()[["SelectOrigCounties"]])){
-#           update_loop$orig <- update_loop$orig+1
-#           if(update_loop$orig<=3){
-#             selected <-Read_Settings()[["SelectOrigCounties"]]
-#           }
-#           }
-#         })
+        isolate({
+          if(!is.null(Read_Settings()[["SelectOrigCounties"]])){
+          update_loop$orig <- update_loop$orig+1
+          if(update_loop$orig<=3){
+            selected <-Read_Settings()[["SelectOrigCounties"]]
+          }
+          }
+        })
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectOrigCounties","Selected Origin Counties or Entire State",choices=pick,selected=selected,multiple=T)
@@ -524,14 +514,14 @@ shinyServer(function(input, output, session) {
         counties <- CountiesOrigin()
         pts <- OrigCircles()
         isolate(pick <- input$SelectOrigCircles)
-#         isolate({
-#           if(!is.null(Read_Settings()[["SelectOrigCircles"]])){
-#           update_loop$origcircle <- update_loop$origcircle+1
-#           if(update_loop$origcircle<=2){
-#             pick <-Read_Settings()[["SelectOrigCircles"]]
-#           }
-#           }
-#         })
+        isolate({
+          if(!is.null(Read_Settings()[["SelectOrigCircles"]])){
+          update_loop$origcircle <- update_loop$origcircle+1
+          if(update_loop$origcircle<=2){
+            pick <-Read_Settings()[["SelectOrigCircles"]]
+          }
+          }
+        })
         
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
         pick <- pick[!is.na(pick)]
@@ -611,6 +601,10 @@ shinyServer(function(input, output, session) {
       ###########################################################
       CountiesDestination <- reactive({
         pick <- input$SelectDestStates
+        if(is.null(pick)){
+          pick <- Read_Settings()[["SelectDestStates"]]
+        }
+        
         if(!is.null(pick)){pick <- unlist(lapply(pick,function(x){strsplit(x,":")[[1]][1]}))}
         
         if(!is.null(input$DestCity) | !is.null(pick)){
@@ -671,14 +665,14 @@ shinyServer(function(input, output, session) {
         pick <- c(pick,counties$names)
         pick <- pick[!is.null(pick)]
         selected <- c(selected,ClickCountiesAddDest())
-#         isolate({
-#           if(!is.null(Read_Settings()[["SelectDestCounties"]])){
-#           update_loop$dest <- update_loop$dest+1
-#           if(update_loop$dest<=3){
-#             selected <-Read_Settings()[["SelectDestCounties"]]
-#           }
-#           }
-#         })
+        isolate({
+          if(!is.null(Read_Settings()[["SelectDestCounties"]])){
+          update_loop$dest <- update_loop$dest+1
+          if(update_loop$dest<=3){
+            selected <-Read_Settings()[["SelectDestCounties"]]
+          }
+          }
+        })
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectDestCounties","Selected Destination Counties or Entire State",choices=pick,selected=selected,multiple=T)
@@ -695,14 +689,14 @@ shinyServer(function(input, output, session) {
         counties <- CountiesDestination()
         pts <- DestCircles()
         isolate(pick <- input$SelectDestCircles)
-#         isolate({
-#           if(!is.null(Read_Settings()[["SelectDestCircles"]])){
-#           update_loop$destcircle <- update_loop$destcircle+1
-#           if(update_loop$destcircle<=2){
-#             pick <-Read_Settings()[["SelectDestCircles"]]
-#           }
-#           }
-#         })
+        isolate({
+          if(!is.null(Read_Settings()[["SelectDestCircles"]])){
+          update_loop$destcircle <- update_loop$destcircle+1
+          if(update_loop$destcircle<=2){
+            pick <-Read_Settings()[["SelectDestCircles"]]
+          }
+          }
+        })
 
         
         pick <- c(pick,paste(pts$x,pts$y,pts$r,sep=":"))
@@ -784,11 +778,9 @@ shinyServer(function(input, output, session) {
       output$LinearTerms <- renderUI({
         terms <- colnames(RAW())
         selected <- c("NumericDate")
-#         isolate({
-#         if(!is.null(Read_Settings()[["LinearTerms"]])){
-#           selected <- Read_Settings()[["LinearTerms"]]
-#         }
-#         })
+        if(!is.null(Read_Settings()[["LinearTerms"]])){
+          selected <- Read_Settings()[["LinearTerms"]]
+        }
         selectizeInput("LinearTerms","Linear Terms in Model",
                        choices=terms,selected=selected,multiple=T)
       })
@@ -796,11 +788,9 @@ shinyServer(function(input, output, session) {
       output$FactorTerms <- renderUI({
         terms <- colnames(RAW())
         selected <- c("SumOfStops")
-#         isolate({
-#         if(!is.null(Read_Settings()[["FactorTerms"]])){
-#           selected <- Read_Settings()[["FactorTerms"]]
-#         }
-#         })
+        if(!is.null(Read_Settings()[["FactorTerms"]])){
+          selected <- Read_Settings()[["FactorTerms"]]
+        }
         selectizeInput("FactorTerms","Factors in Model",
                        choices=terms,selected=selected,multiple=T)
       })
@@ -808,11 +798,9 @@ shinyServer(function(input, output, session) {
       output$SplineTerms <- renderUI({
         terms <- colnames(RAW())
         selected <- NULL
-#         isolate({
-#         if(!is.null(Read_Settings()[["SplineTerms"]])){
-#           selected <- Read_Settings()[["SplineTerms"]]
-#         }
-#         })
+        if(!is.null(Read_Settings()[["SplineTerms"]])){
+          selected <- Read_Settings()[["SplineTerms"]]
+        }
         selectizeInput("SplineTerms","Spline Terms in Model (non cyclic)",
                        choices=terms,selected=selected,multiple=T)
       })
@@ -820,11 +808,9 @@ shinyServer(function(input, output, session) {
       output$SplineTermsCyclic <- renderUI({
         terms <- colnames(RAW())
         selected <- c("Day365")
-#         isolate({
-#         if(!is.null(Read_Settings()[["SplineTermsCyclic"]])){
-#           selected <- Read_Settings()[["SplineTermsCyclic"]]
-#         }
-#         })
+        if(!is.null(Read_Settings()[["SplineTermsCyclic"]])){
+          selected <- Read_Settings()[["SplineTermsCyclic"]]
+        }
         selectizeInput("SplineTermsCyclic","Cyclical Spline Terms in Model",
                        choices=terms,selected=selected,multiple=T)
       })
@@ -3076,7 +3062,7 @@ shinyServer(function(input, output, session) {
       })
       
       output$modelInput <- renderPrint({
-        DumpData()
+        reactiveValuesToList(input)
       })
       
 
