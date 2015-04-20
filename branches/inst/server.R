@@ -10,8 +10,10 @@ shinyServer(function(input, output, session) {
   ####use this to load all of the data
   RAW<-reactive({
     inFile <- input$rawdata
-    if (is.null(inFile))
-      return(NULL)
+    if(Sys.info()["sysname"]=="Windows"){if (is.null(inFile)) {return(NULL)}}else{
+      load("/srv/shiny-server/CHR_II/Raw_100_Min.RData")
+      return(RAW)
+    }
     load(inFile$datapath)
     return(RAW)
   })

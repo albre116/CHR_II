@@ -66,7 +66,7 @@ body <- dashboardBody(
                          ),###end column
                   column(width=3,
                          box(title="Upload Data File",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
-                             fileInput('rawdata', 'Choose RData File',
+                             fileInput('rawdata', 'Choose RData File (If on Shiny Server No Need)',
                                        accept=c('.RData'))
                          ),##end box
                          box(title="Upload Model Image",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
