@@ -38,6 +38,15 @@ shinyServer(function(input, output, session) {
     })
   
   
+  ####get the raw data from the server
+  output$downloadRawData <- downloadHandler(
+    filename = function(){paste("RAW",".RData",sep = "")},
+    content = function(file){
+      RAW = RAW()
+      save(RAW, file = file)
+    })
+  
+  
   ####this will load a model image and set the values of the different selectors
   Read_Settings <- reactive({
     inFile <- input$modelimage

@@ -72,6 +72,9 @@ body <- dashboardBody(
                          box(title="Upload Model Image",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                              fileInput('modelimage', 'Choose RData File',
                                        accept=c('.RData'))
+                         ),##end box
+                         box(title="Get Raw Data File From Server",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
+                             downloadButton('downloadRawData','Get Raw Data File From Server?')
                          )##end box
                   )###end column
             )###end row
