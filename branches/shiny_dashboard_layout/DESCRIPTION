@@ -1,0 +1,9 @@
+Package: shinydashboardlayout
+Type: Package
+Title: Production Code for CHR GAM Model (Daily Predictions)
+Version: 1.0
+Date: 6/16/2014
+Author: Mark Albrecht
+Maintainer: Mark Albrecht <albre116@gmail.com>
+  Description: Run file for a branch of CHR code
+License: None
