@@ -6,5 +6,5 @@ To initialize, install the following software packages: 1. The latest version of
 TO RUN AFTER INSTALLATION:
 
 To run enter the following commands into the R-console window:  
-devtools::install_github("CHR_II/branches/shiny_dashboard_layout",auth_token="9b170fa4551681199539cf0a38e0b3d7892c4bb5") 
+devtools::install_github("CHR_II/shinydashboardlayout",auth_token="9b170fa4551681199539cf0a38e0b3d7892c4bb5") 
 shiny::runApp(system.file(package='shinydashboardlayout'))
