@@ -12,7 +12,7 @@ shinyServer(function(input, output, session) {
     inFile <- input$rawdata
     if(Sys.info()["sysname"]=="Windows"){if (is.null(inFile)) {return(NULL)}}else{
       if(is.null(inFile)){
-      load("/srv/shiny_data/RAW_100_Min.RData")
+      load("/srv/shiny_data/Min_2015_04_20.RData")
       return(RAW)}
     }
     load(inFile$datapath)
