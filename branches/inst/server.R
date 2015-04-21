@@ -1125,10 +1125,10 @@ shinyServer(function(input, output, session) {
         if(("Lower Quantile" %in% input$QuantileFilter) | ("Upper Quantile" %in% input$QuantileFilter)){
           quantiles <- PERCENTILES()
           ids <- colnames(quantiles)
-#           QUANT <-  select_(SELECTED,.dots = c("EntryDate",r)) %>% 
-#             left_join(quantiles,by=c("EntryDate"="Date"))
-          QUANT <- SELECTED[,c("EntryDate",r)]
-          QUANT <- base::merge(QUANT,quantiles,by.x="EntryDate",by.y="Date",all.x=TRUE)
+           QUANT <-  select_(SELECTED,.dots = c("EntryDate",r)) %>% 
+             left_join(quantiles,by=c("EntryDate"="Date"))
+          #QUANT <- SELECTED[,c("EntryDate",r)]
+          #QUANT <- base::merge(QUANT,quantiles,by.x="EntryDate",by.y="Date",all.x=TRUE)
           
           
           if(c("Lower Quantile") %in% input$QuantileFilter){
@@ -1228,7 +1228,7 @@ shinyServer(function(input, output, session) {
         p <- ggplot(data,aes(y=y,x=x))
         p <- p + geom_violin(fill = "grey80", colour = "#3366FF") + coord_flip() + 
           xlab(NULL)+ ggtitle(paste0("Data Coverage: n=",n," Observations")) +
-          ylab(NULL) + geom_dotplot(binaxis="y",stackdir = "center",dotsize = 0.05) + theme(axis.text.y=element_blank(),
+          ylab(NULL) + geom_point() + theme(axis.text.y=element_blank(),
                                                    axis.ticks.y=element_blank())
         print(p)
       })
@@ -2668,8 +2668,8 @@ shinyServer(function(input, output, session) {
         p <- ggplot(data,aes(y=y,x=x))
         p <- p + geom_violin(fill = "grey80", colour = "#3366FF") + coord_flip() + 
           xlab(NULL)+ ggtitle(paste0("Data Coverage: n=",n," Observations")) +
-          ylab(NULL) + geom_dotplot(binaxis="y",stackdir = "center",dotsize = 0.05) + theme(axis.text.y=element_blank(),
-                                                                                            axis.ticks.y=element_blank())
+          ylab(NULL) + geom_point() + theme(axis.text.y=element_blank(),
+                                            axis.ticks.y=element_blank())
         print(p)
       })
       

@@ -5,6 +5,9 @@ To initialize, install the following software packages: 1. The latest version of
 
 TO RUN AFTER INSTALLATION:
 
-To run enter the following commands into the R-console window:  
+To run enter the following 2 commands into the R-console window: 
+Command 1:
 devtools::install_github("albre116/CHR_II/branches",auth_token="9b170fa4551681199539cf0a38e0b3d7892c4bb5") 
+
+Command 2:
 shiny::runApp(system.file(package='shinydashboardlayout'))
