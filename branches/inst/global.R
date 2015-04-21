@@ -94,10 +94,6 @@ if(!require('dyPencilgraphs')) {
 }
 
 
-####Load Data File
-#load("RAW_100_Min.RData")
-
-
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota",
                   "Wyoming", "Wisconsin", "Idaho", "Vermont", "Minnesota", "Oregon",
                   "New Hampshire", "Iowa", "Massachusetts", "Nebraska", "New York",
@@ -116,10 +112,6 @@ states_labels <- data.frame(labels=states$names) %>%
   select(abb)
 state_labs <- states
 state_labs$names <- as.character(states_labels$abb)
-
-
-
-
 
 
 

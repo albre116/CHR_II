@@ -11,8 +11,9 @@ shinyServer(function(input, output, session) {
   RAW<-reactive({
     inFile <- input$rawdata
     if(Sys.info()["sysname"]=="Windows"){if (is.null(inFile)) {return(NULL)}}else{
+      if(is.null(inFile)){
       load("/srv/shiny_data/RAW_100_Min.RData")
-      return(RAW)
+      return(RAW)}
     }
     load(inFile$datapath)
     return(RAW)
@@ -118,8 +119,6 @@ shinyServer(function(input, output, session) {
     ####static geography
     updateNumericInput(session,"OrigRadius",value=Read_Settings()[["OrigRadius"]])
     updateNumericInput(session,"DestRadius",value=Read_Settings()[["DestRadius"]])
-  
-    
     })
     
 
@@ -178,54 +177,6 @@ shinyServer(function(input, output, session) {
     }
     selectizeInput("DestCity","Destination City",choices=idx4,selected=selected,multiple = TRUE)
   })
-  
-#   output$OrigRadius<- renderUI({
-#     value=50
-# #     #isolate({
-# #     if(!is.null(Read_Settings()[["OrigRadius"]])){
-# #       value <- Read_Settings()[["OrigRadius"]]
-# #     }
-# #     #})
-#     numericInput("OrigRadius","Miles Around Origin City to Include",value=value,min=0,step=1)
-#   })
-  
-#   output$DestRadius<- renderUI({
-#     value=50
-# #     #isolate({
-# #     if(!is.null(Read_Settings()[["DestRadius"]])){
-# #       value <- Read_Settings()[["DestRadius"]]
-# #     }
-# #     #})
-#     numericInput("DestRadius","Miles Around Destination City to Include",value=value,min=0,step=1)
-#   })
-  
-  
-#   output$maplayersOrigStates <- renderUI({
-#     selected=c("State Names","Data")
-#   checkboxGroupInput("maplayersOrigStates","Map Layers to Display",
-#                      c("State Names","Data"),
-#                      selected=c("State Names","Data"),inline=TRUE)
-#   })
-  
-#   output$maplayersDestStates <- renderUI({
-#     selected=c("State Names","Data")
-#     checkboxGroupInput("maplayersDestStates","Map Layers to Display",
-#                        c("State Names","Data"),
-#                        selected=c("State Names","Data"),inline=TRUE)
-#   })
-#   
-#   output$maplayersOrigCounties <- renderUI({
-#     selected=c("Data")
-#     checkboxGroupInput("maplayersOrigCounties","Map Layers to Display",
-#                        c("Data"),selected=c("Data"),inline=T)
-#   })
-  
-#   output$maplayersDestCounties <- renderUI({
-#     selected=c("Data")
-#     checkboxGroupInput("maplayersDestCounties","Map Layers to Display",
-#                        c("Data"),selected=c("Data"),inline=T)
-#   })
-  
   
   output$DateRange <- renderUI({
     data <- RAW()
@@ -1239,6 +1190,7 @@ shinyServer(function(input, output, session) {
       ###########################################################
       #######Tab Panel 2:  Quick quote
       ###########################################################
+      
       output$mile15_QUICK<- renderValueBox({
         Fn <- mileECDF()
         pct <- 0.15
@@ -1265,6 +1217,24 @@ shinyServer(function(input, output, session) {
           color = "purple"
         )
       })
+      
+      
+      ####generate graph of data coverage
+      
+      output$DataCoverage_QUICK <- renderPlot({
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        data <- data.frame(y=data$EntryDate,x="Rug")
+        n <- nrow(data)
+        p <- ggplot(data,aes(y=y,x=x))
+        p <- p + geom_violin(fill = "grey80", colour = "#3366FF") + coord_flip() + 
+          xlab(NULL)+ ggtitle(paste0("Data Coverage: n=",n," Observations")) +
+          ylab(NULL) + geom_dotplot(binaxis="y",stackdir = "center",dotsize = 0.05) + theme(axis.text.y=element_blank(),
+                                                   axis.ticks.y=element_blank())
+        print(p)
+      })
+      
+      
+      
       
       
       MODELFIT_QUICK <- reactive({
@@ -1608,8 +1578,8 @@ shinyServer(function(input, output, session) {
       })
       
       output$HistVolIntegratedTable_QUICK<- DT::renderDataTable(
-        DT::datatable(tdat2_QUICK(),filter='bottom',extensions = 'TableTools',
-                      options=list(scrollX=TRUE,    dom = 'T<"clear">lfrtip',
+        DT::datatable(tdat2_QUICK(),extensions = 'TableTools',
+                      options=list( dom = 'T<"clear">lfrtip',
                                    tableTools = list(sSwfPath = copySWF())))
       )
       
@@ -2373,7 +2343,7 @@ shinyServer(function(input, output, session) {
       
       output$PredicitonTable <- DT::renderDataTable({
         DT::datatable(tdat1(),filter='bottom',extensions = 'TableTools',
-                      options=list(scrollX=TRUE,    dom = 'T<"clear">lfrtip',
+                      options=list( dom = 'T<"clear">lfrtip',
                                    tableTools = list(sSwfPath = copySWF())))
       })
       
@@ -2689,6 +2659,24 @@ shinyServer(function(input, output, session) {
       })
       
       
+      ####generate graph of data coverage
+      
+      output$DataCoverage <- renderPlot({
+        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        data <- data.frame(y=data$EntryDate,x="Rug")
+        n <- nrow(data)
+        p <- ggplot(data,aes(y=y,x=x))
+        p <- p + geom_violin(fill = "grey80", colour = "#3366FF") + coord_flip() + 
+          xlab(NULL)+ ggtitle(paste0("Data Coverage: n=",n," Observations")) +
+          ylab(NULL) + geom_dotplot(binaxis="y",stackdir = "center",dotsize = 0.05) + theme(axis.text.y=element_blank(),
+                                                                                            axis.ticks.y=element_blank())
+        print(p)
+      })
+      
+      
+      
+      
+      
       HistoricalData <- reactive({
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Computing',
@@ -2833,8 +2821,8 @@ shinyServer(function(input, output, session) {
       })
 
       output$HistVolIntegratedTable<- DT::renderDataTable(
-        DT::datatable(tdat2(),filter='bottom',extensions = 'TableTools',
-                      options=list(scrollX=TRUE,    dom = 'T<"clear">lfrtip',
+        DT::datatable(tdat2(),extensions = 'TableTools',
+                      options=list( dom = 'T<"clear">lfrtip',
                                    tableTools = list(sSwfPath = copySWF())))
       )
       

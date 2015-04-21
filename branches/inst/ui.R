@@ -162,7 +162,16 @@ body <- dashboardBody(
             )###end fluid row
     ),
     tabItem(tabName = "basicquote",
-            fluidRow(valueBoxOutput("mile15_QUICK"),valueBoxOutput("mile50_QUICK"),valueBoxOutput("mile85_QUICK")),
+            fluidRow(
+              column(width=6,
+                     valueBoxOutput("mile15_QUICK"),
+                     valueBoxOutput("mile50_QUICK"),
+                     valueBoxOutput("mile85_QUICK")
+              ),###end column
+              column(width=6,
+                     plotOutput("DataCoverage_QUICK",height=100)
+                     )
+              ),###end row
             box(title="Historical Integrated: Market Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=12,
@@ -176,7 +185,7 @@ body <- dashboardBody(
                          dygraphOutput("HistVolIntegrated_QUICK")
                   ),
                   column(width=6,
-                         DT::dataTableOutput("HistVolIntegratedTable_QUICK")
+                         div(style = 'overflow-x: scroll',DT::dataTableOutput("HistVolIntegratedTable_QUICK"))
                   )
                 )
             )
@@ -253,7 +262,7 @@ body <- dashboardBody(
             fluidRow(
               column(width=6,
                      box(title="Table of Predictions",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
-                                     DT::dataTableOutput("PredicitonTable")
+                         div(style = 'overflow-x: scroll',DT::dataTableOutput("PredicitonTable"))
                      )
               ),###end first column
               column(width=6,
@@ -276,7 +285,16 @@ body <- dashboardBody(
     ),
     
     tabItem(tabName = "SummaryPredictions",
-            fluidRow(valueBoxOutput("mile15"),valueBoxOutput("mile50"),valueBoxOutput("mile85")),
+            fluidRow(
+              column(width=6,
+                     valueBoxOutput("mile15"),
+                     valueBoxOutput("mile50"),
+                     valueBoxOutput("mile85")
+              ),###end column
+              column(width=6,
+                     plotOutput("DataCoverage",height=100)
+              )
+            ),###end row
             box(title="Historical Integrated: Customer Specific",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
                 fluidRow(
                   column(width=12,
@@ -290,7 +308,7 @@ body <- dashboardBody(
                          dygraphOutput("HistVolIntegrated")
                   ),
                   column(width=6,
-                         DT::dataTableOutput("HistVolIntegratedTable")
+                         div(style = 'overflow-x: scroll',DT::dataTableOutput("HistVolIntegratedTable"))
                   )
                 )
             )
