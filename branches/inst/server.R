@@ -1590,22 +1590,18 @@ shinyServer(function(input, output, session) {
       ###########################################################
       output$ModelFamily <- renderUI({
         selected <- c("Generalized Additive Model")
-        isolate({
-#         if(!is.null(Read_Settings()[["ModelFamily"]])){
-#           selected <- Read_Settings()[["ModelFamily"]]
-#         }
-        })
+        if(!is.null(Read_Settings()[["ModelFamily"]])){
+          selected <- Read_Settings()[["ModelFamily"]]
+        }
         
         selectInput("ModelFamily","Modeling Kernel",c("Generalized Additive Model"),selected=selected)
       })
       
       output$ConfLimits <- renderUI({
         value <- c(0.15,0.85)
-#         isolate({
-#         if(!is.null(Read_Settings()[["ConfLimits"]])){
-#           value <- Read_Settings()[["ConfLimits"]]
-#         }
-#         })
+        if(!is.null(Read_Settings()[["ConfLimits"]])){
+          value <- Read_Settings()[["ConfLimits"]]
+        }
         sliderInput("ConfLimits","Model Confidince Intervals",0,1,value=value)
       })
       
@@ -1687,11 +1683,11 @@ shinyServer(function(input, output, session) {
           l <- min(data[,terms[i]])
           
           ####do the update here on the first pass through
-#           isolate({
-#             if(!is.null(Read_Settings()[[inputname]])){
-#               l <- Read_Settings()[[inputname]]
-#             }
-#           })
+          isolate({
+            if(!is.null(Read_Settings()[[inputname]])){
+              l <- Read_Settings()[[inputname]]
+            }
+          })
           
           numericInput(inputname,paste0("Lower Y Range:",terms[i]),value=l)
         })
@@ -1716,11 +1712,11 @@ shinyServer(function(input, output, session) {
           
           
           ####do the update here on the first pass through
-#           isolate({
-#             if(!is.null(Read_Settings()[[inputname]])){
-#               u <- Read_Settings()[[inputname]]
-#             }
-#           })
+          isolate({
+            if(!is.null(Read_Settings()[[inputname]])){
+              u <- Read_Settings()[[inputname]]
+            }
+          })
           
           numericInput(inputname,paste0("Upper Y Range:",terms[i]),value=u)
         })
@@ -1742,11 +1738,11 @@ shinyServer(function(input, output, session) {
           inputname <- paste("PredictorTerms_percentile_", terms[i], sep="")
           ####do the update here on the first pass through
           value=0.5
-#           isolate({
-#             if(!is.null(Read_Settings()[[inputname]])){
-#               value <- Read_Settings()[[inputname]]
-#             }
-#           })
+          isolate({
+            if(!is.null(Read_Settings()[[inputname]])){
+              value <- Read_Settings()[[inputname]]
+            }
+          })
 
           sliderInput(inputname,paste0("Percentile:",terms[i]),value=value,min=0,max=1)
         })
@@ -1773,11 +1769,11 @@ shinyServer(function(input, output, session) {
           pick <- as.character(c("Automatic",pick))
           ####do the update here on the first pass through
           selected=c("Automatic")
-#           isolate({
-#             if(!is.null(Read_Settings()[[inputname]])){
-#               selected <- Read_Settings()[[inputname]]
-#             }
-#           })
+          isolate({
+            if(!is.null(Read_Settings()[[inputname]])){
+              selected <- Read_Settings()[[inputname]]
+            }
+          })
           
           selectInput(inputname,paste0("Input Value:",terms[i]),choices=pick,selected=selected)
         })
@@ -1800,11 +1796,11 @@ shinyServer(function(input, output, session) {
           inputname <- paste("PredictorTerms_dataType_", terms[i], sep="")
           pick <- as.character(c(unique(data$CustomerCCode),unique(data$CarrierTCode)))
           selected=NULL
-#           isolate({
-#             if(!is.null(Read_Settings()[[inputname]])){
-#               selected <- Read_Settings()[[inputname]]
-#             }
-#           })
+          isolate({
+            if(!is.null(Read_Settings()[[inputname]])){
+              selected <- Read_Settings()[[inputname]]
+            }
+          })
 
           selectizeInput(inputname,paste0("Include in Plot (no selection includes all):",terms[i]),choices=pick,selected=selected,multiple=TRUE)
         })
@@ -1878,18 +1874,18 @@ shinyServer(function(input, output, session) {
           
           
           ####drop in saved values here from model image
-#           isolate({
-#             plotname <- paste("PredictorTerms_", terms[my_i], sep="")
-#             grob <- paste0(plotname,"_data_extract")
-#             if(!is.null(Read_Settings()[[grob]])){
-#               q <- Read_Settings()[[grob]]
-#               grob <- paste0(plotname,"_data_dimension_RowCol")
-#               dimension <-Read_Settings()[[grob]]
-#               q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
-#               predictor <- eval(parse(text=paste0("data.frame(",terms[my_i],"=q[,2])")))
-#               predictor <- xts(predictor,date_sequence)###FIX
-#             }
-#          })
+          isolate({
+            plotname <- paste("PredictorTerms_", terms[my_i], sep="")
+            grob <- paste0(plotname,"_data_extract")
+            if(!is.null(Read_Settings()[[grob]])){
+              q <- Read_Settings()[[grob]]
+              grob <- paste0(plotname,"_data_dimension_RowCol")
+              dimension <-Read_Settings()[[grob]]
+              q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
+              predictor <- eval(parse(text=paste0("data.frame(",terms[my_i],"=q[,2])")))
+              predictor <- xts(predictor,date_sequence)###FIX
+            }
+         })
           
           
           
@@ -2376,11 +2372,9 @@ shinyServer(function(input, output, session) {
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         customers <- unique(data$CustomerCCode)
         selected <- NULL
-#         isolate({
-#         if(!is.null(Read_Settings()[["CarrierSelect"]])){
-#           selected <- Read_Settings()[["CustomerSelect"]]
-#         }
-#         })
+        if(!is.null(Read_Settings()[["CarrierSelect"]])){
+          selected <- Read_Settings()[["CustomerSelect"]]
+        }
         selectizeInput("CustomerSelect","Customer CCodes to Base Volume On",choices=customers,selected = selected,
                        multiple=TRUE)
       })
@@ -2390,11 +2384,9 @@ shinyServer(function(input, output, session) {
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
         customers <- unique(data$CarrierTCode)
         selected <- NULL
-#         isolate({
-#         if(!is.null(Read_Settings()[["CarrierSelect"]])){
-#           selected <- Read_Settings()[["CarrierSelect"]]
-#         }
-#         })
+        if(!is.null(Read_Settings()[["CarrierSelect"]])){
+          selected <- Read_Settings()[["CarrierSelect"]]
+        }
         selectizeInput("CarrierSelect","Carrier TCodes to Base Volume On",choices=customers,selected=selected,
                        multiple=TRUE)
       })
@@ -2402,11 +2394,9 @@ shinyServer(function(input, output, session) {
       
       output$volbasis <- renderUI({
         selected <- c("Transactions in Lane")
-#         isolate({
-#         if(!is.null(Read_Settings()[["volbasis"]])){
-#           selected <- Read_Settings()[["volbasis"]]
-#         }
-#         })
+        if(!is.null(Read_Settings()[["volbasis"]])){
+          selected <- Read_Settings()[["volbasis"]]
+        }
         
         selectInput("volbasis","Volume Basis",
                   choices=c("Transactions in Lane","Specific Customer","Specific Carrier"),
@@ -2415,11 +2405,9 @@ shinyServer(function(input, output, session) {
       
       output$volmethod <- renderUI({
         selected <- c("GAM Weekly Max")
-#         isolate({
-#         if(!is.null(Read_Settings()[["volmethod"]])){
-#           selected <- Read_Settings()[["volmethod"]]
-#         }
-#         })
+        if(!is.null(Read_Settings()[["volmethod"]])){
+          selected <- Read_Settings()[["volmethod"]]
+        }
         
         selectInput("volmethod","Volume Modeling Method",
                     choices = c("GAM","GAM No Weekend","GAM Weekly Max"),
@@ -2511,15 +2499,15 @@ shinyServer(function(input, output, session) {
         pred_volume <- xts(pred_volume,date_sequence)
         
         ####drop in saved values here from model image
-#         isolate({
-#           if(!is.null(Read_Settings()[["VolumeDraw_data_extract"]])){
-#             q <- Read_Settings()[["VolumeDraw_data_extract"]]
-#             dimension <-Read_Settings()[["VolumeDraw_data_dimension_RowCol"]]
-#             q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
-#             pred_volume <- data.frame(TransFcst=as.numeric(q[,2]))
-#             pred_volume <- xts(pred_volume,date_sequence)
-#           }
-#         })
+        isolate({
+          if(!is.null(Read_Settings()[["VolumeDraw_data_extract"]])){
+            q <- Read_Settings()[["VolumeDraw_data_extract"]]
+            dimension <-Read_Settings()[["VolumeDraw_data_dimension_RowCol"]]
+            q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
+            pred_volume <- data.frame(TransFcst=as.numeric(q[,2]))
+            pred_volume <- xts(pred_volume,date_sequence)
+          }
+        })
         
         
         
