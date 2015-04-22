@@ -1256,6 +1256,7 @@ shinyServer(function(input, output, session) {
       COVERAGE <- reactive({
         r <- input$response
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+        n=nrow(data)
         min_dte <- if(is.null(input$dygraph_cut_date_window[1])){min(RAW()$EntryDate)}else{as.Date(input$dygraph_cut_date_window[1])}
         max_dte <- if(is.null(input$dygraph_cut_date_window[2])){max(RAW()$EntryDate)}else{as.Date(input$dygraph_cut_date_window[2])}
         interval <- seq(min_dte,max_dte,"days")
@@ -1269,15 +1270,16 @@ shinyServer(function(input, output, session) {
         idx <- max(which(coverage_class$lower<=coverage))
         class <- coverage_class$class[idx]
         color <- coverage_class$color[idx]
-        return(list(coverage=coverage,class=class,color=color))
+        return(list(coverage=coverage,class=class,color=color,n=n))
       })
       
       
       ####generate data coverage
       output$DataCoverage_QUICK<- renderValueBox({
         coverage <- COVERAGE()[["coverage"]]
+        n <- COVERAGE()[["n"]]
         valueBox(
-          paste0(coverage, "%:"," (n=",nrow(data),")"), "Weekday Data Coverage", icon = icon("list"),
+          paste0(coverage, "%:"," (n=",n,")"), "Weekday Data Coverage", icon = icon("list"),
           color = "purple"
         )
       })
@@ -2719,12 +2721,12 @@ shinyServer(function(input, output, session) {
       })
       
       
-      ####generate graph of data coverage
       ####generate data coverage
       output$DataCoverage<- renderValueBox({
         coverage <- COVERAGE()[["coverage"]]
+        n <- COVERAGE()[["n"]]
         valueBox(
-          paste0(coverage, "%:"," (n=",nrow(data),")"), "Weekday Data Coverage", icon = icon("list"),
+          paste0(coverage, "%:"," (n=",n,")"), "Weekday Data Coverage", icon = icon("list"),
           color = "purple"
         )
       })
