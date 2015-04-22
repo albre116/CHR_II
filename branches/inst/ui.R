@@ -1,6 +1,6 @@
 
 header <- dashboardHeader(
-  title="CPDS Time Series"
+  title="CPDS Time Series",dropdownMenuOutput("dataProcessing")
   )###end header
 
 sidebar <- dashboardSidebar(

@@ -35,6 +35,7 @@ shinyServer(function(input, output, session) {
     return(list(RAW=RAW,city_lookup=city_lookup,reduced_orig=reduced_orig,reduced_dest=reduced_dest))
   })
   
+  
   RAW <- reactive({
     RAW <- GO()[["RAW"]]
     return(RAW)
@@ -50,6 +51,20 @@ shinyServer(function(input, output, session) {
     reduced_orig <- GO()[["reduced_orig"]]
     reduced_dest <- GO()[["reduced_dest"]]
     return(list(reduced_orig=reduced_orig,reduced_dest=reduced_dest))
+  })
+  
+  output$dataProcessing <- renderMenu({
+    if(is.null(RAW())){return(NULL)}
+    messageData <- data.frame(from="Admin",message="Data Loaded and Processed Completely")
+    # Code to generate each of the messageItems here, in a list. This assumes
+    # that messageData is a data frame with two columns, 'from' and 'message'.
+    msgs <- apply(messageData, 1, function(row) {
+      messageItem(from = row[["from"]], message = row[["message"]])
+    })
+    
+    # This is equivalent to calling:
+    #   dropdownMenu(type="messages", msgs[[1]], msgs[[2]], ...)
+    dropdownMenu(type = "notifications", .list = msgs)
   })
 
   
