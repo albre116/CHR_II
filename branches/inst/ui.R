@@ -163,13 +163,14 @@ body <- dashboardBody(
     ),
     tabItem(tabName = "basicquote",
             fluidRow(
-              column(width=6,
+              column(width=7,
                      valueBoxOutput("mile15_QUICK"),
                      valueBoxOutput("mile50_QUICK"),
                      valueBoxOutput("mile85_QUICK")
               ),###end column
-              column(width=6,
-                     plotOutput("DataCoverage_QUICK",height=100)
+              column(width=5,
+                     valueBoxOutput("DataCoverage_QUICK",width=6),
+                     valueBoxOutput("DataCoverageClass_QUICK",width=6)
                      )
               ),###end row
             box(title="Historical Integrated: Market Average",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,
@@ -286,13 +287,14 @@ body <- dashboardBody(
     
     tabItem(tabName = "SummaryPredictions",
             fluidRow(
-              column(width=6,
+              column(width=7,
                      valueBoxOutput("mile15"),
                      valueBoxOutput("mile50"),
                      valueBoxOutput("mile85")
               ),###end column
-              column(width=6,
-                     plotOutput("DataCoverage",height=100)
+              column(width=5,
+                     valueBoxOutput("DataCoverage",width=6),
+                     valueBoxOutput("DataCoverageClass",width=6)
               )
             ),###end row
             box(title="Historical Integrated: Customer Specific",width=NULL,status="primary",solidHeader = TRUE,collapsible = F,

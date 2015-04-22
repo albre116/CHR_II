@@ -8,22 +8,48 @@ shinyServer(function(input, output, session) {
   
   
   ####use this to load all of the data
-  RAW<-reactive({
+  GO<-reactive({
     inFile <- input$rawdata
-    if(Sys.info()["sysname"]=="Windows"){if (is.null(inFile)) {return(NULL)}}else{
+    if(Sys.info()["sysname"]=="Windows"){if (is.null(inFile)) {
+      return(NULL)
+      }else{load(inFile$datapath)}
+      }else{
       if(is.null(inFile)){
-      load("/srv/shiny_data/Min_2015_04_20.RData")
-      return(RAW)}
+      load("/srv/shiny_data/Min_2015_04_20.RData")}else{load(inFile$datapath)}
     }
-    load(inFile$datapath)
+    
+    progress <- shiny::Progress$new(session, min=0, max=2)
+    progress$set(message = 'Computing Unique City Coordinates',
+                 detail = '...')
+    on.exit(progress$close())
+    
+    city_lookup <- data.frame(city=RAW$OrigCity,x=RAW$OrigLongitude,y=RAW$OrigLatitude)
+    city_lookup <- rbind(city_lookup,data.frame(city=RAW$DestCity,x=RAW$DestLongitude,y=RAW$DestLatitude))
+    city_lookup <- unique(city_lookup)
+    
+    reduced_orig <- data.frame(x=RAW$OrigLongitude,y=RAW$OrigLatitude)
+    reduced_orig <- unique(reduced_orig)
+    reduced_dest <- data.frame(x=RAW$DestLongitude,y=RAW$DestLatitude)
+    reduced_dest <- unique(reduced_dest)
+
+    return(list(RAW=RAW,city_lookup=city_lookup,reduced_orig=reduced_orig,reduced_dest=reduced_dest))
+  })
+  
+  RAW <- reactive({
+    RAW <- GO()[["RAW"]]
     return(RAW)
   })
   
   city_lookup <- reactive({
-    city_lookup <- data.frame(city=RAW()$OrigCity,x=RAW()$OrigLongitude,y=RAW()$OrigLatitude)
-    city_lookup <- rbind(city_lookup,data.frame(city=RAW()$DestCity,x=RAW()$DestLongitude,y=RAW()$DestLatitude))
-    city_lookup <- unique(city_lookup)
+    city_lookup <- GO()[["city_lookup"]]
     return(city_lookup)
+  })
+  
+  
+  RAWPLOT <- reactive({
+    reduced_orig <- GO()[["reduced_orig"]]
+    reduced_dest <- GO()[["reduced_dest"]]
+    return(list(reduced_orig=reduced_orig,reduced_dest=reduced_dest))
   })
 
   
@@ -203,14 +229,7 @@ shinyServer(function(input, output, session) {
   })
   
   
-  
-  RAWPLOT <- reactive({
-    reduced_orig <- data.frame(x=RAW()$OrigLongitude,y=RAW()$OrigLatitude)
-    reduced_orig <- unique(reduced_orig)
-    reduced_dest <- data.frame(x=RAW()$DestLongitude,y=RAW()$DestLatitude)
-    reduced_dest <- unique(reduced_dest)
-    return(list(reduced_orig=reduced_orig,reduced_dest=reduced_dest))
-  })
+
   
   ###########################################################
   #######All of the Selection functions for the Origin States
@@ -1218,21 +1237,58 @@ shinyServer(function(input, output, session) {
         )
       })
       
-      
-      ####generate graph of data coverage
-      
-      output$DataCoverage_QUICK <- renderPlot({
+      COVERAGE <- reactive({
+        r <- input$response
         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
-        data <- data.frame(y=data$EntryDate,x="Rug")
-        n <- nrow(data)
-        p <- ggplot(data,aes(y=y,x=x))
-        p <- p + geom_violin(fill = "grey80", colour = "#3366FF") + coord_flip() + 
-          xlab(NULL)+ ggtitle(paste0("Data Coverage: n=",n," Observations")) +
-          ylab(NULL) + geom_point() + theme(axis.text.y=element_blank(),
-                                                   axis.ticks.y=element_blank())
-        print(p)
+        min_dte <- if(is.null(input$dygraph_cut_date_window[1])){min(RAW()$EntryDate)}else{as.Date(input$dygraph_cut_date_window[1])}
+        max_dte <- if(is.null(input$dygraph_cut_date_window[2])){max(RAW()$EntryDate)}else{as.Date(input$dygraph_cut_date_window[2])}
+        interval <- seq(min_dte,max_dte,"days")
+        coverage <- data.frame(EntryDate=interval,weekday=format(interval,format="%A"))
+        coverage <- coverage[!(coverage$weekday %in% c("Saturday","Sunday")),]
+        check <- data.frame(EntryDate=unique(data$EntryDate),check=1)
+        coverage <- base::merge(coverage,check,all.x=TRUE)
+        coverage <- mean(!is.na(coverage[,"check"]))
+        coverage <- round(coverage,2)*100
+        coverage_class <- data.frame(class=c("Poor","Moderate","Good"),lower=c(0,20,70),color=c("red","green","blue"))
+        idx <- max(which(coverage_class$lower<=coverage))
+        class <- coverage_class$class[idx]
+        color <- coverage_class$color[idx]
+        return(list(coverage=coverage,class=class,color=color))
       })
       
+      
+      ####generate data coverage
+      output$DataCoverage_QUICK<- renderValueBox({
+        coverage <- COVERAGE()[["coverage"]]
+        valueBox(
+          paste0(coverage, "%:"," (n=",nrow(data),")"), "Weekday Data Coverage", icon = icon("list"),
+          color = "purple"
+        )
+      })
+      
+      ####generate data coverage
+      output$DataCoverageClass_QUICK<- renderValueBox({
+        class <- COVERAGE()[["class"]]
+        color <- COVERAGE()[["color"]]
+        valueBox(
+          class, "Data Coverage Quality", icon = icon("list"),
+          color = color)
+      })
+      
+      
+      
+#       output$DataCoverage_QUICK <- renderPlot({
+#         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+#         data <- data.frame(y=data$EntryDate,x="Rug")
+#         n <- nrow(data)
+#         p <- ggplot(data,aes(y=y,x=x))
+#         p <- p + geom_violin(fill = "grey80", colour = "#3366FF") + coord_flip() + 
+#           xlab(NULL)+ ggtitle(paste0("Data Coverage: n=",n," Observations")) +
+#           ylab(NULL) + geom_point() + theme(axis.text.y=element_blank(),
+#                                                    axis.ticks.y=element_blank())
+#         print(p)
+#       })
+#       
       
       
       
@@ -2648,19 +2704,36 @@ shinyServer(function(input, output, session) {
       
       
       ####generate graph of data coverage
-      
-      output$DataCoverage <- renderPlot({
-        data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
-        data <- data.frame(y=data$EntryDate,x="Rug")
-        n <- nrow(data)
-        p <- ggplot(data,aes(y=y,x=x))
-        p <- p + geom_violin(fill = "grey80", colour = "#3366FF") + coord_flip() + 
-          xlab(NULL)+ ggtitle(paste0("Data Coverage: n=",n," Observations")) +
-          ylab(NULL) + geom_point() + theme(axis.text.y=element_blank(),
-                                            axis.ticks.y=element_blank())
-        print(p)
+      ####generate data coverage
+      output$DataCoverage<- renderValueBox({
+        coverage <- COVERAGE()[["coverage"]]
+        valueBox(
+          paste0(coverage, "%:"," (n=",nrow(data),")"), "Weekday Data Coverage", icon = icon("list"),
+          color = "purple"
+        )
       })
       
+      ####generate data coverage
+      output$DataCoverageClass<- renderValueBox({
+        class <- COVERAGE()[["class"]]
+        color <- COVERAGE()[["color"]]
+        valueBox(
+          class, "Data Coverage Quality", icon = icon("list"),
+          color = color)
+      })
+      
+#       output$DataCoverage <- renderPlot({
+#         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
+#         data <- data.frame(y=data$EntryDate,x="Rug")
+#         n <- nrow(data)
+#         p <- ggplot(data,aes(y=y,x=x))
+#         p <- p + geom_violin(fill = "grey80", colour = "#3366FF") + coord_flip() + 
+#           xlab(NULL)+ ggtitle(paste0("Data Coverage: n=",n," Observations")) +
+#           ylab(NULL) + geom_point() + theme(axis.text.y=element_blank(),
+#                                             axis.ticks.y=element_blank())
+#         print(p)
+#       })
+#       
       
       
       
