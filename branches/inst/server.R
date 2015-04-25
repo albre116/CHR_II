@@ -14,8 +14,11 @@ shinyServer(function(input, output, session) {
       return(NULL)
       }else{load(inFile$datapath)}
       }else{
-      if(is.null(inFile)){
-      load("/srv/shiny_data/Min_2015_04_20.RData")}else{load(inFile$datapath)}
+      if(is.null(inFile) & exists("/srv/shiny_data/Min_2015_04_20.RData")){
+      load("/srv/shiny_data/Min_2015_04_20.RData")}else{
+        if (is.null(inFile)) {
+          return(NULL)
+        }else{load(inFile$datapath)}
     }
     
     progress <- shiny::Progress$new(session, min=0, max=2)
