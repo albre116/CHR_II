@@ -19,7 +19,8 @@ shinyServer(function(input, output, session) {
         if (is.null(inFile)) {
           return(NULL)
         }else{load(inFile$datapath)}
-    }
+      }
+      }
     
     progress <- shiny::Progress$new(session, min=0, max=2)
     progress$set(message = 'Computing Unique City Coordinates',
