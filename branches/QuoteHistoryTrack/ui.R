@@ -14,6 +14,7 @@ sidebar <- dashboardSidebar(
              menuSubItem("1: Select Predictors", tabName = "predictors", icon = icon("fa fa-bar-chart")),
              menuSubItem("2: Model & Volume", tabName = "VolumeEntry", icon = icon("fa fa-car")),
              menuSubItem("3: Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog"))),
+    menuItem("Quote Tracker",tabName = "QuoteTracker",icon = icon("fa fa-info")),
     menuItem("Advanced Options",icon = icon("fa fa-line-chart"),
              menuSubItem("Map of Selected Data","MapSelected"),
              menuSubItem("Date Range & Outliers","DateRange"),

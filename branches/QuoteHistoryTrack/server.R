@@ -77,11 +77,24 @@ shinyServer(function(input, output, session) {
   #######Model Saving/Loading Features
   ###########################################################
   #####This saves a model image of all of the chosen settings
+  
+  fileStatus <- reactiveValues(quick=FALSE,full=FALSE)
+  
+  DownloadBundle <- reactive({
+    saved_settings = reactiveValuesToList(input)
+    if(fileStatus$quick==TRUE){HistoricalData_QUICK = HistoricalData_QUICK()}else{HistoricalData_QUICK = NULL}
+    if(fileStatus$full==TRUE){HistoricalData = HistoricalData()}else{HistoricalData = NULL}
+    list(saved_settings=saved_settings,
+         HistoricalData_QUICK=HistoricalData_QUICK,
+         HistoricalData=HistoricalData)
+  })
+  
+  
   output$downloadData<-downloadHandler(
     filename = function(){paste("Model_Image",".RData",sep = "")},
     content = function(file){
-      saved_settings = reactiveValuesToList(input)
-      save(saved_settings, file = file)
+      DownloadBundle = DownloadBundle()
+        save(DownloadBundle, file = file)
     })
   
   
@@ -100,7 +113,7 @@ shinyServer(function(input, output, session) {
     if (is.null(inFile))
       return(NULL)
     load(inFile$datapath)
-    return(saved_settings)
+    return(DownloadBundle[["saved_settings"]])
   })
   
   
@@ -142,7 +155,7 @@ shinyServer(function(input, output, session) {
 
   
 
-  update_loop <- reactiveValues(orig=1,dest=1,origcircle=1,destcircle=1)
+  update_loop <- reactiveValues(orig=1,dest=1,origcircle=1,destcircle=1,SelectOrigStates=1,SelectDestStates=1)
 
   
   ####scan across inputs and set values for static inputs
@@ -165,10 +178,13 @@ shinyServer(function(input, output, session) {
     ####static geography
     updateNumericInput(session,"OrigRadius",value=Read_Settings()[["OrigRadius"]])
     updateNumericInput(session,"DestRadius",value=Read_Settings()[["DestRadius"]])
-    })
     
-
-  
+    ####activate the collapsed state boxes
+    if(!is.null(Read_Settings()[["SelectOrigStates"]]) | !is.null(Read_Settings()[["SelectDestStates"]])){
+    session$sendCustomMessage(type = 'testmessage',
+                              message = list())}
+    
+    })
 
 
   ###########################################################
@@ -227,23 +243,25 @@ shinyServer(function(input, output, session) {
   output$DateRange <- renderUI({
     data <- RAW()
     start_date <-max(data$EntryDate)
+    lower <- start_date
     yr <- format(start_date,format="%Y")
     mo <- format(start_date,format="%m")
     day <- format(start_date,format="%d")
     yr <- as.numeric(yr)+1
     end_date <- as.Date(format(paste(yr,mo,day,sep="-"),
                                format="%y-%m-%d"))
+    upper <- end_date
     
     if(!is.null(Read_Settings()[["DateRange"]])){
-      start_date <- Read_Settings()[["DateRange"]][1]
-      end_date <- Read_Settings()[["DateRange"]][2]
+      lower <- max(Read_Settings()[["DateRange"]][1],lower)
+      upper <- min(Read_Settings()[["DateRange"]][2],upper)
     }
     
     
     dateRangeInput("DateRange","Select Prediction Date Range ",
-                   start=start_date,
+                   start=lower,
                    min=start_date,
-                   end=end_date,
+                   end=upper,
                    max=end_date
     )
   })
@@ -290,6 +308,14 @@ shinyServer(function(input, output, session) {
       
       output$SelectOrigStates <- renderUI({
         isolate(selected <- input$SelectOrigStates)
+        isolate({
+          if(!is.null(Read_Settings()[["SelectOrigStates"]])){
+            update_loop$SelectOrigStates <- update_loop$SelectOrigStates+1
+            if(update_loop$SelectOrigStates<=2){
+              selected <-Read_Settings()[["SelectOrigStates"]]
+            }
+          }
+        })
         selected <- c(selected,ClickStateAddOrig())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
@@ -374,6 +400,14 @@ shinyServer(function(input, output, session) {
       
       output$SelectDestStates <- renderUI({
         isolate(selected <- input$SelectDestStates)
+        isolate({
+          if(!is.null(Read_Settings()[["SelectDestStates"]])){
+            update_loop$SelectDestStates <- update_loop$SelectDestStates+1
+            if(update_loop$SelectDestStates<=2){
+              selected <-Read_Settings()[["SelectDestStates"]]
+            }
+          }
+        })
         selected <- c(selected,ClickStateAddDest())
         selected <- unlist(lapply(selected,function(x){strsplit(x,":")[[1]][1]}))
         selected <- unique(selected)
@@ -424,9 +458,9 @@ shinyServer(function(input, output, session) {
       ###########################################################
       CountiesOrigin <- reactive({
         pick <- input$SelectOrigStates
-        if(is.null(pick)){
-          pick <- Read_Settings()[["SelectOrigStates"]]
-        }
+#         if(is.null(pick)){
+#           pick <- Read_Settings()[["SelectOrigStates"]]
+#         }
         
         if(!is.null(pick)){pick <- unlist(lapply(pick,function(x){strsplit(x,":")[[1]][1]}))}
         
@@ -495,6 +529,13 @@ shinyServer(function(input, output, session) {
           }
           }
         })
+        
+        
+        add <- !(selected %in% pick)
+        if(any(add)){
+          pick <- c(selected[add],pick)
+        }
+        
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectOrigCounties","Selected Origin Counties or Entire State",choices=pick,selected=selected,multiple=T)
@@ -602,9 +643,9 @@ shinyServer(function(input, output, session) {
       ###########################################################
       CountiesDestination <- reactive({
         pick <- input$SelectDestStates
-        if(is.null(pick)){
-          pick <- Read_Settings()[["SelectDestStates"]]
-        }
+#         if(is.null(pick)){
+#           pick <- Read_Settings()[["SelectDestStates"]]
+#         }
         
         if(!is.null(pick)){pick <- unlist(lapply(pick,function(x){strsplit(x,":")[[1]][1]}))}
         
@@ -674,6 +715,10 @@ shinyServer(function(input, output, session) {
           }
           }
         })
+        add <- !(selected %in% pick)
+        if(any(add)){
+          pick <- c(selected[add],pick)
+        }
         selected <- unique(selected)
         selected <- selected[!is.null(selected)]
         selectizeInput("SelectDestCounties","Selected Destination Counties or Entire State",choices=pick,selected=selected,multiple=T)
@@ -1518,7 +1563,6 @@ shinyServer(function(input, output, session) {
         progress$set(message = 'Modeling',
                      detail = 'Merging Data')
         on.exit(progress$close())
-        
         series <- VolumeDataPrep_QUICK()[["series"]]
         response <- VolumeDataPrep_QUICK()[["response"]]
         vol_int_rate_fcst <- VolumeDataPrep_QUICK()[["vol_int_rate_fcst"]]
@@ -1583,6 +1627,9 @@ shinyServer(function(input, output, session) {
         series <- cbind(series,padit)
         series$TransFcst[is.na(series$TransFcst)] <- 0
         series <- series[,-c(8)]
+        
+        isolate(fileStatus$quick <- TRUE)
+        
         return(list(series=series,vol_int_rate_fcst=vol_int_rate_fcst,event=event,
                     response=response,data=data,preds=preds,volume=volume,
                     name=name,quote=quote))
@@ -1595,7 +1642,6 @@ shinyServer(function(input, output, session) {
         progress$set(message = 'Modeling',
                      detail = 'Plotting')
         on.exit(progress$close())
-        
         series <- HistoricalData_QUICK()[["series"]]
         #series <- series[,c(2,4:7)]
         p <- colnames(series)
@@ -2830,6 +2876,9 @@ shinyServer(function(input, output, session) {
       series <- cbind(series,padit)
       series$TransFcst[is.na(series$TransFcst)] <- 0
       series <- series[,-c(8)]
+      
+      isolate(fileStatus$full <- TRUE)
+      
       return(list(series=series,vol_int_rate_fcst=vol_int_rate_fcst,event=event,
                   response=response,data=data,preds=preds,volume=volume,
                   name=name,quote=quote))
@@ -3144,7 +3193,7 @@ shinyServer(function(input, output, session) {
       })
       
       output$modelInput <- renderPrint({
-        reactiveValuesToList(input)
+        DownloadBundle()
       })
       
 
