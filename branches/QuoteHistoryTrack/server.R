@@ -2958,6 +2958,34 @@ shinyServer(function(input, output, session) {
                                    tableTools = list(sSwfPath = copySWF())))
       )
       
+      ###########################################################
+      #######Quote Tracker
+      ###########################################################
+      ####this will load a model image and set the values of the different selectors
+      QuoteImage_Quick <- reactive({
+        inFile <- input$modelimage
+        if (is.null(inFile))
+          return(NULL)
+        load(inFile$datapath)
+        return(DownloadBundle[["HistoricalData_QUICK"]])
+      })
+      
+      QuoteImage <- reactive({
+        inFile <- input$modelimage
+        if (is.null(inFile))
+          return(NULL)
+        load(inFile$datapath)
+        return(DownloadBundle[["HistoricalData"]])
+      })
+      
+      output$QuoteImagePrint_Quick <- renderPrint({
+        QuoteImage_Quick()
+      })
+      
+      output$QuoteImagePrint<- renderPrint({
+        QuoteImage()
+      })
+      
       
       
       

@@ -15,6 +15,7 @@ sidebar <- dashboardSidebar(
              menuSubItem("2: Model & Volume", tabName = "VolumeEntry", icon = icon("fa fa-car")),
              menuSubItem("3: Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog"))),
     menuItem("Quote Tracker",tabName = "QuoteTracker",icon = icon("fa fa-info")),
+    menuItem("Save Model Image?",tabName = "saveimage",icon = icon("fa fa-file")),
     menuItem("Advanced Options",icon = icon("fa fa-line-chart"),
              menuSubItem("Map of Selected Data","MapSelected"),
              menuSubItem("Date Range & Outliers","DateRange"),
@@ -24,8 +25,7 @@ sidebar <- dashboardSidebar(
              menuSubItem("Adjusted Predictions","prediction"),
              menuSubItem("Session Info 1","sessionInfo"),
              menuSubItem("Session Info 2","sessionInfo2")
-             ),
-   menuItem("Save Model Image?",tabName = "saveimage",icon = icon("fa fa-file"))
+             )
 ),
   box(title="Major Modeling Options",width=NULL,status = "warning",solidHeader = TRUE,
   uiOutput("response"),
@@ -315,6 +315,14 @@ body <- dashboardBody(
                   )
                 )
             )
+    ),###end current tab
+    
+    tabItem(tabName = "QuoteTracker",
+            box(title="Market Average Data",width=NULL,status = "warning",solidHeader = TRUE,
+                verbatimTextOutput("QuoteImagePrint_Quick")),
+            box(title="Customer Specific Data",width=NULL,status = "warning",solidHeader = TRUE,
+                verbatimTextOutput("QuoteImagePrint"))
+            
     ),###end current tab
     
     tabItem(tabName = "saveimage",
