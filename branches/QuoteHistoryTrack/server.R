@@ -1342,24 +1342,6 @@ shinyServer(function(input, output, session) {
           color = color)
       })
       
-      
-      
-#       output$DataCoverage_QUICK <- renderPlot({
-#         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
-#         data <- data.frame(y=data$EntryDate,x="Rug")
-#         n <- nrow(data)
-#         p <- ggplot(data,aes(y=y,x=x))
-#         p <- p + geom_violin(fill = "grey80", colour = "#3366FF") + coord_flip() + 
-#           xlab(NULL)+ ggtitle(paste0("Data Coverage: n=",n," Observations")) +
-#           ylab(NULL) + geom_point() + theme(axis.text.y=element_blank(),
-#                                                    axis.ticks.y=element_blank())
-#         print(p)
-#       })
-#       
-      
-      
-      
-      
       MODELFIT_QUICK <- reactive({
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Modeling',
@@ -2790,22 +2772,6 @@ shinyServer(function(input, output, session) {
           color = color)
       })
       
-#       output$DataCoverage <- renderPlot({
-#         data <- DATAFILTERED2()[["KEEP"]]###data brought in after filtering is complete
-#         data <- data.frame(y=data$EntryDate,x="Rug")
-#         n <- nrow(data)
-#         p <- ggplot(data,aes(y=y,x=x))
-#         p <- p + geom_violin(fill = "grey80", colour = "#3366FF") + coord_flip() + 
-#           xlab(NULL)+ ggtitle(paste0("Data Coverage: n=",n," Observations")) +
-#           ylab(NULL) + geom_point() + theme(axis.text.y=element_blank(),
-#                                             axis.ticks.y=element_blank())
-#         print(p)
-#       })
-#       
-      
-      
-      
-      
       HistoricalData <- reactive({
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Computing',
@@ -2978,11 +2944,48 @@ shinyServer(function(input, output, session) {
         return(DownloadBundle[["HistoricalData"]])
       })
       
-      output$QuoteImagePrint_Quick <- renderPrint({
-        QuoteImage_Quick()
+      COMPARE_QUICK <- reactive({
+        return(list(HistoricalData_QUICK=HistoricalData_QUICK(),QuoteImage_Quick=QuoteImage_Quick()))
       })
       
+      COMPARE <- reactive({
+        return(list(HistoricalData=HistoricalData(),QuoteImage=QuoteImage()))
+      })
+      
+      
+      output$TrackerPlot_QUICK <- renderDygraph({
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Rendering',
+                     detail = 'Quote Tracker')
+        on.exit(progress$close())
+        HistoricalData <- COMPARE_QUICK()[["HistoricalData_QUICK"]]
+        series <- HistoricalData[["series"]]
+        #series <- series[,c(2,4:7)]
+        p <- colnames(series)
+        response <- HistoricalData[["response"]]
+        vol_int_rate_fcst <- HistoricalData[["vol_int_rate_fcst"]]
+        data <- HistoricalData[["data"]]
+        preds <- HistoricalData[["preds"]]
+        volume <- HistoricalData[["volume"]]
+        event <- HistoricalData[["event"]]
+        name <- HistoricalData[["name"]]
+        dygraph(series,name) %>%
+          dySeries(p[c(1,2,3)],label="Historical") %>%
+          dySeries("TransFcst",label="Repeated Volume",
+                   axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%  
+          dySeries(p[c(5,4,6)],label="FCST") %>% ###turned off error bars... if desired but might crash
+          dyAxis("y",label=response) %>%
+          dyAxis("y2", label = "Transacitonal Volume", 
+                 independentTicks = TRUE, valueRange = c(0, max(volume))) %>%
+          dyRoller(rollPeriod = 1) %>%
+          dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
+      })
+      
+      
+
+      
       output$QuoteImagePrint<- renderPrint({
+        COMPARE()
         QuoteImage()
       })
       

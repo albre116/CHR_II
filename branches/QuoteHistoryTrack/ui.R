@@ -6,15 +6,17 @@ header <- dashboardHeader(
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Load Model and Data?",tabName = "image",icon = icon("fa fa-file")),
-    menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe"),
-             badgeLabel = "Start Here",badgeColor = "red"),
-    menuItem("Basic Quote", tabName = "basicquote", icon = icon("fa fa-camera"),
-             badgeLabel = "Market Average",badgeColor = "red"),
+    menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe")),
+    menuItem("Basic Quote", icon = icon("fa fa-camera"),
+             menuSubItem("Market Average",tabName = "basicquote",icon = icon("fa fa-bar-chart")),
+             menuSubItem("Quote Tracker",tabName = "Health_QUICK",icon = icon("fa fa-bar-chart"))
+             ),
     menuItem("Customer Specific Quote",icon = icon("fa fa-bullseye"),
              menuSubItem("1: Select Predictors", tabName = "predictors", icon = icon("fa fa-bar-chart")),
              menuSubItem("2: Model & Volume", tabName = "VolumeEntry", icon = icon("fa fa-car")),
-             menuSubItem("3: Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog"))),
-    menuItem("Quote Tracker",tabName = "QuoteTracker",icon = icon("fa fa-info")),
+             menuSubItem("3: Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog")),
+             menuSubItem("Quote Tracker",tabName = "Health",icon = icon("fa fa-bar-chart"))
+             ),
     menuItem("Save Model Image?",tabName = "saveimage",icon = icon("fa fa-file")),
     menuItem("Advanced Options",icon = icon("fa fa-line-chart"),
              menuSubItem("Map of Selected Data","MapSelected"),
@@ -193,6 +195,12 @@ body <- dashboardBody(
             )
     ),###end current tab
     
+    tabItem(tabName = "Health_QUICK",
+            box(title="Market Average Data",width=NULL,status = "warning",solidHeader = TRUE,
+                dygraphOutput("TrackerPlot_QUICK"))
+            
+    ),###end current tab
+    
     tabItem(tabName = "predictors",
             fluidRow(
               column(width=4,
@@ -317,9 +325,7 @@ body <- dashboardBody(
             )
     ),###end current tab
     
-    tabItem(tabName = "QuoteTracker",
-            box(title="Market Average Data",width=NULL,status = "warning",solidHeader = TRUE,
-                verbatimTextOutput("QuoteImagePrint_Quick")),
+    tabItem(tabName = "Health",
             box(title="Customer Specific Data",width=NULL,status = "warning",solidHeader = TRUE,
                 verbatimTextOutput("QuoteImagePrint"))
             
