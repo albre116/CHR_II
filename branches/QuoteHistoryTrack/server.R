@@ -2945,7 +2945,25 @@ shinyServer(function(input, output, session) {
       })
       
       COMPARE_QUICK <- reactive({
-        return(list(HistoricalData_QUICK=HistoricalData_QUICK(),QuoteImage_Quick=QuoteImage_Quick()))
+        browser()
+        HistoricalData=HistoricalData_QUICK()
+        QuoteImage=QuoteImage_Quick()
+        
+        volume <- HistoricalData[["volume"]]
+        series <- HistoricalData[["series"]]
+        event <- HistoricalData[["event"]]
+        
+        seriesQ <- QuoteImage[["series"]]
+        eventQ <- QuoteImage[["event"]]
+        
+        combined <- cbind(seriesQ,series,volume)
+        combined <- combined[paste0(eventQ+1,"::",max(index(seriesQ)))]
+        
+        
+        
+        
+        
+        return(list(volume=volume,series=series))
       })
       
       COMPARE <- reactive({
@@ -2960,7 +2978,6 @@ shinyServer(function(input, output, session) {
         on.exit(progress$close())
         HistoricalData <- COMPARE_QUICK()[["HistoricalData_QUICK"]]
         series <- HistoricalData[["series"]]
-        #series <- series[,c(2,4:7)]
         p <- colnames(series)
         response <- HistoricalData[["response"]]
         vol_int_rate_fcst <- HistoricalData[["vol_int_rate_fcst"]]
