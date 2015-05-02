@@ -69,7 +69,7 @@ loadData <- function(path,sample_pct){
 
   #CHR<-dplyr::select(raw_data, one_of(include))
   CHR <- raw_data[,include]
-  CHR<-CHR[complete.cases(CHR[c("TotalCustomerCharges","TotalCarrierCharges")]),]###minimum quantities needed to make any inference
+  #CHR<-CHR[complete.cases(CHR[c("TotalCustomerCharges","TotalCarrierCharges")]),]###minimum quantities needed to make any inference
   CHR$RPM_NormalizedCustomer <- CHR$NormalizedCustomerLineHaul/CHR$NormalizedDistanceByCity
   CHR$RPM_AllInCustomer <- CHR$TotalCustomerCharges/CHR$LoadMiles ###should I use normalized miles
   CHR$CPM_NormalizedCarrier <- CHR$NormalizedCarrierLineHaul/CHR$NormalizedDistanceByCity

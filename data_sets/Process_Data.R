@@ -31,3 +31,7 @@ if(Sys.info()["sysname"]=="Windows"){savepath <- paste0("C:/Users/albre116/Docum
   savepath <- paste0("/srv/shiny_data/",save_name)}
 
 save(RAW,file=savepath)###save it so we don't always have to run this
+
+###to check file dates
+RAW_CUT <- RAW[RAW[["EntryDate"]]>as.Date("3/20/2015",format="%m/%d/%Y"),]
+
