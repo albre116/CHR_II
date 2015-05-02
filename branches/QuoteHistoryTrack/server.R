@@ -1279,7 +1279,7 @@ shinyServer(function(input, output, session) {
         Fn <- mileECDF()
         pct <- 0.15
         valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste0(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          paste0(quantile(Fn,pct), " mi"), paste0(pct*100,"th Mileage Percentile"),
           color = "purple"
         )
       })
@@ -1288,7 +1288,7 @@ shinyServer(function(input, output, session) {
         Fn <- mileECDF()
         pct <- 0.5
         valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste0(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          paste0(quantile(Fn,pct), " mi"), paste0(pct*100,"th Mileage Percentile"),
           color = "purple"
         )
       })
@@ -1297,7 +1297,7 @@ shinyServer(function(input, output, session) {
         Fn <- mileECDF()
         pct <- 0.85
         valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste0(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          paste0(quantile(Fn,pct), " mi"), paste0(pct*100,"th Mileage Percentile"), 
           color = "purple"
         )
       })
@@ -1328,7 +1328,7 @@ shinyServer(function(input, output, session) {
         coverage <- COVERAGE()[["coverage"]]
         n <- COVERAGE()[["n"]]
         valueBox(
-          paste0(coverage, "%:"," (n=",n,")"), "Weekday Data Coverage", icon = icon("list"),
+          paste0(coverage, "%:"," (n=",n,")"), "Weekday Data Coverage", 
           color = "purple"
         )
       })
@@ -1338,7 +1338,7 @@ shinyServer(function(input, output, session) {
         class <- COVERAGE()[["class"]]
         color <- COVERAGE()[["color"]]
         valueBox(
-          class, "Data Coverage Quality", icon = icon("list"),
+          class, "Data Coverage Quality",
           color = color)
       })
       
@@ -1989,11 +1989,12 @@ shinyServer(function(input, output, session) {
               dimension <-Read_Settings()[[grob]]
               q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
               predictor <- eval(parse(text=paste0("data.frame(",terms[my_i],"=q[,2])")))
-              predictor <- xts(predictor,date_sequence)###FIX
+              date_sequence_pred <- Read_Settings()[["DateRange"]]
+              date_sequence_pred <- seq(date_sequence_pred[1]+1,date_sequence_pred[2],"days")
+              predictor <- xts(predictor,date_sequence_pred)
+              predictor <- predictor[paste0(date_window[1]+1,"::")]
             }
          })
-          
-          
           
             lims <- paste("PredictorTerms_range_lower_", terms[my_i], sep="")
             l <- input[[lims]]
@@ -2611,7 +2612,11 @@ shinyServer(function(input, output, session) {
             dimension <-Read_Settings()[["VolumeDraw_data_dimension_RowCol"]]
             q <- matrix(q,nrow=dimension[[1]],ncol=dimension[[2]],byrow = T)
             pred_volume <- data.frame(TransFcst=as.numeric(q[,2]))
-            pred_volume <- xts(pred_volume,date_sequence)
+            date_sequence_pred <- Read_Settings()[["DateRange"]]
+            date_sequence_pred <- seq(date_sequence_pred[1]+1,date_sequence_pred[2],"days")
+            pred_volume <- xts(pred_volume,date_sequence_pred)
+            pred_volume <- pred_volume[paste0(date_window[1]+1,"::")]
+            
           }
         })
         
@@ -2729,7 +2734,7 @@ shinyServer(function(input, output, session) {
         Fn <- mileECDF()
         pct <- 0.15
         valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), 
           color = "purple"
         )
       })
@@ -2738,7 +2743,7 @@ shinyServer(function(input, output, session) {
         Fn <- mileECDF()
         pct <- 0.5
         valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"),
           color = "purple"
         )
       })
@@ -2747,7 +2752,7 @@ shinyServer(function(input, output, session) {
         Fn <- mileECDF()
         pct <- 0.85
         valueBox(
-          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"), icon = icon("list"),
+          paste0(quantile(Fn,pct), " mi"), paste(pct*100,"th Mileage Percentile"),
           color = "purple"
         )
       })
@@ -2758,7 +2763,7 @@ shinyServer(function(input, output, session) {
         coverage <- COVERAGE()[["coverage"]]
         n <- COVERAGE()[["n"]]
         valueBox(
-          paste0(coverage, "%:"," (n=",n,")"), "Weekday Data Coverage", icon = icon("list"),
+          paste0(coverage, "%:"," (n=",n,")"), "Weekday Data Coverage", 
           color = "purple"
         )
       })
@@ -2768,7 +2773,7 @@ shinyServer(function(input, output, session) {
         class <- COVERAGE()[["class"]]
         color <- COVERAGE()[["color"]]
         valueBox(
-          class, "Data Coverage Quality", icon = icon("list"),
+          class, "Data Coverage Quality", 
           color = color)
       })
       
@@ -2936,61 +2941,82 @@ shinyServer(function(input, output, session) {
         return(DownloadBundle[["HistoricalData_QUICK"]])
       })
       
-      QuoteImage <- reactive({
-        inFile <- input$modelimage
-        if (is.null(inFile))
-          return(NULL)
-        load(inFile$datapath)
-        return(DownloadBundle[["HistoricalData"]])
-      })
-      
       COMPARE_QUICK <- reactive({
-        browser()
+        if(is.null(QuoteImage_Quick())){return(NULL)}
         HistoricalData=HistoricalData_QUICK()
         QuoteImage=QuoteImage_Quick()
         
         volume <- HistoricalData[["volume"]]
         series <- HistoricalData[["series"]]
         event <- HistoricalData[["event"]]
+        quote <- HistoricalData[["quote"]]
         
         seriesQ <- QuoteImage[["series"]]
         eventQ <- QuoteImage[["event"]]
+        quoteQ <- QuoteImage[["quote"]]
         
-        combined <- cbind(seriesQ,series,volume)
-        combined <- combined[paste0(eventQ+1,"::",max(index(seriesQ)))]
+        series <- series[paste0(eventQ+1,"::",max(index(seriesQ)))]
+        seriesQ <- seriesQ[paste0(eventQ+1,"::",max(index(seriesQ)))]
         
+        quote_begin <- eventQ+1
+        quote_end <- max(index(seriesQ))
+        life_remain <- nrow(seriesQ[paste0(event+1,"::")])/nrow(seriesQ)
         
+        ####fill the gaps on series where there is a hole in the data between fcst and observed
         
+        observed <- series[,1:3]
+        fcst <- series[,c(5,4,6)]
         
+        observed <- observed[complete.cases(observed),]
+        fcst <- fcst[complete.cases(fcst),]
+        combined <- rbind(observed,fcst)
+        date_string <- seq(min(index(combined)),max(index(combined)),"days")
+        combined <- cbind(combined,date_string)
+        combined <- na.approx(combined)
+        series[paste0("::",event),c(1,2,3)] <- combined[paste0("::",event),c(1,2,3)]###complete series coverage
+        series <- cbind(seriesQ,series)###go old then new
+        series <- series[,c(5,4,6,7,8,9,10,12,11,13)]
+        combined <- cbind(combined,series$TransFcst)
         
-        return(list(volume=volume,series=series))
+        lcl <- weighted.mean(combined[,1],combined[,4])
+        x_bar <- weighted.mean(combined[,2],combined[,4])
+        ucl <- weighted.mean(combined[,3],combined[,4])
+        newTable <-quoteQ[1,c(4,5,6)] 
+        newTable <- data.frame(Method="Quoted At",newTable)
+        newTable <- rbind(newTable,newTable,newTable)
+        newTable[,1] <- as.character(newTable[,1])
+        newTable[2,1] <- "Updated Forecast" 
+        newTable[2,2] <- lcl 
+        newTable[2,3] <- x_bar 
+        newTable[2,4] <- ucl
+        newTable[3,1] <- "Difference" 
+        newTable[3,2] <- newTable[1,2]-newTable[2,2]
+        newTable[3,3] <- newTable[1,3]-newTable[2,3] 
+        newTable[3,4] <- newTable[1,4]-newTable[2,4]
+        newTable[,2:4] <- round(newTable[,2:4],2)
+        
+        return(list(series=series,event=event,volume=volume,
+                    newTable=newTable,quote_begin=quote_begin,
+                    quote_end=quote_end,life_remain=life_remain))
       })
-      
-      COMPARE <- reactive({
-        return(list(HistoricalData=HistoricalData(),QuoteImage=QuoteImage()))
-      })
-      
       
       output$TrackerPlot_QUICK <- renderDygraph({
+        if(is.null(COMPARE_QUICK())){return(NULL)}
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Rendering',
                      detail = 'Quote Tracker')
         on.exit(progress$close())
-        HistoricalData <- COMPARE_QUICK()[["HistoricalData_QUICK"]]
-        series <- HistoricalData[["series"]]
+        response <- input$response
+        series <- COMPARE_QUICK()[["series"]]
+        event <- COMPARE_QUICK()[["event"]]
+        volume <- COMPARE_QUICK()[["volume"]]
         p <- colnames(series)
-        response <- HistoricalData[["response"]]
-        vol_int_rate_fcst <- HistoricalData[["vol_int_rate_fcst"]]
-        data <- HistoricalData[["data"]]
-        preds <- HistoricalData[["preds"]]
-        volume <- HistoricalData[["volume"]]
-        event <- HistoricalData[["event"]]
-        name <- HistoricalData[["name"]]
-        dygraph(series,name) %>%
-          dySeries(p[c(1,2,3)],label="Historical") %>%
-          dySeries("TransFcst",label="Repeated Volume",
+        dygraph(series,"Comparison of Quote to Actual and Updated Forecast") %>%
+          dySeries(p[c(1,2,3)],label="Old FCST") %>%
+          dySeries(p[c(4)],label="Old FCST Volume",
                    axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%  
-          dySeries(p[c(5,4,6)],label="FCST") %>% ###turned off error bars... if desired but might crash
+          dySeries(p[c(5,6,7)],label="Observed") %>% 
+          dySeries(p[c(8,9,10)],label="Updated FCST") %>% 
           dyAxis("y",label=response) %>%
           dyAxis("y2", label = "Transacitonal Volume", 
                  independentTicks = TRUE, valueRange = c(0, max(volume))) %>%
@@ -2999,12 +3025,169 @@ shinyServer(function(input, output, session) {
       })
       
       
+      output$QuoteBurndown_QUICK<- DT::renderDataTable(
+        DT::datatable(COMPARE_QUICK()[["newTable"]],extensions = 'TableTools',
+                      options=list( dom = 'T<"clear">lfrtip',
+                                    tableTools = list(sSwfPath = copySWF())))
+      )
+      
+      output$QuoteDetails_QUICK <- renderValueBox({
+        quote_begin <- COMPARE_QUICK()[["quote_begin"]]
+        quote_end <- COMPARE_QUICK()[["quote_end"]]
+        life_remain <- round(COMPARE_QUICK()[["life_remain"]],2)*100
+        valueBox(paste0(life_remain,"% Remaining"), paste("Quote Period:",quote_begin,"to",quote_end),
+                 color = "blue")
+        
+        
+      })
+      
 
       
-      output$QuoteImagePrint<- renderPrint({
-        COMPARE()
-        QuoteImage()
+      output$burndown50_QUICK<- renderValueBox({
+        r <- input$response
+        table <- COMPARE_QUICK()[["newTable"]]
+        value <- table[3,3]
+        percentile <- colnames(table)[3]
+        color <- "red"
+        message <- paste("Projected Loss  Versus Quote",r,percentile)
+        if(value>=0){
+          color <- "green"
+          message <- paste("Projected Premium  Versus Quote",r,percentile)
+        }
+        valueBox(paste0("$",value), message,
+                 color = color)
       })
+      
+      
+      
+      QuoteImage <- reactive({
+        inFile <- input$modelimage
+        if (is.null(inFile))
+          return(NULL)
+        load(inFile$datapath)
+        return(DownloadBundle[["HistoricalData"]])
+      })
+      
+
+      
+      COMPARE<- reactive({
+        if(is.null(QuoteImage())){return(NULL)}
+        HistoricalData=HistoricalData()
+        QuoteImage=QuoteImage()
+        
+        volume <- HistoricalData[["volume"]]
+        series <- HistoricalData[["series"]]
+        event <- HistoricalData[["event"]]
+        quote <- HistoricalData[["quote"]]
+        
+        seriesQ <- QuoteImage[["series"]]
+        eventQ <- QuoteImage[["event"]]
+        quoteQ <- QuoteImage[["quote"]]
+        
+        series <- series[paste0(eventQ+1,"::",max(index(seriesQ)))]
+        seriesQ <- seriesQ[paste0(eventQ+1,"::",max(index(seriesQ)))]
+        
+        quote_begin <- eventQ+1
+        quote_end <- max(index(seriesQ))
+        life_remain <- nrow(seriesQ[paste0(event+1,"::")])/nrow(seriesQ)
+        
+        ####fill the gaps on series where there is a hole in the data between fcst and observed
+        
+        observed <- series[,1:3]
+        fcst <- series[,c(5,4,6)]
+        
+        observed <- observed[complete.cases(observed),]
+        fcst <- fcst[complete.cases(fcst),]
+        combined <- rbind(observed,fcst)
+        date_string <- seq(min(index(combined)),max(index(combined)),"days")
+        combined <- cbind(combined,date_string)
+        combined <- na.approx(combined)
+        series[paste0("::",event),c(1,2,3)] <- combined[paste0("::",event),c(1,2,3)]###complete series coverage
+        series <- cbind(seriesQ,series)###go old then new
+        series <- series[,c(5,4,6,7,8,9,10,12,11,13)]
+        combined <- cbind(combined,series$TransFcst)
+        
+        lcl <- weighted.mean(combined[,1],combined[,4])
+        x_bar <- weighted.mean(combined[,2],combined[,4])
+        ucl <- weighted.mean(combined[,3],combined[,4])
+        newTable <-quoteQ[1,c(4,5,6)] 
+        newTable <- data.frame(Method="Quoted At",newTable)
+        newTable <- rbind(newTable,newTable,newTable)
+        newTable[,1] <- as.character(newTable[,1])
+        newTable[2,1] <- "Updated Forecast" 
+        newTable[2,2] <- lcl 
+        newTable[2,3] <- x_bar 
+        newTable[2,4] <- ucl
+        newTable[3,1] <- "Difference" 
+        newTable[3,2] <- newTable[1,2]-newTable[2,2]
+        newTable[3,3] <- newTable[1,3]-newTable[2,3] 
+        newTable[3,4] <- newTable[1,4]-newTable[2,4]
+        newTable[,2:4] <- round(newTable[,2:4],2)
+        
+        return(list(series=series,event=event,volume=volume,
+                    newTable=newTable,quote_begin=quote_begin,
+                    quote_end=quote_end,life_remain=life_remain))
+      })
+      
+      output$TrackerPlot <- renderDygraph({
+        if(is.null(COMPARE())){return(NULL)}
+        progress <- shiny::Progress$new(session, min=0, max=2)
+        progress$set(message = 'Rendering',
+                     detail = 'Quote Tracker')
+        on.exit(progress$close())
+        response <- input$response
+        series <- COMPARE()[["series"]]
+        event <- COMPARE()[["event"]]
+        volume <- COMPARE()[["volume"]]
+        p <- colnames(series)
+        dygraph(series,"Comparison of Quote to Actual and Updated Forecast") %>%
+          dySeries(p[c(1,2,3)],label="Old FCST") %>%
+          dySeries(p[c(4)],label="Old FCST Volume",
+                   axis='y2',stepPlot = TRUE, fillGraph = TRUE) %>%  
+          dySeries(p[c(5,6,7)],label="Observed") %>% 
+          dySeries(p[c(8,9,10)],label="Updated FCST") %>% 
+          dyAxis("y",label=response) %>%
+          dyAxis("y2", label = "Transacitonal Volume", 
+                 independentTicks = TRUE, valueRange = c(0, max(volume))) %>%
+          dyRoller(rollPeriod = 1) %>%
+          dyEvent(date = event, "Observed/Predicted", labelLoc = "bottom")
+      })
+      
+      
+      output$QuoteBurndown<- DT::renderDataTable(
+        DT::datatable(COMPARE()[["newTable"]],extensions = 'TableTools',
+                      options=list( dom = 'T<"clear">lfrtip',
+                                    tableTools = list(sSwfPath = copySWF())))
+      )
+      
+      output$QuoteDetails <- renderValueBox({
+        quote_begin <- COMPARE()[["quote_begin"]]
+        quote_end <- COMPARE()[["quote_end"]]
+        life_remain <- round(COMPARE()[["life_remain"]],2)*100
+        valueBox(paste0(life_remain,"% Remaining"), paste("Quote Period:",quote_begin,"to",quote_end),
+                 color = "blue")
+        
+        
+      })
+      
+
+      
+      output$burndown50<- renderValueBox({
+        r <- input$response
+        table <- COMPARE()[["newTable"]]
+        value <- table[3,3]
+        percentile <- colnames(table)[3]
+        color <- "red"
+        message <- paste("Projected Loss  Versus Quote",r,percentile)
+        if(value>=0){
+          color <- "green"
+          message <- paste("Projected Premium  Versus Quote",r,percentile)
+        }
+        valueBox(paste0("$",value), message,
+                 color = color)
+      })
+      
+
       
       
       

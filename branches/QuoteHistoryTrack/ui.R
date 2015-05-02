@@ -196,9 +196,18 @@ body <- dashboardBody(
     ),###end current tab
     
     tabItem(tabName = "Health_QUICK",
+            valueBoxOutput("QuoteDetails_QUICK",width=6),
+            valueBoxOutput("burndown50_QUICK",width=6),
+            fluidRow(
+              column(width = 6,
             box(title="Market Average Data",width=NULL,status = "warning",solidHeader = TRUE,
                 dygraphOutput("TrackerPlot_QUICK"))
-            
+              ),####end column
+            column(width = 6,
+                   box(title="Projected Deviance in Quote",width=NULL,status = "warning",solidHeader = TRUE,
+                       DT::dataTableOutput("QuoteBurndown_QUICK"))
+            )####end column
+            )###end row
     ),###end current tab
     
     tabItem(tabName = "predictors",
@@ -326,9 +335,18 @@ body <- dashboardBody(
     ),###end current tab
     
     tabItem(tabName = "Health",
-            box(title="Customer Specific Data",width=NULL,status = "warning",solidHeader = TRUE,
-                verbatimTextOutput("QuoteImagePrint"))
-            
+            valueBoxOutput("QuoteDetails",width=6),
+            valueBoxOutput("burndown50",width=6),
+            fluidRow(
+              column(width = 6,
+                     box(title="Market Average Data",width=NULL,status = "warning",solidHeader = TRUE,
+                         dygraphOutput("TrackerPlot"))
+              ),####end column
+              column(width = 6,
+                     box(title="Projected Deviance in Quote",width=NULL,status = "warning",solidHeader = TRUE,
+                         DT::dataTableOutput("QuoteBurndown"))
+              )####end column
+            )###end row
     ),###end current tab
     
     tabItem(tabName = "saveimage",
