@@ -18,8 +18,9 @@ shinyServer(function(input, output, session) {
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Loading Data File off Server',
                      detail = '...')
-        on.exit(progress$close())  
+          
         load("/srv/shiny_data/Min_2015_04_20.RData")
+        progress$close()
         }else{
         if (is.null(inFile)) {
           return(NULL)
