@@ -3026,24 +3026,32 @@ shinyServer(function(input, output, session) {
       
       
       output$QuoteBurndown_QUICK<- DT::renderDataTable(
+        if(is.null(COMPARE_QUICK())){return(NULL)}else{
         DT::datatable(COMPARE_QUICK()[["newTable"]],extensions = 'TableTools',
                       options=list( dom = 'T<"clear">lfrtip',
                                     tableTools = list(sSwfPath = copySWF())))
+        }
       )
       
       output$QuoteDetails_QUICK <- renderValueBox({
+        if(is.null(COMPARE_QUICK())){
+          valueBox("No Model Image Uploaded","To use this feature, upload a quote on the front page",
+                   color="red")
+          }else{
         quote_begin <- COMPARE_QUICK()[["quote_begin"]]
         quote_end <- COMPARE_QUICK()[["quote_end"]]
         life_remain <- round(COMPARE_QUICK()[["life_remain"]],2)*100
         valueBox(paste0(life_remain,"% Remaining"), paste("Quote Period:",quote_begin,"to",quote_end),
                  color = "blue")
-        
-        
+          }
       })
       
 
       
       output$burndown50_QUICK<- renderValueBox({
+        if(is.null(COMPARE_QUICK())){
+          valueBox(NULL,NULL)
+        }else{
         r <- input$response
         table <- COMPARE_QUICK()[["newTable"]]
         value <- table[3,3]
@@ -3056,6 +3064,7 @@ shinyServer(function(input, output, session) {
         }
         valueBox(paste0("$",value), message,
                  color = color)
+        }
       })
       
       
@@ -3155,24 +3164,36 @@ shinyServer(function(input, output, session) {
       
       
       output$QuoteBurndown<- DT::renderDataTable(
+        if(is.null(COMPARE())){
+          return(NULL)
+        }else{
         DT::datatable(COMPARE()[["newTable"]],extensions = 'TableTools',
                       options=list( dom = 'T<"clear">lfrtip',
                                     tableTools = list(sSwfPath = copySWF())))
-      )
+        }
+          )
       
       output$QuoteDetails <- renderValueBox({
+        if(is.null(COMPARE())){
+          valueBox("No Model Image Uploaded","To use this feature, upload a quote on the front page",
+                   color="red")
+        }else{
+        
         quote_begin <- COMPARE()[["quote_begin"]]
         quote_end <- COMPARE()[["quote_end"]]
         life_remain <- round(COMPARE()[["life_remain"]],2)*100
         valueBox(paste0(life_remain,"% Remaining"), paste("Quote Period:",quote_begin,"to",quote_end),
                  color = "blue")
         
-        
+        }
       })
       
 
       
       output$burndown50<- renderValueBox({
+        if(is.null(COMPARE_QUICK())){
+          valueBox(NULL,NULL)
+        }else{
         r <- input$response
         table <- COMPARE()[["newTable"]]
         value <- table[3,3]
@@ -3185,6 +3206,7 @@ shinyServer(function(input, output, session) {
         }
         valueBox(paste0("$",value), message,
                  color = color)
+        }
       })
       
 
