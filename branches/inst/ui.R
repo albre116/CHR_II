@@ -6,14 +6,18 @@ header <- dashboardHeader(
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Load Model and Data?",tabName = "image",icon = icon("fa fa-file")),
-    menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe"),
-             badgeLabel = "Start Here",badgeColor = "red"),
-    menuItem("Basic Quote", tabName = "basicquote", icon = icon("fa fa-camera"),
-             badgeLabel = "Market Average",badgeColor = "red"),
+    menuItem("Select Geography", tabName = "geography", icon = icon("fa fa-globe")),
+    menuItem("Basic Quote", icon = icon("fa fa-camera"),
+             menuSubItem("Market Average",tabName = "basicquote",icon = icon("fa fa-bar-chart")),
+             menuSubItem("Quote Tracker",tabName = "Health_QUICK",icon = icon("fa fa-bar-chart"))
+             ),
     menuItem("Customer Specific Quote",icon = icon("fa fa-bullseye"),
              menuSubItem("1: Select Predictors", tabName = "predictors", icon = icon("fa fa-bar-chart")),
              menuSubItem("2: Model & Volume", tabName = "VolumeEntry", icon = icon("fa fa-car")),
-             menuSubItem("3: Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog"))),
+             menuSubItem("3: Model Summary", tabName = "SummaryPredictions", icon = icon("fa fa-cog")),
+             menuSubItem("Quote Tracker",tabName = "Health",icon = icon("fa fa-bar-chart"))
+             ),
+    menuItem("Save Model Image?",tabName = "saveimage",icon = icon("fa fa-file")),
     menuItem("Advanced Options",icon = icon("fa fa-line-chart"),
              menuSubItem("Map of Selected Data","MapSelected"),
              menuSubItem("Date Range & Outliers","DateRange"),
@@ -23,8 +27,7 @@ sidebar <- dashboardSidebar(
              menuSubItem("Adjusted Predictions","prediction"),
              menuSubItem("Session Info 1","sessionInfo"),
              menuSubItem("Session Info 2","sessionInfo2")
-             ),
-   menuItem("Save Model Image?",tabName = "saveimage",icon = icon("fa fa-file"))
+             )
 ),
   box(title="Major Modeling Options",width=NULL,status = "warning",solidHeader = TRUE,
   uiOutput("response"),
@@ -192,6 +195,21 @@ body <- dashboardBody(
             )
     ),###end current tab
     
+    tabItem(tabName = "Health_QUICK",
+            valueBoxOutput("QuoteDetails_QUICK",width=6),
+            valueBoxOutput("burndown50_QUICK",width=6),
+            fluidRow(
+              column(width = 6,
+            box(title="Market Average Data",width=NULL,status = "warning",solidHeader = TRUE,
+                dygraphOutput("TrackerPlot_QUICK"))
+              ),####end column
+            column(width = 6,
+                   box(title="Projected Deviance in Quote",width=NULL,status = "warning",solidHeader = TRUE,
+                       DT::dataTableOutput("QuoteBurndown_QUICK"))
+            )####end column
+            )###end row
+    ),###end current tab
+    
     tabItem(tabName = "predictors",
             fluidRow(
               column(width=4,
@@ -314,6 +332,21 @@ body <- dashboardBody(
                   )
                 )
             )
+    ),###end current tab
+    
+    tabItem(tabName = "Health",
+            valueBoxOutput("QuoteDetails",width=6),
+            valueBoxOutput("burndown50",width=6),
+            fluidRow(
+              column(width = 6,
+                     box(title="Market Average Data",width=NULL,status = "warning",solidHeader = TRUE,
+                         dygraphOutput("TrackerPlot"))
+              ),####end column
+              column(width = 6,
+                     box(title="Projected Deviance in Quote",width=NULL,status = "warning",solidHeader = TRUE,
+                         DT::dataTableOutput("QuoteBurndown"))
+              )####end column
+            )###end row
     ),###end current tab
     
     tabItem(tabName = "saveimage",
