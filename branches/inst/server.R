@@ -14,12 +14,13 @@ shinyServer(function(input, output, session) {
       return(NULL)
       }else{load(inFile$datapath)}
       }else{
-      if(is.null(inFile) & exists("/srv/shiny_data/Min_2015_04_20.RData")){
+      if(is.null(inFile) & file.exists("/srv/shiny_data/Min_2015_04_20.RData")){
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Loading Data File off Server',
                      detail = '...')
         on.exit(progress$close())  
-      load("/srv/shiny_data/Min_2015_04_20.RData")}else{
+        load("/srv/shiny_data/Min_2015_04_20.RData")
+        }else{
         if (is.null(inFile)) {
           return(NULL)
         }else{load(inFile$datapath)}
