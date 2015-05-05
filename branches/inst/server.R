@@ -1503,6 +1503,7 @@ shinyServer(function(input, output, session) {
           fit <- mgcv::gam(TransVolume~s(Day365,bs="cc")+NumericDate,data=dat)
           PredData <- data.frame(EntryDate=date_sequence,Day365=as.numeric(format(date_sequence,format="%j")),NumericDate=as.numeric(date_sequence))
           pred_volume <- predict(fit,newdata=PredData)
+          pred_volume[pred_volume<=0] <- 0 ###set to zero if negative
           pred_volume <- data.frame(TransFcst=as.numeric(pred_volume))
 
         pred_volume <- xts(pred_volume,date_sequence)
@@ -2577,6 +2578,7 @@ shinyServer(function(input, output, session) {
           fit <- mgcv::gam(TransVolume~s(Day365,bs="cc")+NumericDate,data=dat)
           PredData <- data.frame(EntryDate=date_sequence,Day365=as.numeric(format(date_sequence,format="%j")),NumericDate=as.numeric(date_sequence))
           pred_volume <- predict(fit,newdata=PredData)
+          pred_volume[pred_volume<=0] <- 0 ###set to zero if negative
           pred_volume <- data.frame(TransFcst=as.numeric(pred_volume))
         }
         
@@ -2587,6 +2589,7 @@ shinyServer(function(input, output, session) {
           fit <- mgcv::gam(TransVolume~s(Day365,bs="cc")+NumericDate,data=dat)
           PredData <- data.frame(EntryDate=date_sequence,Day365=as.numeric(format(date_sequence,format="%j")),NumericDate=as.numeric(date_sequence))
           pred_volume <- predict(fit,newdata=PredData)
+          pred_volume[pred_volume<=0] <- 0 ###set to zero if negative
           pred_volume <- data.frame(TransFcst=as.numeric(pred_volume))
         }
         
@@ -2604,6 +2607,7 @@ shinyServer(function(input, output, session) {
           fit <- mgcv::gam(TransVolume~s(Day365,bs="cc")+NumericDate,data=dat)
           PredData <- data.frame(EntryDate=date_sequence,Day365=as.numeric(format(date_sequence,format="%j")),NumericDate=as.numeric(date_sequence))
           pred_volume <- predict(fit,newdata=PredData)
+          pred_volume[pred_volume<=0] <- 0 ###set to zero if negative
           pred_volume <- data.frame(TransFcst=as.numeric(pred_volume))
         }
         
