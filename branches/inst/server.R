@@ -30,7 +30,7 @@ shinyServer(function(input, output, session) {
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Loading Data File off Server',
                      detail = '...')
-        load(paste0("/srv/shiny_data",input$file_selector))
+        load(paste0("/srv/shiny_data/",input$file_selector))
         progress$close()
         }else{
         if (is.null(inFile)) {
