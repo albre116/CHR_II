@@ -26,7 +26,7 @@ shinyServer(function(input, output, session) {
       load(paste0("C:/Users/albre116/Documents/CHR_II/data_sets/",input$file_selector))
       }else{load(inFile$datapath)}
       }else{
-      if(is.null(inFile) | is.null(input$file_selector)){
+      if(is.null(inFile) & !is.null(input$file_selector)){
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Loading Data File off Server',
                      detail = '...')
