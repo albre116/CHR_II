@@ -6,7 +6,7 @@ if(!require('DataPull')) {
   devtools::install_github(c("albre116/CHR_II/trunk/DataPull"),auth_token="ffcaf9fb4036981ec6022f13d2a1d05df97a5ff3")
 }
 
-fileName <- "2015_04_27.txt"
+fileName <- "2015_04_30.txt"
 save_name <- gsub(".txt",".RData",fileName)
 Minimal_Data=TRUE
 if(Sys.info()["sysname"]=="Windows"){path <- paste0("C:/Users/albre116/Documents/CHR_II/data_sets/",fileName)}else{
@@ -32,6 +32,28 @@ if(Sys.info()["sysname"]=="Windows"){savepath <- paste0("C:/Users/albre116/Docum
 
 save(RAW,file=savepath)###save it so we don't always have to run this
 
-###to check file dates
-RAW_CUT <- RAW[RAW[["EntryDate"]]>as.Date("3/20/2015",format="%m/%d/%Y"),]
+###do some data cuts with this data
+ii=c("2015-04-01",
+    "2015-03-01",
+    "2015-02-01",
+    "2015-01-01",
+    "2014-12-01",
+    "2014-11-01",
+    "2014-10-01",
+    "2014-09-01",
+    "2014-08-01",
+    "2014-07-01",
+    "2014-06-01")
+for(i in ii){
+date <- as.Date(i,format="%Y-%m-%d")
+i <- gsub("-","_",i)
+if(Minimal_Data==TRUE){save_name <- paste0("Min_",i,".RData")}else{save_name <- paste0(i,".RData")}
+RAW <- RAW[RAW[["EntryDate"]]<=date,]
+if(Sys.info()["sysname"]=="Windows"){savepath <- paste0("C:/Users/albre116/Documents/CHR_II/data_sets/",save_name)}else{
+  savepath <- paste0("/srv/shiny_data/",save_name)}
+save(RAW,file=savepath)}
+
+
+
+
 
