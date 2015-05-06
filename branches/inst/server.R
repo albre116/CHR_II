@@ -7,18 +7,30 @@ shinyServer(function(input, output, session) {
                             message = list())
   
   
+  output$file_selector <- renderUI({
+    if(Sys.info()["sysname"]=="Windows"){
+      choices <- list.files("C:/Users/albre116/Documents/CHR_II/data_sets")
+    }else{
+      choices <- list.files("/srv/shiny_data")
+    }
+    selectInput("file_selector","File to Load From Server Memory (or use browser if not desired)",
+                   choices = choices,selected = "Min_2015_04_30.RData")
+  })
+
+  
+  
   ####use this to load all of the data
   GO<-reactive({
     inFile <- input$rawdata
     if(Sys.info()["sysname"]=="Windows"){if (is.null(inFile)) {
-      return(NULL)
+      load(paste0("C:/Users/albre116/Documents/CHR_II/data_sets/",input$file_selector))
       }else{load(inFile$datapath)}
       }else{
-      if(is.null(inFile) & file.exists(server_file_path)){
+      if(is.null(inFile)){
         progress <- shiny::Progress$new(session, min=0, max=2)
         progress$set(message = 'Loading Data File off Server',
                      detail = '...')
-        load(server_file_path)
+        load(paste0("/srv/shiny_data",input$file_selector))
         progress$close()
         }else{
         if (is.null(inFile)) {

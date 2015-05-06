@@ -93,7 +93,7 @@ if(!require('dyPencilgraphs')) {
   devtools::install_github(c("albre116/DygraphsPencil"))
 }
 
-server_file_path <- c("/srv/shiny_data/Min_2015_04_27.RData")
+
 
 states.model <- c("Washington", "Montana", "Maine", "North Dakota", "South Dakota",
                   "Wyoming", "Wisconsin", "Idaho", "Vermont", "Minnesota", "Oregon",
