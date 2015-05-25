@@ -6,7 +6,7 @@ if(!require('DataPull')) {
   devtools::install_github(c("albre116/CHR_II/trunk/DataPull"),auth_token="ffcaf9fb4036981ec6022f13d2a1d05df97a5ff3")
 }
 
-fileName <- "2015_04_30.txt"
+fileName <- "2015_05_20.txt"
 save_name <- gsub(".txt",".RData",fileName)
 Minimal_Data=FALSE
 if(Sys.info()["sysname"]=="Windows"){path <- paste0("C:/Users/albre116/Documents/CHR_II/data_sets/",fileName)}else{
@@ -33,7 +33,8 @@ if(Sys.info()["sysname"]=="Windows"){savepath <- paste0("C:/Users/albre116/Docum
 save(RAW,file=savepath)###save it so we don't always have to run this
 
 ###do some data cuts with this data
-ii=c("2015-04-01",
+ii=c("2015-05-01",
+     "2015-04-01",
     "2015-03-01",
     "2015-02-01",
     "2015-01-01",
