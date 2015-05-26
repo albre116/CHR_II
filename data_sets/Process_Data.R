@@ -8,7 +8,7 @@ if(!require('DataPull')) {
 
 fileName <- "2015_05_20.txt"
 save_name <- gsub(".txt",".RData",fileName)
-Minimal_Data=FALSE
+Minimal_Data=TRUE
 if(Sys.info()["sysname"]=="Windows"){path <- paste0("C:/Users/albre116/Documents/CHR_II/data_sets/",fileName)}else{
   path <- paste0("/srv/shiny_data/",fileName)}
  ###set this to file path location for raw data
