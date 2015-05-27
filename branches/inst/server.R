@@ -14,7 +14,7 @@ shinyServer(function(input, output, session) {
       choices <- list.files("/srv/shiny_data")
     }
     selectInput("file_selector","File to Load From Server Memory (or use browser if not desired)",
-                   choices = choices,selected = "Min_2015_05_20.RData")
+                   choices = choices,selected = "Min_2015_05_26.RData")
   })
 
   
