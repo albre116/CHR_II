@@ -46,7 +46,7 @@ body <- dashboardBody(
                          box(width=NULL,background = NULL,status="primary",
                              withTags({
                                div(class="header", checked=NA,
-                                   h2("Welcome to CPDS Time Series Modeling Applicaiton"),
+                                   h2("Welcome to CPDS Time Series Modeling Application"),
                                    h2("First upload your data with the data upload botton on the Right"),
                                    h3("To use the tool you can take 1 of 2 paths:"),
                                    ul(ol(
