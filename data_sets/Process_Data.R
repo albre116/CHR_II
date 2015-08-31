@@ -9,7 +9,7 @@ if(!require('DataPull')) {
 fileName <- "2015_05_26.txt"
 save_name <- gsub(".txt",".RData",fileName)
 Minimal_Data=FALSE
-if(Sys.info()["sysname"]=="Windows"){path <- paste0("C:/Users/albre116/Documents/CHR_II/data_sets/",fileName)}else{
+if(Sys.info()["sysname"]=="Windows"){path <- paste0("C:/Users/albrmar/Desktop/RProjects/CHR_II/data_sets/",fileName)}else{
   path <- paste0("/srv/shiny_data/",fileName)}
  ###set this to file path location for raw data
 sample_pct <- 1 ###set between [0,1]
@@ -27,7 +27,7 @@ if(Minimal_Data==TRUE){
 }
 
 
-if(Sys.info()["sysname"]=="Windows"){savepath <- paste0("C:/Users/albre116/Documents/CHR_II/data_sets/",save_name)}else{
+if(Sys.info()["sysname"]=="Windows"){savepath <- paste0("C:/Users/albrmar/Desktop/RProjects/CHR_II/data_sets/",save_name)}else{
   savepath <- paste0("/srv/shiny_data/",save_name)}
 
 save(RAW,file=savepath)###save it so we don't always have to run this
